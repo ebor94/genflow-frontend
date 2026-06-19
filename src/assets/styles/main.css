@@ -1,0 +1,114 @@
+/* Fuentes corporativas locales (Comfortaa, Raleway, Hind Vadodara) */
+@import './fonts.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Paleta corporativa Serfunorte (alineada con mantix-frontend)
+     Los nombres semánticos se conservan para preservar componentes sv-*,
+     pero ahora apuntan a la paleta verde Serfunorte. */
+  --primary-50:  #e6f7f1;
+  --primary-500: #00875c;
+  --primary-700: #005a3d;
+  --primary-800: #004730;
+
+  --cream:       #f9fafb;
+  --brown-deep:  #004730;
+  --brown-warm:  #005a3d;
+  --gold:        #00875c;
+  --gold-bright: #1ab37d;
+  --sage:        #16a34a;
+  --danger:      #dc2626;
+  --warning:     #f59e0b;
+  --text:        #111827;
+  --text2:       #374151;
+  --text3:       #6b7280;
+  --area-prenec: #00875c;
+  --area-emp:    #1d4ed8;
+  --area-pap:    #15803d;
+  --area-svc:    #0f766e;
+}
+
+@layer base {
+  html, body {
+    @apply bg-cream text-text1 antialiased;
+    font-family: "Raleway", system-ui, sans-serif;
+  }
+
+  h1, h2, h3, h4 {
+    font-family: "Comfortaa", system-ui, sans-serif;
+    /* color: inherit — los h1 heredan el color del contenedor.
+       En fondos claros heredan text-text1 del body (gris #111827, legible).
+       En headers oscuros (bg-area-*, bg-brown-deep) heredan text-cream automáticamente.
+       Para forzar brown-deep usar la clase utility `text-brown-deep`. */
+    color: inherit;
+  }
+
+  a { @apply text-gold hover:text-gold-bright transition-colors; }
+
+  input, select, textarea {
+    font-family: inherit;
+  }
+}
+
+@layer components {
+  .sv-card {
+    @apply bg-white rounded-sv shadow-sv-card border border-text3/10;
+  }
+
+  .sv-input {
+    @apply block w-full rounded-sv border-text3/30 text-sm shadow-sm transition-colors
+           focus:border-gold focus:ring-2 focus:ring-gold/20
+           disabled:bg-cream/60 disabled:text-text3
+           read-only:bg-cream/60 read-only:text-text2;
+  }
+
+  .sv-btn {
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold
+           rounded-sv shadow-sm transition-all duration-150
+           focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-cream
+           disabled:cursor-not-allowed;
+  }
+  .sv-btn-primary  { @apply sv-btn bg-gold text-white hover:bg-gold-bright focus:ring-gold disabled:bg-gold/40; }
+  .sv-btn-secondary{ @apply sv-btn bg-cream border border-text3/30 text-text1 hover:bg-text3/10 focus:ring-text3; }
+  .sv-btn-danger   { @apply sv-btn bg-danger text-white hover:bg-danger/90 focus:ring-danger disabled:bg-danger/40; }
+  .sv-btn-success  { @apply sv-btn bg-sage text-white hover:bg-sage/90 focus:ring-sage disabled:bg-sage/40; }
+
+  .sv-label {
+    @apply block text-sm font-semibold text-text2 mb-1;
+  }
+}
+
+/* ===========================================================================
+   Scrollbar corporativo (verde Serfunorte) — adaptado de mantix-frontend
+   =========================================================================== */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--primary-500);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--primary-700);
+}
+
+/* ===========================================================================
+   Animaciones reutilizables — adaptadas de mantix-frontend
+   =========================================================================== */
+@keyframes slideInRight {
+  from { transform: translateX(100%); opacity: 0; }
+  to   { transform: translateX(0);    opacity: 1; }
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.slide-in-right { animation: slideInRight 0.3s ease-out; }
+.fade-in        { animation: fadeIn 0.3s ease-out; }

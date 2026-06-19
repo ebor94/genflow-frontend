@@ -1,0 +1,1122 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SerVentas CRM — Mockups Multi-Área</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --cream:#F6F1E9;--cream-dark:#EDE5D3;--cream-mid:#E4D9C4;
+  --bg:#16100A;--brown-deep:#2C1A0E;--brown-warm:#9B4F20;
+  --gold:#C8902A;--gold-bright:#E6AA3A;
+  --sage:#6B8F6E;--sage-pale:#D4E8D6;
+  --danger:#B83227;--danger-pale:#FFE8E6;
+  --warning:#C97B1A;--warning-pale:#FEF0DC;
+  --success:#2A6E47;--success-pale:#E2F0E8;
+  --blue:#1A5C8A;--blue-pale:#E0EEF8;
+  --purple:#5A3E9E;--purple-pale:#EDE8FF;
+  --teal:#1A7A7A;--teal-pale:#E0F4F4;
+  --text:#1A0E06;--text2:#4A2E1A;--text3:#8A6A52;--text4:#B8967C;
+  --border:rgba(107,62,32,0.13);--border2:rgba(107,62,32,0.25);
+  --sh-sm:0 2px 8px rgba(44,26,14,0.08);--sh-md:0 4px 20px rgba(44,26,14,0.12);--sh-lg:0 12px 48px rgba(44,26,14,0.18);
+
+  /* Área colors */
+  --prenec:#C8902A;--prenec-pale:#FEF8EA;
+  --prev-emp:#1A5C8A;--prev-emp-pale:#E0EEF8;
+  --prev-pap:#2A6E47;--prev-pap-pale:#E2F0E8;
+  --svc:#5A3E9E;--svc-pale:#EDE8FF;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);overflow-x:hidden;}
+
+/* ===== NAV ===== */
+.nav{position:fixed;top:0;left:0;right:0;z-index:2000;height:56px;background:rgba(22,16,10,0.97);backdrop-filter:blur(16px);border-bottom:1px solid rgba(200,144,42,0.18);display:flex;align-items:center;padding:0 20px;gap:16px;}
+.nav-logo{width:30px;height:30px;border-radius:7px;background:linear-gradient(135deg,var(--gold),#6B3E20);display:flex;align-items:center;justify-content:center;font-family:'DM Serif Display',serif;font-size:15px;color:white;flex-shrink:0;}
+.nav-brand{font-family:'DM Serif Display',serif;color:var(--gold-bright);font-size:16px;flex-shrink:0;}
+.nav-tabs{display:flex;gap:2px;overflow-x:auto;scrollbar-width:none;flex:1;}
+.nav-tabs::-webkit-scrollbar{display:none;}
+.nt{padding:6px 12px;border-radius:7px;border:1px solid transparent;background:transparent;color:rgba(246,241,233,0.45);font-family:'DM Sans',sans-serif;font-size:11.5px;font-weight:500;cursor:pointer;transition:all 0.15s;white-space:nowrap;flex-shrink:0;}
+.nt:hover{color:var(--cream);background:rgba(255,255,255,0.06);}
+.nt.active{background:rgba(200,144,42,0.15);border-color:rgba(200,144,42,0.35);color:var(--gold-bright);font-weight:700;}
+.nav-badge{font-size:9px;font-weight:800;padding:2px 6px;border-radius:10px;background:var(--danger);color:white;margin-left:3px;}
+.nav-tag{font-size:10px;font-weight:700;padding:4px 10px;border-radius:20px;background:rgba(200,144,42,0.15);border:1px solid rgba(200,144,42,0.3);color:var(--gold-bright);letter-spacing:0.5px;text-transform:uppercase;flex-shrink:0;}
+
+/* ===== SCREENS ===== */
+.screens{padding-top:56px;}
+.screen{display:none;min-height:calc(100vh - 56px);background:linear-gradient(160deg,#16100A,#1E1208);}
+.screen.active{display:flex;flex-direction:column;}
+
+/* ===== HERO ===== */
+.hero{text-align:center;padding:28px 20px 20px;flex-shrink:0;}
+.hero h2{font-family:'DM Serif Display',serif;color:var(--gold-bright);font-size:24px;margin-bottom:5px;}
+.hero p{color:rgba(246,241,233,0.4);font-size:12.5px;}
+
+/* ===== PHONE FRAME ===== */
+.phones-row{display:flex;gap:28px;justify-content:center;align-items:flex-start;padding:0 20px 40px;flex-wrap:wrap;}
+.phone-wrap{display:flex;flex-direction:column;align-items:center;gap:10px;}
+.phone-lbl{font-size:10px;font-weight:700;color:rgba(246,241,233,0.35);letter-spacing:1px;text-transform:uppercase;}
+.phone{width:355px;min-height:760px;background:var(--cream);border-radius:42px;overflow:hidden;box-shadow:0 0 0 8px #0C0704,0 0 0 10px #3A2415,var(--sh-lg);position:relative;flex-shrink:0;}
+.phone::before{content:'';position:absolute;top:10px;left:50%;transform:translateX(-50%);width:85px;height:24px;background:#0C0704;border-radius:16px;z-index:20;}
+.pscreen{height:100%;overflow-y:auto;padding-top:44px;scrollbar-width:none;background:var(--cream);}
+.pscreen::-webkit-scrollbar{display:none;}
+
+/* ===== DESKTOP FRAME ===== */
+.deskwrap{padding:0 28px 40px;}
+.desk{width:100%;background:var(--cream);border-radius:16px;overflow:hidden;box-shadow:0 0 0 6px #0C0704,0 0 0 8px #3A2415,var(--sh-lg);}
+.deskbar{height:36px;background:#EDE4D2;display:flex;align-items:center;padding:0 12px;gap:6px;border-bottom:1px solid var(--border);}
+.dot{width:10px;height:10px;border-radius:50%;}
+.dot.r{background:#FF5F57;}.dot.y{background:#FFBD2E;}.dot.g{background:#28CA42;}
+.deskurl{flex:1;margin:0 10px;background:rgba(255,255,255,0.7);border-radius:5px;height:20px;display:flex;align-items:center;padding:0 8px;font-size:10px;color:var(--text3);font-family:monospace;}
+.app-shell{display:flex;height:580px;}
+
+/* ===== SIDEBAR ===== */
+.sidebar{width:200px;background:var(--brown-deep);flex-shrink:0;display:flex;flex-direction:column;}
+.shead{padding:16px 16px 12px;border-bottom:1px solid rgba(200,144,42,0.15);}
+.sname{font-family:'DM Serif Display',serif;color:var(--gold-bright);font-size:17px;}
+.ssub{font-size:9px;color:rgba(246,241,233,0.3);letter-spacing:1.2px;text-transform:uppercase;margin-top:1px;}
+.snlbl{font-size:9px;font-weight:700;color:rgba(246,241,233,0.22);letter-spacing:1.5px;text-transform:uppercase;padding:10px 16px 3px;}
+.sni{display:flex;align-items:center;gap:8px;padding:8px 16px;cursor:pointer;color:rgba(246,241,233,0.55);font-size:12px;font-weight:500;border-left:3px solid transparent;transition:all 0.15s;}
+.sni:hover{background:rgba(200,144,42,0.07);color:var(--cream);}
+.sni.active{background:rgba(200,144,42,0.12);color:var(--gold-bright);border-left-color:var(--gold);}
+.sni-icon{font-size:14px;width:16px;text-align:center;}
+.sni-badge{margin-left:auto;font-size:9px;font-weight:800;background:var(--danger);color:white;padding:2px 5px;border-radius:10px;}
+.sfoot{margin-top:auto;padding:12px 16px;border-top:1px solid rgba(200,144,42,0.12);display:flex;align-items:center;gap:8px;}
+.sfav{width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,var(--brown-warm),var(--gold));display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:white;flex-shrink:0;}
+.sfname{font-size:11px;color:var(--cream);font-weight:500;}
+.sfrole{font-size:9px;color:rgba(246,241,233,0.35);}
+
+.main{flex:1;overflow-y:auto;background:var(--cream);}
+
+/* ===== COMMON COMPONENTS ===== */
+.mhdr{background:var(--brown-deep);padding:12px 16px 20px;position:relative;}
+.mhdr::after{content:'';position:absolute;bottom:-15px;left:-5%;right:-5%;height:30px;background:var(--cream);border-radius:50% 50% 0 0;}
+.mhdr-row{display:flex;align-items:center;justify-content:space-between;}
+.mhdr-name{font-family:'DM Serif Display',serif;color:var(--gold-bright);font-size:19px;}
+.mhdr-sub{font-size:11px;color:rgba(246,241,233,0.45);margin-top:1px;}
+
+/* Area badge */
+.area-badge{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:20px;font-size:10px;font-weight:700;letter-spacing:0.3px;}
+.ab-prenec{background:var(--prenec-pale);color:var(--prenec);border:1px solid rgba(200,144,42,0.3);}
+.ab-emp{background:var(--prev-emp-pale);color:var(--prev-emp);border:1px solid rgba(26,92,138,0.3);}
+.ab-pap{background:var(--prev-pap-pale);color:var(--prev-pap);border:1px solid rgba(42,110,71,0.3);}
+.ab-svc{background:var(--svc-pale);color:var(--svc);border:1px solid rgba(90,62,158,0.3);}
+
+/* Cards */
+.card{background:white;border-radius:14px;box-shadow:var(--sh-sm);overflow:hidden;}
+.card-hdr{background:var(--cream-dark);padding:8px 13px;font-size:10px;font-weight:700;color:var(--text2);letter-spacing:0.6px;text-transform:uppercase;display:flex;align-items:center;gap:5px;}
+.irow{display:flex;padding:8px 13px;border-bottom:1px solid var(--border);gap:7px;}
+.irow:last-child{border-bottom:none;}
+.irow .il{font-size:10.5px;color:var(--text3);min-width:90px;flex-shrink:0;}
+.irow .iv{font-size:11.5px;color:var(--text);font-weight:500;flex:1;}
+
+/* Form */
+.fl{font-size:10px;font-weight:700;color:var(--text2);letter-spacing:0.5px;text-transform:uppercase;margin-bottom:6px;display:block;}
+.fi{width:100%;border:2px solid var(--border);border-radius:8px;padding:9px 11px;font-family:'DM Sans',sans-serif;font-size:12.5px;color:var(--text);outline:none;background:white;transition:border-color 0.15s;}
+.fi:focus{border-color:var(--gold);}
+.fta{width:100%;border:2px solid var(--border);border-radius:8px;padding:9px 11px;font-family:'DM Sans',sans-serif;font-size:12px;color:var(--text);outline:none;background:white;resize:none;min-height:70px;}
+.fta:focus{border-color:var(--gold);}
+
+.btn-p{width:100%;padding:12px;background:linear-gradient(135deg,var(--gold),var(--brown-warm));border:none;border-radius:10px;color:white;font-family:'DM Serif Display',serif;font-size:14px;cursor:pointer;transition:opacity 0.15s;}
+.btn-p:hover{opacity:0.9;}
+.btn-s{width:100%;padding:10px;background:var(--cream-dark);border:1px solid var(--border2);border-radius:10px;color:var(--text2);font-family:'DM Sans',sans-serif;font-size:12.5px;font-weight:600;cursor:pointer;transition:background 0.15s;margin-bottom:7px;}
+
+/* Res opts */
+.res-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:11px;}
+.ro{padding:8px;border-radius:8px;border:2px solid var(--border);background:white;font-size:11px;font-weight:500;color:var(--text2);cursor:pointer;display:flex;align-items:center;gap:5px;font-family:'DM Sans',sans-serif;transition:all 0.15s;}
+.ro.sel{border-color:var(--gold);background:#FEF8EA;color:#6B3E20;font-weight:700;}
+.ro.sel-b{border-color:var(--blue);background:var(--blue-pale);color:var(--blue);font-weight:700;}
+.ro.sel-g{border-color:var(--success);background:var(--success-pale);color:var(--success);font-weight:700;}
+
+/* Status pill */
+.sp{display:inline-block;padding:2px 7px;border-radius:20px;font-size:10px;font-weight:700;}
+.sp-g{background:var(--success-pale);color:var(--success);}
+.sp-o{background:var(--warning-pale);color:var(--warning);}
+.sp-b{background:var(--blue-pale);color:var(--blue);}
+.sp-r{background:var(--danger-pale);color:var(--danger);}
+.sp-p{background:var(--purple-pale);color:var(--purple);}
+
+/* Prog bar */
+.pb{height:6px;background:var(--cream-dark);border-radius:3px;overflow:hidden;}
+.pbf{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--gold),var(--brown-warm));}
+
+/* Bottom nav */
+.bnav{position:sticky;bottom:0;background:white;border-top:1px solid var(--border);display:flex;padding:6px 0 9px;}
+.bni{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:9px;color:var(--text3);cursor:pointer;transition:color 0.15s;}
+.bni .bi{font-size:18px;}
+.bni.active{color:var(--gold);}
+
+/* Toggle */
+.toggle{width:32px;height:18px;border-radius:9px;position:relative;cursor:pointer;margin-left:auto;}
+.toggle-on{background:var(--gold);}
+.toggle-off{background:var(--cream-dark);}
+.tknob{position:absolute;top:3px;width:12px;height:12px;background:white;border-radius:50%;}
+.toggle-on .tknob{right:3px;}
+.toggle-off .tknob{left:3px;}
+
+/* Funnel */
+.fi-item{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
+.fi-lbl{font-size:11px;color:var(--text2);min-width:100px;}
+.fi-bw{flex:1;height:6px;background:var(--cream-dark);border-radius:3px;overflow:hidden;}
+.fi-bf{height:100%;border-radius:3px;}
+.fi-n{font-size:11px;font-weight:700;color:var(--text);min-width:24px;text-align:right;}
+
+/* KPI */
+.krow{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px;}
+.kcard{background:white;border-radius:14px;padding:16px;box-shadow:var(--sh-sm);border-top:4px solid transparent;position:relative;overflow:hidden;}
+.kcard::after{content:attr(data-icon);position:absolute;right:12px;top:50%;transform:translateY(-50%);font-size:30px;opacity:0.07;}
+.kcard.kg{border-top-color:var(--gold);}
+.kcard.ks{border-top-color:var(--sage);}
+.kcard.kr{border-top-color:var(--danger);}
+.kcard.kb{border-top-color:var(--blue);}
+.kcard.kp{border-top-color:var(--purple);}
+.klbl{font-size:9.5px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:6px;}
+.kval{font-family:'DM Serif Display',serif;font-size:32px;color:var(--brown-deep);line-height:1;margin-bottom:4px;}
+.ksub{font-size:11px;color:var(--text3);}
+.tup{color:var(--success);font-weight:700;}
+.tdn{color:var(--danger);font-weight:700;}
+
+.dash-area{padding:20px 22px;background:var(--cream);}
+.dash-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;}
+.dash-top h1{font-family:'DM Serif Display',serif;font-size:22px;color:var(--brown-deep);}
+.dchip{background:white;border:1px solid var(--border);border-radius:7px;padding:5px 12px;font-size:11.5px;color:var(--text2);font-weight:500;}
+
+.dgrid2{display:grid;grid-template-columns:1.3fr 1fr;gap:12px;margin-bottom:12px;}
+.dgrid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px;}
+.dcard{background:white;border-radius:14px;padding:16px;box-shadow:var(--sh-sm);}
+.dcttl{font-size:12.5px;font-weight:700;color:var(--text2);margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;}
+.dcsee{font-size:10.5px;color:var(--gold);font-weight:600;cursor:pointer;}
+
+/* Table */
+.dtbl{width:100%;border-collapse:collapse;}
+.dtbl th{font-size:9px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;padding:0 0 8px;text-align:left;border-bottom:1px solid var(--border);}
+.dtbl td{padding:8px 0;font-size:11.5px;color:var(--text);border-bottom:1px solid var(--border);vertical-align:middle;}
+.dtbl tr:last-child td{border-bottom:none;}
+.tav{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:white;flex-shrink:0;background:linear-gradient(135deg,var(--brown-warm),var(--gold));}
+.tnc{display:flex;align-items:center;gap:6px;}
+
+/* Config grid */
+.cfg-group{background:white;border-radius:12px;overflow:hidden;margin-bottom:12px;box-shadow:var(--sh-sm);}
+.cfg-item{display:flex;align-items:center;padding:11px 13px;border-bottom:1px solid var(--border);gap:10px;cursor:pointer;transition:background 0.12s;}
+.cfg-item:last-child{border-bottom:none;}
+.cfg-item:hover{background:var(--cream);}
+.cfg-icon{font-size:16px;width:20px;text-align:center;}
+.cfg-lbl{flex:1;font-size:12.5px;font-weight:500;color:var(--text);}
+.cfg-sub{font-size:10.5px;color:var(--text3);margin-top:1px;}
+.cfg-arr{color:var(--text3);font-size:13px;}
+.cfg-val{font-size:11px;color:var(--text3);background:var(--cream-dark);padding:3px 8px;border-radius:6px;}
+
+/* Selector area cards */
+.area-sel-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:0 14px 14px;}
+.asc{border-radius:13px;padding:14px;cursor:pointer;transition:all 0.15s;border:2px solid transparent;position:relative;overflow:hidden;}
+.asc::before{content:attr(data-icon);position:absolute;right:10px;bottom:6px;font-size:36px;opacity:0.12;}
+.asc.prenec{background:var(--prenec-pale);border-color:rgba(200,144,42,0.3);}
+.asc.emp{background:var(--prev-emp-pale);border-color:rgba(26,92,138,0.3);}
+.asc.pap{background:var(--prev-pap-pale);border-color:rgba(42,110,71,0.3);}
+.asc.svc{background:var(--svc-pale);border-color:rgba(90,62,158,0.3);}
+.asc-name{font-size:13px;font-weight:700;margin-bottom:2px;}
+.prenec .asc-name{color:var(--prenec);}
+.emp .asc-name{color:var(--prev-emp);}
+.pap .asc-name{color:var(--prev-pap);}
+.svc .asc-name{color:var(--svc);}
+.asc-sub{font-size:10px;color:var(--text3);line-height:1.4;}
+.asc-count{font-size:11px;font-weight:700;margin-top:6px;}
+.prenec .asc-count{color:var(--prenec);}
+.emp .asc-count{color:var(--prev-emp);}
+.pap .asc-count{color:var(--prev-pap);}
+.svc .asc-count{color:var(--svc);}
+
+/* Multi-area horizontal strip */
+.area-strip{display:flex;overflow-x:auto;gap:8px;padding:10px 14px;scrollbar-width:none;}
+.area-strip::-webkit-scrollbar{display:none;}
+.as-chip{flex-shrink:0;padding:6px 12px;border-radius:20px;font-size:11px;font-weight:700;cursor:pointer;border:2px solid transparent;transition:all 0.15s;}
+.as-chip.all{background:var(--brown-deep);color:var(--gold-bright);}
+.as-chip.prenec{background:var(--prenec-pale);color:var(--prenec);border-color:rgba(200,144,42,0.4);}
+.as-chip.emp{background:var(--prev-emp-pale);color:var(--prev-emp);border-color:rgba(26,92,138,0.4);}
+.as-chip.pap{background:var(--prev-pap-pale);color:var(--prev-pap);border-color:rgba(42,110,71,0.4);}
+.as-chip.svc{background:var(--svc-pale);color:var(--svc);border-color:rgba(90,62,158,0.4);}
+
+/* Config pill input */
+.pill-edit{display:flex;align-items:center;gap:6px;background:var(--cream-dark);border-radius:20px;padding:5px 10px;}
+.pill-edit input{border:none;background:transparent;font-family:'DM Sans',sans-serif;font-size:12px;outline:none;color:var(--text);width:110px;}
+
+/* Animations */
+.screen{animation:fadeUp 0.25s ease;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
+::-webkit-scrollbar{width:5px;}
+::-webkit-scrollbar-thumb{background:var(--cream-dark);border-radius:3px;}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="nav">
+  <div class="nav-logo">S</div>
+  <span class="nav-brand">SerVentas</span>
+  <div class="nav-tabs">
+    <button class="nt active" onclick="go('selector')">🏠 Selector de Área</button>
+    <button class="nt" onclick="go('admin')">⚙️ Admin / Parametrización</button>
+    <button class="nt" onclick="go('empresariales')">🏢 Empresariales B2B</button>
+    <button class="nt" onclick="go('pap')">🚶 PAP Venta Masiva</button>
+    <button class="nt" onclick="go('svc')">🎧 Servicio al Cliente</button>
+    <button class="nt" onclick="go('dash-multi')">📊 Dashboard Multi-Área</button>
+  </div>
+  <span class="nav-tag">Escalable · Multi-Área</span>
+</nav>
+
+<div class="screens">
+
+<!-- ================================================================
+     SCREEN 1 — SELECTOR DE ÁREA
+================================================================ -->
+<div class="screen active" id="s-selector" style="align-items:center;padding:28px 20px;">
+  <div class="hero">
+    <h2>Selector de Área</h2>
+    <p>El asesor ve solo su área. El Super Admin ve todas · Versión móvil</p>
+  </div>
+  <div class="phones-row">
+    <!-- Vista Super Admin -->
+    <div class="phone-wrap">
+      <div class="phone-lbl">Vista Super Admin / Gerencia</div>
+      <div class="phone">
+        <div class="pscreen">
+          <div class="mhdr">
+            <div class="mhdr-row">
+              <div>
+                <div style="font-size:11px;color:rgba(246,241,233,0.45);">Bienvenido de nuevo</div>
+                <div class="mhdr-name">SerVentas CRM</div>
+              </div>
+              <div style="font-size:20px;color:var(--gold-bright);">🔔</div>
+            </div>
+            <div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap;">
+              <span class="area-badge ab-prenec">Prenecesidad</span>
+              <span class="area-badge ab-emp">Empresariales</span>
+              <span class="area-badge ab-pap">PAP</span>
+              <span class="area-badge ab-svc">Serv. Cliente</span>
+            </div>
+          </div>
+          <div style="padding:24px 14px 10px;">
+            <div style="font-size:11px;font-weight:700;color:var(--text2);margin-bottom:12px;">📊 KPIs Consolidados Hoy</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px;">
+              <div style="background:white;border-radius:12px;padding:12px;box-shadow:var(--sh-sm);">
+                <div style="font-size:9px;color:var(--text3);font-weight:700;text-transform:uppercase;letter-spacing:0.5px;">Contratos hoy</div>
+                <div style="font-family:'DM Serif Display',serif;font-size:28px;color:var(--brown-deep);">4</div>
+                <div style="font-size:10px;color:var(--text3);">3 áreas activas</div>
+              </div>
+              <div style="background:white;border-radius:12px;padding:12px;box-shadow:var(--sh-sm);">
+                <div style="font-size:9px;color:var(--text3);font-weight:700;text-transform:uppercase;letter-spacing:0.5px;">Gestiones hoy</div>
+                <div style="font-family:'DM Serif Display',serif;font-size:28px;color:var(--brown-deep);">124</div>
+                <div style="font-size:10px;color:var(--success);font-weight:600;">↑ +18 vs ayer</div>
+              </div>
+            </div>
+
+            <div style="font-size:11px;font-weight:700;color:var(--text2);margin-bottom:10px;">🏢 Seleccionar Área</div>
+            <div class="area-sel-grid">
+              <div class="asc prenec" data-icon="🕊️" onclick="alert('Entra a Prenecesidad')">
+                <div class="asc-name">Prenecesidad</div>
+                <div class="asc-sub">Telemercadeo · Seguimiento individual</div>
+                <div class="asc-count">187 prospectos</div>
+              </div>
+              <div class="asc emp" data-icon="🏛️" onclick="go('empresariales')">
+                <div class="asc-name">Empresariales</div>
+                <div class="asc-sub">Previsión B2B · Cuentas corporativas</div>
+                <div class="asc-count">43 empresas</div>
+              </div>
+              <div class="asc pap" data-icon="🚶" onclick="go('pap')">
+                <div class="asc-name">PAP</div>
+                <div class="asc-sub">Previsión · Venta masiva puerta a puerta</div>
+                <div class="asc-count">1,240 visitados</div>
+              </div>
+              <div class="asc svc" data-icon="🎧" onclick="go('svc')">
+                <div class="asc-name">Serv. Cliente</div>
+                <div class="asc-sub">Postventa · Casos y PQRS</div>
+                <div class="asc-count">12 casos abiertos</div>
+              </div>
+            </div>
+
+            <div style="font-size:11px;font-weight:700;color:var(--text2);margin-bottom:8px;">⚙️ Acceso Rápido</div>
+            <div style="background:white;border-radius:12px;overflow:hidden;box-shadow:var(--sh-sm);">
+              <div class="cfg-item" onclick="go('admin')"><span class="cfg-icon">🔧</span><div><div class="cfg-lbl">Parametrización del Sistema</div><div class="cfg-sub">Áreas, productos, pipelines, usuarios</div></div><span class="cfg-arr">›</span></div>
+              <div class="cfg-item"><span class="cfg-icon">📊</span><div><div class="cfg-lbl">Dashboard Multi-Área</div></div><span class="cfg-arr">›</span></div>
+              <div class="cfg-item"><span class="cfg-icon">📥</span><div><div class="cfg-lbl">Cargar Lista de Prospectos</div></div><span class="cfg-arr">›</span></div>
+            </div>
+          </div>
+          <div style="height:10px;"></div>
+          <div class="bnav">
+            <div class="bni active"><span class="bi">🏠</span>Inicio</div>
+            <div class="bni"><span class="bi">📊</span>Dashboard</div>
+            <div class="bni" onclick="go('admin')"><span class="bi">⚙️</span>Admin</div>
+            <div class="bni"><span class="bi">👤</span>Perfil</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Vista Asesor Normal -->
+    <div class="phone-wrap">
+      <div class="phone-lbl">Vista Asesor (solo su área)</div>
+      <div class="phone">
+        <div class="pscreen">
+          <div class="mhdr">
+            <div class="mhdr-row">
+              <div>
+                <div style="font-size:11px;color:rgba(246,241,233,0.45);">Buenos días, Martes 19 Feb</div>
+                <div class="mhdr-name">Carlos Mendoza</div>
+              </div>
+              <div style="position:relative;">
+                <div style="width:34px;height:34px;border-radius:50%;background:rgba(200,144,42,0.13);border:1px solid rgba(200,144,42,0.28);display:flex;align-items:center;justify-content:center;font-size:15px;color:var(--gold-bright);">🔔</div>
+                <div style="position:absolute;top:5px;right:5px;width:7px;height:7px;border-radius:50%;background:var(--danger);border:2px solid var(--brown-deep);"></div>
+              </div>
+            </div>
+            <div style="margin-top:8px;">
+              <span class="area-badge ab-emp">Previsión — Empresariales</span>
+            </div>
+          </div>
+          <div style="display:flex;gap:7px;padding:26px 14px 12px;">
+            <div style="flex:1;background:white;border-radius:11px;padding:10px;text-align:center;box-shadow:var(--sh-sm);">
+              <div style="font-family:'DM Serif Display',serif;font-size:22px;color:var(--danger);">2</div>
+              <div style="font-size:9.5px;color:var(--text3);">Urgentes</div>
+            </div>
+            <div style="flex:1;background:white;border-radius:11px;padding:10px;text-align:center;box-shadow:var(--sh-sm);">
+              <div style="font-family:'DM Serif Display',serif;font-size:22px;color:var(--brown-deep);">8</div>
+              <div style="font-size:9.5px;color:var(--text3);">Hoy</div>
+            </div>
+            <div style="flex:1;background:white;border-radius:11px;padding:10px;text-align:center;box-shadow:var(--sh-sm);">
+              <div style="font-family:'DM Serif Display',serif;font-size:22px;color:var(--success);">3</div>
+              <div style="font-size:9.5px;color:var(--text3);">Contratos</div>
+            </div>
+          </div>
+          <!-- Meta -->
+          <div style="margin:0 14px 12px;background:white;border-radius:12px;padding:12px;box-shadow:var(--sh-sm);">
+            <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+              <span style="font-size:11px;color:var(--text3);font-weight:600;">Meta Febrero</span>
+              <span style="font-family:'DM Serif Display',serif;font-size:14px;color:var(--blue);">3 / 5 empresas</span>
+            </div>
+            <div class="pb"><div class="pbf" style="width:60%;background:linear-gradient(90deg,var(--blue),var(--blue));"></div></div>
+            <div style="font-size:10.5px;color:var(--success);margin-top:5px;font-weight:600;">Te faltan 2 convenios — quedan 9 días hábiles</div>
+          </div>
+          <!-- Pipeline empresas -->
+          <div style="font-size:11px;font-weight:700;color:var(--text2);padding:2px 14px 8px;">🏢 Mis Empresas — Pipeline</div>
+          <div style="background:white;border-radius:12px;margin:0 14px 10px;overflow:hidden;box-shadow:var(--sh-sm);">
+            <div style="display:flex;align-items:center;padding:10px 13px;border-bottom:1px solid var(--border);cursor:pointer;" onclick="go('empresariales')">
+              <div style="width:34px;height:34px;border-radius:8px;background:var(--prev-emp-pale);display:flex;align-items:center;justify-content:center;font-size:14px;margin-right:10px;flex-shrink:0;">🏭</div>
+              <div style="flex:1;">
+                <div style="font-size:12.5px;font-weight:700;color:var(--text);">Industrias Cúcuta S.A.S.</div>
+                <div style="font-size:10px;color:var(--text3);">320 empleados · Convenio colectivo</div>
+              </div>
+              <span class="sp sp-o" style="font-size:9px;">Negociación</span>
+            </div>
+            <div style="display:flex;align-items:center;padding:10px 13px;border-bottom:1px solid var(--border);cursor:pointer;">
+              <div style="width:34px;height:34px;border-radius:8px;background:var(--prev-emp-pale);display:flex;align-items:center;justify-content:center;font-size:14px;margin-right:10px;flex-shrink:0;">🏥</div>
+              <div style="flex:1;">
+                <div style="font-size:12.5px;font-weight:700;color:var(--text);">Clínica del Norte</div>
+                <div style="font-size:10px;color:var(--text3);">180 empleados · Plan Grupal</div>
+              </div>
+              <span class="sp sp-r" style="font-size:9px;">🔴 Vencida</span>
+            </div>
+            <div style="display:flex;align-items:center;padding:10px 13px;cursor:pointer;">
+              <div style="width:34px;height:34px;border-radius:8px;background:var(--success-pale);display:flex;align-items:center;justify-content:center;font-size:14px;margin-right:10px;flex-shrink:0;">🏪</div>
+              <div style="flex:1;">
+                <div style="font-size:12.5px;font-weight:700;color:var(--text);">Almacenes Textiles del Norte</div>
+                <div style="font-size:10px;color:var(--text3);">95 empleados · Convenio firmado</div>
+              </div>
+              <span class="sp sp-g" style="font-size:9px;">✅ Activo</span>
+            </div>
+          </div>
+          <div style="height:8px;"></div>
+          <div class="bnav">
+            <div class="bni active"><span class="bi">📋</span>Panel</div>
+            <div class="bni"><span class="bi">🗓️</span>Agenda</div>
+            <div class="bni"><span class="bi">🏢</span>Empresas</div>
+            <div class="bni"><span class="bi">📊</span>Métricas</div>
+            <div class="bni"><span class="bi">⚙️</span>Config</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================================================================
+     SCREEN 2 — ADMIN / PARAMETRIZACIÓN (DESKTOP)
+================================================================ -->
+<div class="screen" id="s-admin" style="padding:28px;">
+  <div class="hero"><h2>Panel de Administración y Parametrización</h2><p>Configura áreas, grupos, productos, pipelines y usuarios sin tocar código · Versión escritorio</p></div>
+  <div class="deskwrap" style="padding:0 0 40px;">
+    <div class="desk">
+      <div class="deskbar"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div><div class="deskurl">serventas.serfunorte.com/admin</div></div>
+      <div class="app-shell">
+        <div class="sidebar">
+          <div class="shead"><div class="sname">SerVentas</div><div class="ssub">Administración</div></div>
+          <div class="snlbl">Configuración</div>
+          <div class="sni active"><span class="sni-icon">🏢</span>Áreas de Negocio</div>
+          <div class="sni"><span class="sni-icon">👥</span>Grupos de Trabajo</div>
+          <div class="sni"><span class="sni-icon">🎯</span>Catálogo Productos</div>
+          <div class="sni"><span class="sni-icon">🔄</span>Pipelines (Estados)</div>
+          <div class="sni"><span class="sni-icon">✅</span>Resultados de Gestión</div>
+          <div class="sni"><span class="sni-icon">📋</span>Fuentes de Prospecto</div>
+          <div class="sni"><span class="sni-icon">📍</span>Puntos de Atención</div>
+          <div class="snlbl">Usuarios</div>
+          <div class="sni"><span class="sni-icon">👤</span>Usuarios<span class="sni-badge">18</span></div>
+          <div class="sni"><span class="sni-icon">🔐</span>Roles y Permisos</div>
+          <div class="sni"><span class="sni-icon">🎯</span>Metas Comerciales</div>
+          <div class="snlbl">Sistema</div>
+          <div class="sni"><span class="sni-icon">📊</span>Auditoría</div>
+          <div class="sni"><span class="sni-icon">🔗</span>Integración SAP B1</div>
+          <div class="sni"><span class="sni-icon">📥</span>Importar Datos</div>
+          <div class="sfoot"><div class="sfav">SA</div><div><div class="sfname">Super Admin</div><div class="sfrole">Acceso total</div></div></div>
+        </div>
+        <div class="main">
+          <div class="dash-area">
+            <div class="dash-top" style="margin-bottom:14px;">
+              <h1>Áreas de Negocio</h1>
+              <button style="padding:8px 16px;background:var(--gold);border:none;border-radius:8px;color:var(--brown-deep);font-family:'DM Sans',sans-serif;font-size:12px;font-weight:800;cursor:pointer;">+ Nueva Área</button>
+            </div>
+
+            <!-- Área cards -->
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px;">
+              <!-- Prenecesidad -->
+              <div style="background:white;border-radius:14px;padding:16px;box-shadow:var(--sh-sm);border-left:4px solid var(--gold);">
+                <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+                  <div style="width:36px;height:36px;border-radius:8px;background:var(--prenec-pale);display:flex;align-items:center;justify-content:center;font-size:18px;">🕊️</div>
+                  <div><div style="font-size:14px;font-weight:700;color:var(--brown-deep);">Prenecesidad</div><div style="font-size:10px;color:var(--text3);">Código: PRENEC · Tipo: Individual</div></div>
+                  <span class="sp sp-g" style="margin-left:auto;">Activa</span>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px;">
+                  <div style="background:var(--prenec-pale);border-radius:8px;padding:8px;text-align:center;"><div style="font-family:'DM Serif Display',serif;font-size:20px;color:var(--prenec);">1</div><div style="font-size:9px;color:var(--text3);">Grupo</div></div>
+                  <div style="background:var(--prenec-pale);border-radius:8px;padding:8px;text-align:center;"><div style="font-family:'DM Serif Display',serif;font-size:20px;color:var(--prenec);">8</div><div style="font-size:9px;color:var(--text3);">Productos</div></div>
+                  <div style="background:var(--prenec-pale);border-radius:8px;padding:8px;text-align:center;"><div style="font-family:'DM Serif Display',serif;font-size:20px;color:var(--prenec);">6</div><div style="font-size:9px;color:var(--text3);">Estados</div></div>
+                </div>
+                <div style="display:flex;gap:7px;">
+                  <button style="flex:1;padding:7px;background:var(--prenec-pale);border:1px solid rgba(200,144,42,0.3);border-radius:7px;font-size:11px;font-weight:700;color:var(--prenec);cursor:pointer;font-family:'DM Sans',sans-serif;">✏️ Editar</button>
+                  <button style="flex:1;padding:7px;background:var(--cream-dark);border:1px solid var(--border);border-radius:7px;font-size:11px;font-weight:600;color:var(--text2);cursor:pointer;font-family:'DM Sans',sans-serif;">📋 Catálogo</button>
+                  <button style="flex:1;padding:7px;background:var(--cream-dark);border:1px solid var(--border);border-radius:7px;font-size:11px;font-weight:600;color:var(--text2);cursor:pointer;font-family:'DM Sans',sans-serif;">🔄 Pipeline</button>
+                </div>
+              </div>
+
+              <!-- Previsión Empresariales -->
+              <div style="background:white;border-radius:14px;padding:16px;box-shadow:var(--sh-sm);border-left:4px solid var(--blue);">
+                <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+                  <div style="width:36px;height:36px;border-radius:8px;background:var(--prev-emp-pale);display:flex;align-items:center;justify-content:center;font-size:18px;">🏢</div>
+                  <div><div style="font-size:14px;font-weight:700;color:var(--brown-deep);">Previsión — Empresariales</div><div style="font-size:10px;color:var(--text3);">Código: PREV-EMP · Tipo: Empresa</div></div>
+                  <span class="sp sp-g" style="margin-left:auto;">Activa</span>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px;">
+                  <div style="background:var(--prev-emp-pale);border-radius:8px;padding:8px;text-align:center;"><div style="font-family:'DM Serif Display',serif;font-size:20px;color:var(--blue);">1</div><div style="font-size:9px;color:var(--text3);">Grupo</div></div>
+                  <div style="background:var(--prev-emp-pale);border-radius:8px;padding:8px;text-align:center;"><div style="font-family:'DM Serif Display',serif;font-size:20px;color:var(--blue);">5</div><div style="font-size:9px;color:var(--text3);">Productos</div></div>
+                  <div style="background:var(--prev-emp-pale);border-radius:8px;padding:8px;text-align:center;"><div style="font-family:'DM Serif Display',serif;font-size:20px;color:var(--blue);">7</div><div style="font-size:9px;color:var(--text3);">Estados</div></div>
+                </div>
+                <div style="display:flex;gap:7px;">
+                  <button style="flex:1;padding:7px;background:var(--prev-emp-pale);border:1px solid rgba(26,92,138,0.3);border-radius:7px;font-size:11px;font-weight:700;color:var(--blue);cursor:pointer;font-family:'DM Sans',sans-serif;">✏️ Editar</button>
+                  <button style="flex:1;padding:7px;background:var(--cream-dark);border:1px solid var(--border);border-radius:7px;font-size:11px;font-weight:600;color:var(--text2);cursor:pointer;font-family:'DM Sans',sans-serif;">📋 Catálogo</button>
+                  <button style="flex:1;padding:7px;background:var(--cream-dark);border:1px solid var(--border);border-radius:7px;font-size:11px;font-weight:600;color:var(--text2);cursor:pointer;font-family:'DM Sans',sans-serif;">🔄 Pipeline</button>
+                </div>
+              </div>
+
+              <!-- PAP -->
+              <div style="background:white;border-radius:14px;padding:16px;box-shadow:var(--sh-sm);border-left:4px solid var(--success);">
+                <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+                  <div style="width:36px;height:36px;border-radius:8px;background:var(--prev-pap-pale);display:flex;align-items:center;justify-content:center;font-size:18px;">🚶</div>
+                  <div><div style="font-size:14px;font-weight:700;color:var(--brown-deep);">Previsión — PAP</div><div style="font-size:10px;color:var(--text3);">Código: PREV-PAP · Tipo: Individual masivo</div></div>
+                  <span class="sp sp-g" style="margin-left:auto;">Activa</span>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px;">
+                  <div style="background:var(--prev-pap-pale);border-radius:8px;padding:8px;text-align:center;"><div style="font-family:'DM Serif Display',serif;font-size:20px;color:var(--success);">1</div><div style="font-size:9px;color:var(--text3);">Grupo</div></div>
+                  <div style="background:var(--prev-pap-pale);border-radius:8px;padding:8px;text-align:center;"><div style="font-family:'DM Serif Display',serif;font-size:20px;color:var(--success);">4</div><div style="font-size:9px;color:var(--text3);">Productos</div></div>
+                  <div style="background:var(--prev-pap-pale);border-radius:8px;padding:8px;text-align:center;"><div style="font-family:'DM Serif Display',serif;font-size:20px;color:var(--success);">4</div><div style="font-size:9px;color:var(--text3);">Estados</div></div>
+                </div>
+                <div style="display:flex;gap:7px;">
+                  <button style="flex:1;padding:7px;background:var(--prev-pap-pale);border:1px solid rgba(42,110,71,0.3);border-radius:7px;font-size:11px;font-weight:700;color:var(--success);cursor:pointer;font-family:'DM Sans',sans-serif;">✏️ Editar</button>
+                  <button style="flex:1;padding:7px;background:var(--cream-dark);border:1px solid var(--border);border-radius:7px;font-size:11px;font-weight:600;color:var(--text2);cursor:pointer;font-family:'DM Sans',sans-serif;">📋 Catálogo</button>
+                  <button style="flex:1;padding:7px;background:var(--cream-dark);border:1px solid var(--border);border-radius:7px;font-size:11px;font-weight:600;color:var(--text2);cursor:pointer;font-family:'DM Sans',sans-serif;">🔄 Pipeline</button>
+                </div>
+              </div>
+
+              <!-- Servicio al Cliente -->
+              <div style="background:white;border-radius:14px;padding:16px;box-shadow:var(--sh-sm);border-left:4px solid var(--purple);">
+                <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+                  <div style="width:36px;height:36px;border-radius:8px;background:var(--svc-pale);display:flex;align-items:center;justify-content:center;font-size:18px;">🎧</div>
+                  <div><div style="font-size:14px;font-weight:700;color:var(--brown-deep);">Servicio al Cliente</div><div style="font-size:10px;color:var(--text3);">Código: SVC · Tipo: Postventa / Casos</div></div>
+                  <span class="sp sp-g" style="margin-left:auto;">Activa</span>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px;">
+                  <div style="background:var(--svc-pale);border-radius:8px;padding:8px;text-align:center;"><div style="font-family:'DM Serif Display',serif;font-size:20px;color:var(--purple);">1</div><div style="font-size:9px;color:var(--text3);">Grupo</div></div>
+                  <div style="background:var(--svc-pale);border-radius:8px;padding:8px;text-align:center;"><div style="font-family:'DM Serif Display',serif;font-size:20px;color:var(--purple);">—</div><div style="font-size:9px;color:var(--text3);">Productos</div></div>
+                  <div style="background:var(--svc-pale);border-radius:8px;padding:8px;text-align:center;"><div style="font-family:'DM Serif Display',serif;font-size:20px;color:var(--purple);">5</div><div style="font-size:9px;color:var(--text3);">Estados</div></div>
+                </div>
+                <div style="display:flex;gap:7px;">
+                  <button style="flex:1;padding:7px;background:var(--svc-pale);border:1px solid rgba(90,62,158,0.3);border-radius:7px;font-size:11px;font-weight:700;color:var(--purple);cursor:pointer;font-family:'DM Sans',sans-serif;">✏️ Editar</button>
+                  <button style="flex:1;padding:7px;background:var(--cream-dark);border:1px solid var(--border);border-radius:7px;font-size:11px;font-weight:600;color:var(--text2);cursor:pointer;font-family:'DM Sans',sans-serif;">📋 Tipos caso</button>
+                  <button style="flex:1;padding:7px;background:var(--cream-dark);border:1px solid var(--border);border-radius:7px;font-size:11px;font-weight:600;color:var(--text2);cursor:pointer;font-family:'DM Sans',sans-serif;">🔄 Pipeline</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Pipeline visual -->
+            <div class="dcard" style="margin-bottom:0;">
+              <div class="dcttl">Pipeline de Empresariales B2B — Editable <span class="dcsee">+ Agregar Estado</span></div>
+              <div style="display:flex;gap:6px;align-items:center;overflow-x:auto;padding-bottom:8px;">
+                <div style="background:var(--prev-emp-pale);border:2px solid rgba(26,92,138,0.3);border-radius:10px;padding:10px 14px;text-align:center;min-width:110px;flex-shrink:0;">
+                  <div style="font-size:11px;font-weight:700;color:var(--blue);">🔵 Prospecto</div>
+                  <div style="font-size:9px;color:var(--text3);margin-top:3px;">Estado inicial</div>
+                </div>
+                <div style="color:var(--text3);font-size:16px;">→</div>
+                <div style="background:var(--warning-pale);border:2px solid rgba(201,123,26,0.3);border-radius:10px;padding:10px 14px;text-align:center;min-width:110px;flex-shrink:0;">
+                  <div style="font-size:11px;font-weight:700;color:var(--warning);">🟡 Presentación</div>
+                  <div style="font-size:9px;color:var(--text3);margin-top:3px;">Reunión agendada</div>
+                </div>
+                <div style="color:var(--text3);font-size:16px;">→</div>
+                <div style="background:var(--blue-pale);border:2px solid rgba(26,92,138,0.3);border-radius:10px;padding:10px 14px;text-align:center;min-width:110px;flex-shrink:0;">
+                  <div style="font-size:11px;font-weight:700;color:var(--blue);">📄 Cotización</div>
+                  <div style="font-size:9px;color:var(--text3);margin-top:3px;">Propuesta enviada</div>
+                </div>
+                <div style="color:var(--text3);font-size:16px;">→</div>
+                <div style="background:var(--purple-pale);border:2px solid rgba(90,62,158,0.3);border-radius:10px;padding:10px 14px;text-align:center;min-width:110px;flex-shrink:0;">
+                  <div style="font-size:11px;font-weight:700;color:var(--purple);">🤝 Negociación</div>
+                  <div style="font-size:9px;color:var(--text3);margin-top:3px;">En revisión</div>
+                </div>
+                <div style="color:var(--text3);font-size:16px;">→</div>
+                <div style="background:var(--success-pale);border:2px solid rgba(42,110,71,0.4);border-radius:10px;padding:10px 14px;text-align:center;min-width:110px;flex-shrink:0;">
+                  <div style="font-size:11px;font-weight:700;color:var(--success);">✅ Convenio</div>
+                  <div style="font-size:9px;color:var(--text3);margin-top:3px;">Firmado · Final</div>
+                </div>
+                <div style="color:var(--text3);font-size:16px;">→</div>
+                <div style="background:var(--danger-pale);border:2px solid rgba(184,50,39,0.3);border-radius:10px;padding:10px 14px;text-align:center;min-width:110px;flex-shrink:0;">
+                  <div style="font-size:11px;font-weight:700;color:var(--danger);">❌ Perdido</div>
+                  <div style="font-size:9px;color:var(--text3);margin-top:3px;">Final descartado</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================================================================
+     SCREEN 3 — EMPRESARIALES B2B (MOBILE)
+================================================================ -->
+<div class="screen" id="s-empresariales" style="align-items:center;padding:28px 20px;">
+  <div class="hero"><h2>Previsión — Empresariales B2B</h2><p>Gestión de cuentas corporativas con pipeline largo · Versión móvil</p></div>
+  <div class="phones-row">
+    <div class="phone-wrap">
+      <div class="phone-lbl">Ficha Empresa</div>
+      <div class="phone">
+        <div class="pscreen">
+          <div style="background:var(--blue);padding:12px 16px 22px;position:relative;">
+            <div style="display:flex;align-items:center;gap:6px;color:rgba(255,255,255,0.6);font-size:12px;margin-bottom:12px;cursor:pointer;" onclick="go('selector')">← Mis Empresas</div>
+            <div style="display:flex;align-items:center;gap:11px;">
+              <div style="width:46px;height:46px;border-radius:10px;background:rgba(255,255,255,0.15);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;border:2px solid rgba(255,255,255,0.2);">🏭</div>
+              <div>
+                <div style="font-family:'DM Serif Display',serif;color:white;font-size:17px;line-height:1.2;">Industrias Cúcuta S.A.S.</div>
+                <div style="font-size:10px;color:rgba(255,255,255,0.55);margin-top:2px;">NIT: 900.234.567-1 · 320 empleados</div>
+              </div>
+            </div>
+            <div style="display:flex;gap:6px;margin-top:10px;">
+              <span style="font-size:9.5px;font-weight:700;padding:3px 8px;border-radius:20px;background:rgba(255,255,255,0.15);color:rgba(255,255,255,0.9);">Manufactura</span>
+              <span style="font-size:9.5px;font-weight:700;padding:3px 8px;border-radius:20px;background:var(--warning-pale);color:var(--warning);">🟡 Negociación</span>
+            </div>
+            <div style="position:absolute;bottom:-15px;left:-5%;right:-5%;height:30px;background:var(--cream);border-radius:50% 50% 0 0;"></div>
+          </div>
+          <!-- Quick actions -->
+          <div style="display:flex;gap:7px;padding:22px 13px 8px;">
+            <button style="flex:1;padding:9px 5px;border-radius:10px;border:none;background:var(--blue-pale);color:var(--blue);font-size:10px;font-weight:700;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;font-family:'DM Sans',sans-serif;"><span style="font-size:17px;">📞</span>Llamar</button>
+            <button style="flex:1;padding:9px 5px;border-radius:10px;border:none;background:#E2F5E4;color:#1B5E20;font-size:10px;font-weight:700;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;font-family:'DM Sans',sans-serif;"><span style="font-size:17px;">💬</span>WhatsApp</button>
+            <button style="flex:1;padding:9px 5px;border-radius:10px;border:none;background:var(--gold);color:var(--brown-deep);font-size:10px;font-weight:700;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;font-family:'DM Sans',sans-serif;"><span style="font-size:17px;">✍️</span>Registrar</button>
+            <button style="flex:1;padding:9px 5px;border-radius:10px;border:none;background:var(--cream-dark);color:var(--text2);font-size:10px;font-weight:700;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;font-family:'DM Sans',sans-serif;"><span style="font-size:17px;">📄</span>Propuesta</button>
+          </div>
+          <!-- Pipeline visual -->
+          <div style="margin:0 13px 11px;background:white;border-radius:12px;padding:12px;box-shadow:var(--sh-sm);">
+            <div style="font-size:10px;font-weight:700;color:var(--text2);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px;">Pipeline de avance</div>
+            <div style="display:flex;align-items:center;gap:3px;overflow-x:auto;scrollbar-width:none;">
+              <div style="display:flex;flex-direction:column;align-items:center;gap:3px;min-width:46px;flex-shrink:0;">
+                <div style="width:28px;height:28px;border-radius:50%;background:var(--success);display:flex;align-items:center;justify-content:center;font-size:12px;">✓</div>
+                <div style="font-size:8px;color:var(--success);font-weight:700;text-align:center;">Prospecto</div>
+              </div>
+              <div style="flex:1;height:2px;background:var(--success);min-width:12px;"></div>
+              <div style="display:flex;flex-direction:column;align-items:center;gap:3px;min-width:46px;flex-shrink:0;">
+                <div style="width:28px;height:28px;border-radius:50%;background:var(--success);display:flex;align-items:center;justify-content:center;font-size:12px;">✓</div>
+                <div style="font-size:8px;color:var(--success);font-weight:700;text-align:center;">Presentación</div>
+              </div>
+              <div style="flex:1;height:2px;background:var(--success);min-width:12px;"></div>
+              <div style="display:flex;flex-direction:column;align-items:center;gap:3px;min-width:46px;flex-shrink:0;">
+                <div style="width:28px;height:28px;border-radius:50%;background:var(--success);display:flex;align-items:center;justify-content:center;font-size:12px;">✓</div>
+                <div style="font-size:8px;color:var(--success);font-weight:700;text-align:center;">Cotización</div>
+              </div>
+              <div style="flex:1;height:2px;background:var(--warning);min-width:12px;"></div>
+              <div style="display:flex;flex-direction:column;align-items:center;gap:3px;min-width:46px;flex-shrink:0;">
+                <div style="width:28px;height:28px;border-radius:50%;background:var(--warning);display:flex;align-items:center;justify-content:center;font-size:12px;color:white;font-weight:700;">●</div>
+                <div style="font-size:8px;color:var(--warning);font-weight:700;text-align:center;">Negociación</div>
+              </div>
+              <div style="flex:1;height:2px;background:var(--cream-dark);min-width:12px;"></div>
+              <div style="display:flex;flex-direction:column;align-items:center;gap:3px;min-width:46px;flex-shrink:0;">
+                <div style="width:28px;height:28px;border-radius:50%;background:var(--cream-dark);display:flex;align-items:center;justify-content:center;font-size:12px;color:var(--text3);">○</div>
+                <div style="font-size:8px;color:var(--text3);text-align:center;">Convenio</div>
+              </div>
+            </div>
+          </div>
+          <!-- Info empresa -->
+          <div style="margin:0 13px 10px;" class="card">
+            <div class="card-hdr">🏭 Datos de la Empresa</div>
+            <div class="irow"><span class="il">NIT</span><span class="iv">900.234.567-1</span></div>
+            <div class="irow"><span class="il">Empleados</span><span class="iv">320 · Manufactura</span></div>
+            <div class="irow"><span class="il">Contacto</span><span class="iv">Germán Ortiz · Gerente RRHH</span></div>
+            <div class="irow"><span class="il">Teléfono</span><span class="iv">310 888 9900</span></div>
+            <div class="irow"><span class="il">Correo</span><span class="iv">g.ortiz@industcuc.com</span></div>
+            <div class="irow"><span class="il">Producto</span><span class="iv">Plan Exequial Colectivo — 320 personas</span></div>
+            <div class="irow"><span class="il">Próx. gestión</span><span class="iv" style="color:var(--warning);font-weight:700;">🟡 Hoy 3:00 pm — Reunión definición</span></div>
+          </div>
+          <!-- Historial -->
+          <div style="font-size:11px;font-weight:700;color:var(--text2);padding:2px 13px 7px;">📜 Historial</div>
+          <div style="margin:0 13px 6px;background:white;border-radius:11px;padding:10px 12px;border-left:3px solid var(--gold);box-shadow:0 1px 4px rgba(44,26,14,0.05);">
+            <div style="font-size:9.5px;color:var(--text3);font-weight:700;margin-bottom:3px;">15/02/2026 — Cotización enviada</div>
+            <div style="font-size:11.5px;color:var(--text);line-height:1.4;">Se envió propuesta para 320 personas. Valor: $18.5M. Incluye Plan Exequial + Seguro de Vida Grupal.</div>
+          </div>
+          <div style="margin:0 13px 6px;background:white;border-radius:11px;padding:10px 12px;border-left:3px solid var(--sage);box-shadow:0 1px 4px rgba(44,26,14,0.05);">
+            <div style="font-size:9.5px;color:var(--text3);font-weight:700;margin-bottom:3px;">08/02/2026 — Presentación comercial</div>
+            <div style="font-size:11.5px;color:var(--text);line-height:1.4;">Reunión presencial con Germán Ortiz y el Gerente General. Muy receptivos. Solicitaron cotización.</div>
+          </div>
+          <div style="height:8px;"></div>
+          <div class="bnav">
+            <div class="bni" onclick="go('selector')"><span class="bi">📋</span>Panel</div>
+            <div class="bni"><span class="bi">🗓️</span>Agenda</div>
+            <div class="bni active"><span class="bi">🏢</span>Empresas</div>
+            <div class="bni"><span class="bi">📊</span>Métricas</div>
+            <div class="bni"><span class="bi">⚙️</span>Config</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Nuevo Prospecto B2B -->
+    <div class="phone-wrap">
+      <div class="phone-lbl">Nuevo Prospecto Empresa</div>
+      <div class="phone">
+        <div class="pscreen" style="background:rgba(26,92,138,0.06);">
+          <div style="height:8px;"></div>
+          <div style="margin:0 11px;background:white;border-radius:16px;overflow:hidden;box-shadow:var(--sh-lg);">
+            <div style="background:var(--blue);padding:12px 15px;display:flex;align-items:center;justify-content:space-between;">
+              <div style="font-family:'DM Serif Display',serif;color:white;font-size:17px;">🏢 Nueva Empresa</div>
+              <div style="font-size:11px;color:rgba(255,255,255,0.5);cursor:pointer;" onclick="go('empresariales')">← Volver</div>
+            </div>
+            <!-- Validación NIT -->
+            <div style="margin:11px 13px;background:var(--blue-pale);border:1px solid rgba(26,92,138,0.25);border-radius:9px;padding:9px 11px;display:flex;gap:7px;align-items:flex-start;">
+              <span style="font-size:15px;">🔍</span>
+              <div><div style="font-size:10.5px;font-weight:700;color:var(--blue);margin-bottom:2px;">Validación automática por NIT</div><div style="font-size:10px;color:var(--text3);">Al ingresar el NIT se verifica si la empresa ya existe en la base de datos.</div></div>
+            </div>
+            <div style="padding:0 13px 13px;">
+              <div style="font-size:9.5px;font-weight:800;color:var(--text3);letter-spacing:1.2px;text-transform:uppercase;margin-bottom:9px;padding-top:8px;border-top:1px solid var(--border);">🏭 Datos de la Empresa</div>
+              <span class="fl">Razón Social *</span>
+              <input class="fi" type="text" placeholder="Ej: Industrias Cúcuta S.A.S." style="margin-bottom:9px;">
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:9px;">
+                <div><span class="fl">NIT *</span><input class="fi" type="text" placeholder="900.000.000-1"></div>
+                <div><span class="fl">N° Empleados *</span><input class="fi" type="number" placeholder="Ej: 320"></div>
+              </div>
+              <span class="fl">Sector Económico</span>
+              <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:9px;">
+                <div style="padding:5px 10px;border-radius:20px;border:2px solid var(--blue);background:var(--blue-pale);font-size:10.5px;font-weight:700;color:var(--blue);cursor:pointer;">✅ Manufactura</div>
+                <div style="padding:5px 10px;border-radius:20px;border:1px solid var(--border);font-size:10.5px;color:var(--text3);cursor:pointer;">Salud</div>
+                <div style="padding:5px 10px;border-radius:20px;border:1px solid var(--border);font-size:10.5px;color:var(--text3);cursor:pointer;">Comercio</div>
+                <div style="padding:5px 10px;border-radius:20px;border:1px solid var(--border);font-size:10.5px;color:var(--text3);cursor:pointer;">Educación</div>
+                <div style="padding:5px 10px;border-radius:20px;border:1px solid var(--border);font-size:10.5px;color:var(--text3);cursor:pointer;">Servicios</div>
+              </div>
+              <div style="font-size:9.5px;font-weight:800;color:var(--text3);letter-spacing:1.2px;text-transform:uppercase;margin-bottom:9px;padding-top:9px;border-top:1px solid var(--border);">👤 Contacto Principal</div>
+              <span class="fl">Nombre del Contacto *</span>
+              <input class="fi" type="text" placeholder="Nombre del tomador de decisión" style="margin-bottom:9px;">
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:9px;">
+                <div><span class="fl">Cargo</span><input class="fi" type="text" placeholder="Ej: Gerente RRHH"></div>
+                <div><span class="fl">Teléfono *</span><input class="fi" type="tel" placeholder="310..."></div>
+              </div>
+              <span class="fl">Correo Corporativo</span>
+              <input class="fi" type="email" placeholder="contacto@empresa.com" style="margin-bottom:9px;">
+              <div style="font-size:9.5px;font-weight:800;color:var(--text3);letter-spacing:1.2px;text-transform:uppercase;margin-bottom:9px;padding-top:9px;border-top:1px solid var(--border);">🎯 Interés Comercial</div>
+              <span class="fl">Productos de interés</span>
+              <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:9px;">
+                <div style="padding:5px 10px;border-radius:20px;border:2px solid var(--blue);background:var(--blue-pale);font-size:10.5px;font-weight:700;color:var(--blue);cursor:pointer;">✅ Plan Exequial Colectivo</div>
+                <div style="padding:5px 10px;border-radius:20px;border:1px solid var(--border);font-size:10.5px;color:var(--text3);cursor:pointer;">Seguro Vida Grupal</div>
+                <div style="padding:5px 10px;border-radius:20px;border:1px solid var(--border);font-size:10.5px;color:var(--text3);cursor:pointer;">Convenio Corporativo</div>
+              </div>
+              <span class="fl">Nota inicial</span>
+              <textarea class="fta" style="margin-bottom:11px;" placeholder="Contexto de cómo se originó el contacto..."></textarea>
+              <button class="btn-p" style="background:linear-gradient(135deg,var(--blue),#0D3A5E);margin-bottom:7px;">✅ Registrar Empresa</button>
+              <button class="btn-s">Cancelar</button>
+            </div>
+          </div>
+          <div style="height:16px;"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================================================================
+     SCREEN 4 — PAP VENTA MASIVA (MOBILE)
+================================================================ -->
+<div class="screen" id="s-pap" style="align-items:center;padding:28px 20px;">
+  <div class="hero"><h2>Previsión — PAP Venta Masiva</h2><p>Formulario ultra-rápido para trabajo de campo · Alto volumen · Versión móvil</p></div>
+  <div class="phones-row">
+    <!-- Panel PAP -->
+    <div class="phone-wrap">
+      <div class="phone-lbl">Panel del Día PAP</div>
+      <div class="phone">
+        <div class="pscreen">
+          <div style="background:var(--success);padding:12px 16px 22px;position:relative;">
+            <div class="mhdr-row">
+              <div><div style="font-size:11px;color:rgba(255,255,255,0.55);">Zona asignada: Barrio La Libertad</div><div style="font-family:'DM Serif Display',serif;color:white;font-size:19px;">Luis Pérez</div></div>
+              <div style="font-size:19px;">🔔</div>
+            </div>
+            <div style="display:flex;gap:7px;margin-top:10px;">
+              <div style="flex:1;background:rgba(255,255,255,0.15);border-radius:10px;padding:10px;text-align:center;">
+                <div style="font-family:'DM Serif Display',serif;font-size:22px;color:white;">34</div>
+                <div style="font-size:10px;color:rgba(255,255,255,0.7);">Visitados hoy</div>
+              </div>
+              <div style="flex:1;background:rgba(255,255,255,0.15);border-radius:10px;padding:10px;text-align:center;">
+                <div style="font-family:'DM Serif Display',serif;font-size:22px;color:white;">8</div>
+                <div style="font-size:10px;color:rgba(255,255,255,0.7);">Interesados</div>
+              </div>
+              <div style="flex:1;background:rgba(255,255,255,0.25);border-radius:10px;padding:10px;text-align:center;">
+                <div style="font-family:'DM Serif Display',serif;font-size:22px;color:white;">3</div>
+                <div style="font-size:10px;color:rgba(255,255,255,0.9);font-weight:700;">Afiliados ✓</div>
+              </div>
+            </div>
+            <div style="position:absolute;bottom:-15px;left:-5%;right:-5%;height:30px;background:var(--cream);border-radius:50% 50% 0 0;"></div>
+          </div>
+          <!-- Meta PAP -->
+          <div style="margin:22px 13px 11px;background:white;border-radius:12px;padding:11px;box-shadow:var(--sh-sm);">
+            <div style="display:flex;justify-content:space-between;margin-bottom:6px;"><span style="font-size:11px;color:var(--text3);font-weight:600;">Meta semanal</span><span style="font-family:'DM Serif Display',serif;font-size:14px;color:var(--success);">3 / 10 afiliados</span></div>
+            <div class="pb"><div class="pbf" style="width:30%;background:linear-gradient(90deg,var(--success),#1B5E20);"></div></div>
+          </div>
+          <!-- Botón PAP principal -->
+          <div style="margin:0 13px 11px;">
+            <button style="width:100%;padding:16px;background:linear-gradient(135deg,var(--success),#1B5E20);border:none;border-radius:13px;color:white;font-family:'DM Serif Display',serif;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 4px 16px rgba(42,110,71,0.35);">
+              ➕ Registrar Visita Rápida
+            </button>
+          </div>
+          <!-- Últimas visitas -->
+          <div style="font-size:11px;font-weight:700;color:var(--text2);padding:2px 13px 8px;">🕐 Últimas visitas hoy</div>
+          <div style="background:white;border-radius:12px;margin:0 13px;overflow:hidden;box-shadow:var(--sh-sm);">
+            <div style="display:flex;align-items:center;padding:10px 12px;border-bottom:1px solid var(--border);">
+              <div style="width:32px;height:32px;border-radius:50%;background:var(--success-pale);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:var(--success);margin-right:9px;flex-shrink:0;">MR</div>
+              <div style="flex:1;"><div style="font-size:12px;font-weight:700;color:var(--text);">María Ramírez</div><div style="font-size:10px;color:var(--text3);">Cll 12 #8-45 · Plan Básico</div></div>
+              <span class="sp sp-g" style="font-size:9px;">Afiliada</span>
+            </div>
+            <div style="display:flex;align-items:center;padding:10px 12px;border-bottom:1px solid var(--border);">
+              <div style="width:32px;height:32px;border-radius:50%;background:var(--warning-pale);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:var(--warning);margin-right:9px;flex-shrink:0;">JC</div>
+              <div style="flex:1;"><div style="font-size:12px;font-weight:700;color:var(--text);">Juan Carlos Blanco</div><div style="font-size:10px;color:var(--text3);">Cll 12 #8-52 · Consultar familia</div></div>
+              <span class="sp sp-o" style="font-size:9px;">Volver</span>
+            </div>
+            <div style="display:flex;align-items:center;padding:10px 12px;">
+              <div style="width:32px;height:32px;border-radius:50%;background:var(--cream-dark);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:var(--text3);margin-right:9px;flex-shrink:0;">—</div>
+              <div style="flex:1;"><div style="font-size:12px;font-weight:700;color:var(--text);">Carrera 8 #12-10</div><div style="font-size:10px;color:var(--text3);">Sin respuesta · No había nadie</div></div>
+              <span class="sp sp-b" style="font-size:9px;">Sin resp.</span>
+            </div>
+          </div>
+          <div style="height:8px;"></div>
+          <div class="bnav">
+            <div class="bni active"><span class="bi">📋</span>Panel</div>
+            <div class="bni"><span class="bi">🗺️</span>Zona</div>
+            <div class="bni"><span class="bi">📊</span>Métricas</div>
+            <div class="bni"><span class="bi">⚙️</span>Config</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Registro PAP ultra rápido -->
+    <div class="phone-wrap">
+      <div class="phone-lbl">Registro Ultra-Rápido PAP</div>
+      <div class="phone">
+        <div class="pscreen" style="background:rgba(42,110,71,0.06);">
+          <div style="height:8px;"></div>
+          <div style="margin:0 11px;background:white;border-radius:16px;overflow:hidden;box-shadow:var(--sh-lg);">
+            <div style="background:var(--success);padding:12px 15px;display:flex;align-items:center;justify-content:space-between;">
+              <div style="font-family:'DM Serif Display',serif;color:white;font-size:17px;">⚡ Visita Rápida</div>
+              <div style="font-size:10px;color:rgba(255,255,255,0.6);">Cll 12 · La Libertad</div>
+            </div>
+            <div style="padding:11px 13px;">
+              <!-- Info mínima -->
+              <div style="background:var(--success-pale);border-radius:9px;padding:9px 11px;margin-bottom:11px;border-left:3px solid var(--success);">
+                <div style="font-size:10px;font-weight:700;color:var(--success);margin-bottom:2px;">💡 Formulario simplificado para campo</div>
+                <div style="font-size:10px;color:var(--text3);">Solo 4 campos obligatorios. Menos de 30 segundos.</div>
+              </div>
+              <span class="fl">Nombre del visitado *</span>
+              <input class="fi" type="text" placeholder="Nombre completo" style="margin-bottom:9px;">
+              <span class="fl">Teléfono *</span>
+              <input class="fi" type="tel" placeholder="310 000 0000" style="margin-bottom:9px;">
+              <span class="fl">Dirección visitada *</span>
+              <input class="fi" type="text" placeholder="Cll 12 #8-45" style="margin-bottom:9px;">
+              <!-- Resultado PAP -->
+              <span class="fl">Resultado de la visita *</span>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:11px;">
+                <div class="ro sel-g" style="flex-direction:column;text-align:center;padding:12px 6px;"><span style="font-size:20px;margin-bottom:3px;">✅</span><span style="font-size:11px;">Afiliado hoy</span></div>
+                <div class="ro" style="flex-direction:column;text-align:center;padding:12px 6px;"><span style="font-size:20px;margin-bottom:3px;">💬</span><span style="font-size:11px;">Interesado</span></div>
+                <div class="ro" style="flex-direction:column;text-align:center;padding:12px 6px;"><span style="font-size:20px;margin-bottom:3px;">🔁</span><span style="font-size:11px;">Volver después</span></div>
+                <div class="ro" style="flex-direction:column;text-align:center;padding:12px 6px;"><span style="font-size:20px;margin-bottom:3px;">🚫</span><span style="font-size:11px;">No interesado</span></div>
+              </div>
+              <!-- Plan -->
+              <span class="fl">Plan de interés</span>
+              <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:11px;">
+                <div style="padding:6px 10px;border-radius:20px;border:2px solid var(--success);background:var(--success-pale);font-size:10.5px;font-weight:700;color:var(--success);cursor:pointer;">✅ Plan Básico</div>
+                <div style="padding:6px 10px;border-radius:20px;border:1px solid var(--border);font-size:10.5px;color:var(--text3);cursor:pointer;">Plan Premium</div>
+                <div style="padding:6px 10px;border-radius:20px;border:1px solid var(--border);font-size:10.5px;color:var(--text3);cursor:pointer;">Plan Dúo</div>
+                <div style="padding:6px 10px;border-radius:20px;border:1px solid var(--border);font-size:10.5px;color:var(--text3);cursor:pointer;">Plan Familiar</div>
+              </div>
+              <button class="btn-p" style="background:linear-gradient(135deg,var(--success),#1B5E20);margin-bottom:7px;">⚡ Guardar y Siguiente Casa</button>
+              <button class="btn-s">Sin respuesta (nadie en casa)</button>
+            </div>
+          </div>
+          <div style="height:16px;"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================================================================
+     SCREEN 5 — SERVICIO AL CLIENTE (MOBILE)
+================================================================ -->
+<div class="screen" id="s-svc" style="align-items:center;padding:28px 20px;">
+  <div class="hero"><h2>Servicio al Cliente / Postventa</h2><p>Gestión de casos y PQRS post-contrato · Integrado con SAP B1 · Versión móvil</p></div>
+  <div class="phones-row">
+    <div class="phone-wrap">
+      <div class="phone-lbl">Panel de Casos</div>
+      <div class="phone">
+        <div class="pscreen">
+          <div style="background:var(--purple);padding:12px 16px 22px;position:relative;">
+            <div class="mhdr-row"><div><div style="font-size:11px;color:rgba(255,255,255,0.5);">Agente de Servicio</div><div style="font-family:'DM Serif Display',serif;color:white;font-size:19px;">Andrea Suárez</div></div><div style="font-size:19px;">🔔</div></div>
+            <div style="display:flex;gap:7px;margin-top:10px;">
+              <div style="flex:1;background:rgba(255,255,255,0.15);border-radius:10px;padding:9px;text-align:center;"><div style="font-family:'DM Serif Display',serif;font-size:20px;color:white;">12</div><div style="font-size:9.5px;color:rgba(255,255,255,0.65);">Casos abiertos</div></div>
+              <div style="flex:1;background:rgba(255,255,255,0.15);border-radius:10px;padding:9px;text-align:center;"><div style="font-family:'DM Serif Display',serif;font-size:20px;color:#FF8A80;">3</div><div style="font-size:9.5px;color:rgba(255,255,255,0.65);">Vencidos</div></div>
+              <div style="flex:1;background:rgba(255,255,255,0.15);border-radius:10px;padding:9px;text-align:center;"><div style="font-family:'DM Serif Display',serif;font-size:20px;color:#A5D6A7;">8</div><div style="font-size:9.5px;color:rgba(255,255,255,0.65);">Resueltos hoy</div></div>
+            </div>
+            <div style="position:absolute;bottom:-15px;left:-5%;right:-5%;height:30px;background:var(--cream);border-radius:50% 50% 0 0;"></div>
+          </div>
+          <div style="padding:22px 13px 10px;">
+            <div style="display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin-bottom:11px;">
+              <div style="flex-shrink:0;padding:5px 11px;border-radius:20px;background:var(--purple);color:white;font-size:11px;font-weight:700;">Todos</div>
+              <div style="flex-shrink:0;padding:5px 11px;border-radius:20px;border:1px solid var(--border);background:white;font-size:11px;color:var(--text3);">🔴 Urgentes</div>
+              <div style="flex-shrink:0;padding:5px 11px;border-radius:20px;border:1px solid var(--border);background:white;font-size:11px;color:var(--text3);">📩 PQRS</div>
+              <div style="flex-shrink:0;padding:5px 11px;border-radius:20px;border:1px solid var(--border);background:white;font-size:11px;color:var(--text3);">💬 Solicitudes</div>
+            </div>
+          </div>
+          <!-- Casos -->
+          <div style="margin:0 13px 8px;background:white;border-radius:12px;overflow:hidden;box-shadow:var(--sh-sm);">
+            <div style="display:flex;align-items:flex-start;padding:11px 12px;border-bottom:1px solid var(--border);cursor:pointer;border-left:4px solid var(--danger);">
+              <div style="flex:1;">
+                <div style="display:flex;align-items:center;gap:6px;margin-bottom:3px;"><span class="sp sp-r" style="font-size:9px;">Queja</span><span style="font-size:9px;color:var(--text3);">Caso #1042 · SAP: CNT-2024-1890</span></div>
+                <div style="font-size:12.5px;font-weight:700;color:var(--text);">Familia Martínez — Servicio velación</div>
+                <div style="font-size:10.5px;color:var(--text3);margin-top:2px;">Inconformidad con horario de entrega de restos. Escalado a Operaciones.</div>
+                <div style="font-size:9.5px;color:var(--danger);margin-top:4px;font-weight:700;">⏱️ Vence hoy · Alta prioridad</div>
+              </div>
+            </div>
+            <div style="display:flex;align-items:flex-start;padding:11px 12px;border-bottom:1px solid var(--border);cursor:pointer;border-left:4px solid var(--warning);">
+              <div style="flex:1;">
+                <div style="display:flex;align-items:center;gap:6px;margin-bottom:3px;"><span class="sp sp-o" style="font-size:9px;">Solicitud</span><span style="font-size:9px;color:var(--text3);">Caso #1041 · SAP: CNT-2025-0234</span></div>
+                <div style="font-size:12.5px;font-weight:700;color:var(--text);">Carlos Rodríguez — Cambio plan</div>
+                <div style="font-size:10.5px;color:var(--text3);margin-top:2px;">Solicita upgrade de plan básico a premium. Diferencia: $320.000 COP.</div>
+                <div style="font-size:9.5px;color:var(--warning);margin-top:4px;font-weight:700;">⏱️ Vence mañana · Media prioridad</div>
+              </div>
+            </div>
+            <div style="display:flex;align-items:flex-start;padding:11px 12px;cursor:pointer;border-left:4px solid var(--sage);">
+              <div style="flex:1;">
+                <div style="display:flex;align-items:center;gap:6px;margin-bottom:3px;"><span class="sp sp-b" style="font-size:9px;">Información</span><span style="font-size:9px;color:var(--text3);">Caso #1040</span></div>
+                <div style="font-size:12.5px;font-weight:700;color:var(--text);">Ana Lucía Torres — Certificado plan</div>
+                <div style="font-size:10.5px;color:var(--text3);margin-top:2px;">Necesita certificado para trámite notarial. En proceso de emisión.</div>
+              </div>
+            </div>
+          </div>
+          <div style="margin:0 13px 8px;display:flex;gap:7px;">
+            <button style="flex:1;padding:11px;background:var(--purple);border:none;border-radius:11px;color:white;font-family:'DM Serif Display',serif;font-size:14px;cursor:pointer;">+ Nuevo Caso</button>
+          </div>
+          <div style="height:8px;"></div>
+          <div class="bnav">
+            <div class="bni active"><span class="bi">🎫</span>Casos</div>
+            <div class="bni"><span class="bi">🔍</span>Buscar</div>
+            <div class="bni"><span class="bi">📊</span>Métricas</div>
+            <div class="bni"><span class="bi">⚙️</span>Config</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================================================================
+     SCREEN 6 — DASHBOARD MULTI-ÁREA (DESKTOP)
+================================================================ -->
+<div class="screen" id="s-dash-multi" style="padding:28px;">
+  <div class="hero"><h2>Dashboard Multi-Área — Vista Gerencial</h2><p>Consolidado de todas las unidades de negocio en tiempo real · Versión escritorio</p></div>
+  <div class="deskwrap" style="padding:0 0 40px;">
+    <div class="desk">
+      <div class="deskbar"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div><div class="deskurl">serventas.serfunorte.com/gerencia</div></div>
+      <div class="app-shell">
+        <div class="sidebar">
+          <div class="shead"><div class="sname">SerVentas</div><div class="ssub">Vista Gerencial</div></div>
+          <div class="snlbl">Consolidado</div>
+          <div class="sni active"><span class="sni-icon">📊</span>Dashboard General</div>
+          <div class="sni"><span class="sni-icon">🏢</span>Por Área</div>
+          <div class="sni"><span class="sni-icon">👥</span>Por Equipo</div>
+          <div class="snlbl">Áreas</div>
+          <div class="sni"><span class="sni-icon">🕊️</span><span style="color:var(--gold);">Prenecesidad</span></div>
+          <div class="sni"><span class="sni-icon">🏢</span><span style="color:var(--blue);">Empresariales</span></div>
+          <div class="sni"><span class="sni-icon">🚶</span><span style="color:var(--success);">PAP</span></div>
+          <div class="sni"><span class="sni-icon">🎧</span><span style="color:var(--purple);">Serv. Cliente</span></div>
+          <div class="snlbl">Reportes</div>
+          <div class="sni"><span class="sni-icon">📈</span>Tendencias</div>
+          <div class="sni"><span class="sni-icon">⬇️</span>Exportar</div>
+          <div class="sfoot"><div class="sfav">GG</div><div><div class="sfname">Gerente General</div><div class="sfrole">Vista completa</div></div></div>
+        </div>
+        <div class="main">
+          <div class="dash-area">
+            <div class="dash-top">
+              <h1>Consolidado — Febrero 2026</h1>
+              <div class="area-strip" style="padding:0;background:transparent;">
+                <div class="as-chip all">Todas</div>
+                <div class="as-chip prenec">Prenecesidad</div>
+                <div class="as-chip emp">Empresariales</div>
+                <div class="as-chip pap">PAP</div>
+                <div class="as-chip svc">Serv. Cliente</div>
+              </div>
+            </div>
+
+            <!-- KPIs consolidados -->
+            <div class="krow">
+              <div class="kcard kg" data-icon="🤝"><div class="klbl">Contratos / Convenios</div><div class="kval">31</div><div class="ksub"><span class="tup">↑ +8</span> vs mes anterior</div></div>
+              <div class="kcard ks" data-icon="📞"><div class="klbl">Gestiones Totales Hoy</div><div class="kval">241</div><div class="ksub">4 áreas activas</div></div>
+              <div class="kcard kr" data-icon="🎫"><div class="klbl">Casos Abiertos</div><div class="kval">12</div><div class="ksub"><span class="tdn">3</span> vencidos hoy</div></div>
+              <div class="kcard kb" data-icon="💰"><div class="klbl">Valor Vendido COP</div><div class="kval">$84M</div><div class="ksub"><span class="tup">↑ +32%</span> vs enero</div></div>
+            </div>
+
+            <!-- Rendimiento por área -->
+            <div class="dgrid2">
+              <div class="dcard">
+                <div class="dcttl">Contratos por Área — Febrero <span class="dcsee">Ver detalle</span></div>
+                <!-- Prenecesidad -->
+                <div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border);">
+                  <div style="width:8px;height:32px;border-radius:4px;background:var(--gold);flex-shrink:0;"></div>
+                  <div style="flex:1;">
+                    <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:3px;">🕊️ Prenecesidad</div>
+                    <div class="pb"><div class="pbf" style="width:60%;"></div></div>
+                  </div>
+                  <div style="text-align:right;min-width:60px;">
+                    <div style="font-family:'DM Serif Display',serif;font-size:18px;color:var(--gold);">18</div>
+                    <div style="font-size:9px;color:var(--text3);">meta: 30</div>
+                  </div>
+                </div>
+                <!-- Empresariales -->
+                <div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border);">
+                  <div style="width:8px;height:32px;border-radius:4px;background:var(--blue);flex-shrink:0;"></div>
+                  <div style="flex:1;">
+                    <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:3px;">🏢 Empresariales</div>
+                    <div class="pb"><div class="pbf" style="width:60%;background:linear-gradient(90deg,var(--blue),#0D3A5E);"></div></div>
+                  </div>
+                  <div style="text-align:right;min-width:60px;">
+                    <div style="font-family:'DM Serif Display',serif;font-size:18px;color:var(--blue);">3</div>
+                    <div style="font-size:9px;color:var(--text3);">meta: 5 convenios</div>
+                  </div>
+                </div>
+                <!-- PAP -->
+                <div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border);">
+                  <div style="width:8px;height:32px;border-radius:4px;background:var(--success);flex-shrink:0;"></div>
+                  <div style="flex:1;">
+                    <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:3px;">🚶 PAP — Venta Masiva</div>
+                    <div class="pb"><div class="pbf" style="width:50%;background:linear-gradient(90deg,var(--success),#1B5E20);"></div></div>
+                  </div>
+                  <div style="text-align:right;min-width:60px;">
+                    <div style="font-family:'DM Serif Display',serif;font-size:18px;color:var(--success);">10</div>
+                    <div style="font-size:9px;color:var(--text3);">meta: 20 afil.</div>
+                  </div>
+                </div>
+                <!-- Servicio al cliente -->
+                <div style="display:flex;align-items:center;gap:10px;padding:9px 0;">
+                  <div style="width:8px;height:32px;border-radius:4px;background:var(--purple);flex-shrink:0;"></div>
+                  <div style="flex:1;">
+                    <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:3px;">🎧 Serv. Cliente</div>
+                    <div class="pb"><div class="pbf" style="width:70%;background:linear-gradient(90deg,var(--purple),#3A2880);"></div></div>
+                  </div>
+                  <div style="text-align:right;min-width:60px;">
+                    <div style="font-family:'DM Serif Display',serif;font-size:18px;color:var(--purple);">33</div>
+                    <div style="font-size:9px;color:var(--text3);">casos resueltos</div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Embudo consolidado -->
+              <div class="dcard">
+                <div class="dcttl">Embudo Consolidado</div>
+                <div class="fi-item"><span class="fi-lbl">Prospectos activos</span><div class="fi-bw"><div class="fi-bf" style="width:100%;background:var(--brown-warm);"></div></div><span class="fi-n">1,470</span></div>
+                <div class="fi-item"><span class="fi-lbl">Interesados</span><div class="fi-bw"><div class="fi-bf" style="width:62%;background:var(--gold);"></div></div><span class="fi-n">274</span></div>
+                <div class="fi-item"><span class="fi-lbl">En proceso cierre</span><div class="fi-bw"><div class="fi-bf" style="width:30%;background:var(--sage);"></div></div><span class="fi-n">68</span></div>
+                <div class="fi-item"><span class="fi-lbl">Contratos/Afil.</span><div class="fi-bw"><div class="fi-bf" style="width:12%;background:var(--success);"></div></div><span class="fi-n">31</span></div>
+                <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--border);">
+                  <div class="dcttl" style="margin-bottom:8px;">Gestiones por Área — Hoy</div>
+                  <div class="fi-item"><span class="fi-lbl" style="color:var(--gold);">🕊️ Prenecesidad</span><div class="fi-bw"><div class="fi-bf" style="width:100%;background:var(--gold);"></div></div><span class="fi-n">124</span></div>
+                  <div class="fi-item"><span class="fi-lbl" style="color:var(--blue);">🏢 Empresariales</span><div class="fi-bw"><div class="fi-bf" style="width:25%;background:var(--blue);"></div></div><span class="fi-n">32</span></div>
+                  <div class="fi-item"><span class="fi-lbl" style="color:var(--success);">🚶 PAP</span><div class="fi-bw"><div class="fi-bf" style="width:61%;background:var(--success);"></div></div><span class="fi-n">76</span></div>
+                  <div class="fi-item"><span class="fi-lbl" style="color:var(--purple);">🎧 Serv. Cliente</span><div class="fi-bw"><div class="fi-bf" style="width:7%;background:var(--purple);"></div></div><span class="fi-n">9</span></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Tabla comparativa asesores multi-área -->
+            <div class="dcard" style="margin-bottom:0;">
+              <div class="dcttl">Top Asesores — Todas las Áreas <span class="dcsee">Ver todos →</span></div>
+              <table class="dtbl">
+                <thead><tr><th>Asesor</th><th>Área</th><th>Gestiones</th><th>Interesados</th><th>Contratos/Afil.</th><th>Meta %</th></tr></thead>
+                <tbody>
+                  <tr>
+                    <td><div class="tnc"><div class="tav" style="background:linear-gradient(135deg,var(--success),#1B5E20);">LP</div>Luis Pérez</div></td>
+                    <td><span class="area-badge ab-pap" style="font-size:9px;">PAP</span></td>
+                    <td>76</td><td>24</td>
+                    <td><strong style="color:var(--success);">10</strong></td>
+                    <td><div>50%</div><div class="pb" style="margin-top:2px;"><div class="pbf" style="width:50%;background:linear-gradient(90deg,var(--success),#1B5E20);"></div></div></td>
+                  </tr>
+                  <tr>
+                    <td><div class="tnc"><div class="tav">JM</div>José Martínez</div></td>
+                    <td><span class="area-badge ab-prenec" style="font-size:9px;">Prenecesidad</span></td>
+                    <td>204</td><td>55</td>
+                    <td><strong style="color:var(--success);">9</strong></td>
+                    <td><div>90%</div><div class="pb" style="margin-top:2px;"><div class="pbf" style="width:90%;"></div></div></td>
+                  </tr>
+                  <tr>
+                    <td><div class="tnc"><div class="tav" style="background:linear-gradient(135deg,var(--blue),#0D3A5E);">CM</div>Carlos Mendoza</div></td>
+                    <td><span class="area-badge ab-emp" style="font-size:9px;">Empresariales</span></td>
+                    <td>32</td><td>8</td>
+                    <td><strong style="color:var(--success);">3</strong></td>
+                    <td><div>60%</div><div class="pb" style="margin-top:2px;"><div class="pbf" style="width:60%;background:linear-gradient(90deg,var(--blue),#0D3A5E);"></div></div></td>
+                  </tr>
+                  <tr>
+                    <td><div class="tnc"><div class="tav">CC</div>Carmen Contreras</div></td>
+                    <td><span class="area-badge ab-prenec" style="font-size:9px;">Prenecesidad</span></td>
+                    <td>187</td><td>42</td>
+                    <td><strong style="color:var(--gold);">6</strong></td>
+                    <td><div>60%</div><div class="pb" style="margin-top:2px;"><div class="pbf" style="width:60%;"></div></div></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div><!-- /screens -->
+
+<script>
+function go(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nt').forEach(t => t.classList.remove('active'));
+  const s = document.getElementById('s-' + id);
+  if(s) s.classList.add('active');
+  const map = {selector:0,admin:1,empresariales:2,pap:3,svc:4,'dash-multi':5};
+  const tabs = document.querySelectorAll('.nt');
+  if(tabs[map[id]]) tabs[map[id]].classList.add('active');
+  window.scrollTo(0,0);
+}
+</script>
+</body>
+</html>
