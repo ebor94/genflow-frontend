@@ -17,8 +17,9 @@ export const empresasApi = {
   movimientos:         (id, params = {}) =>
                           api.get(`/empresas/${id}/presupuesto/movimientos`, { params }).then(r => r.data),
   // Reporte agregado por categoría (gerencia)
+  // Cache-buster (_t) evita 304 con body vacío que rompía la vista.
   reportePresupuestoFideliz: () =>
-                          api.get('/empresas/reportes/presupuesto-fideliz').then(r => r.data),
+                          api.get('/empresas/reportes/presupuesto-fideliz', { params: { _t: Date.now() } }).then(r => r.data),
 
   // ─── Documentos ───
   listarDocumentos:    (id) => api.get(`/empresas/${id}/documentos`).then(r => r.data),
