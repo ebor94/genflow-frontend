@@ -2,6 +2,7 @@
 import { ref, computed, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useEmpresasStore } from '@/stores/useEmpresasStore';
+import { useAuthStore } from '@/stores/useAuthStore';
 import { useApiError } from '@/composables/useApiError';
 import { useNit } from '@/composables/useNit';
 
@@ -13,6 +14,7 @@ import NuevaEmpresa from '@/components/crm/NuevaEmpresa.vue';
 
 const router = useRouter();
 const store  = useEmpresasStore();
+const auth   = useAuthStore();
 const { notify } = useApiError();
 const { formato: fmtNit } = useNit();
 
@@ -56,6 +58,7 @@ function abrir(empresa) {
       <h1 class="font-serif text-3xl text-brown-deep">Empresas</h1>
       <div class="flex gap-2">
         <BaseButton variant="secondary" size="sm" @click="router.push({ name: 'emp-kanban' })">🔄 Kanban</BaseButton>
+        <BaseButton v-if="auth.rolNivel <= 3" variant="secondary" size="sm" @click="router.push({ name: 'emp-reporte-fideliz' })">📊 Reporte Fidelización</BaseButton>
         <BaseButton variant="primary"   size="sm" @click="showNueva = true">+ Nueva empresa</BaseButton>
       </div>
     </header>

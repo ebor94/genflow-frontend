@@ -16,6 +16,9 @@ export const empresasApi = {
                           api.post(`/empresas/${id}/presupuesto/ajustar`, payload).then(r => r.data),
   movimientos:         (id, params = {}) =>
                           api.get(`/empresas/${id}/presupuesto/movimientos`, { params }).then(r => r.data),
+  // Reporte agregado por categoría (gerencia)
+  reportePresupuestoFideliz: () =>
+                          api.get('/empresas/reportes/presupuesto-fideliz').then(r => r.data),
 
   // ─── Documentos ───
   listarDocumentos:    (id) => api.get(`/empresas/${id}/documentos`).then(r => r.data),

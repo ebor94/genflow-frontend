@@ -82,6 +82,8 @@ const routes = [
     meta: { requiereAuth: true, areaCodigo: 'PREV-EMP' } },
   { path: '/emp/supervisor',   name: 'emp-supervisor',   component: () => import('@/views/empresariales/PanelSupervisorEmp.vue'),
     meta: { requiereAuth: true, areaCodigo: 'PREV-EMP', nivelMaximo: 3 } },
+  { path: '/emp/reporte-fideliz', name: 'emp-reporte-fideliz', component: () => import('@/views/empresariales/ReportePresupuestoFideliz.vue'),
+    meta: { requiereAuth: true, areaCodigo: 'PREV-EMP', nivelMaximo: 3 } },
   { path: '/emp/renovaciones', name: 'emp-renovaciones', component: () => import('@/views/empresariales/RenovacionesProximas.vue'),
     meta: { requiereAuth: true, areaCodigo: 'PREV-EMP' } },
 
