@@ -30,8 +30,11 @@ async function cargar() {
   cargando.value = true;
   try {
     const r = await empresasApi.reportePresupuestoFideliz();
-    porCategoria.value = r.por_categoria || [];
-    totales.value = r.totales || {};
+    // El backend responde { success, data: { por_categoria, totales } }
+    // y el axios wrapper devuelve el body completo. Desempaquetamos defensivamente.
+    const payload = r?.data || r;
+    porCategoria.value = payload.por_categoria || [];
+    totales.value = payload.totales || {};
   } catch (e) {
     toast.error(e.response?.data?.message || 'Error cargando reporte');
   } finally {
