@@ -177,6 +177,25 @@ router.beforeEach(async (to) => {
   const auth = useAuthStore();
   const config = useConfigStore();
 
+  // ── SSO callback desde el Portal Serfunorte ──
+  if (to.query.sso_token && to.query.sso_refresh) {
+    auth.accessToken  = String(to.query.sso_token);
+    auth.refreshToken = String(to.query.sso_refresh);
+    localStorage.setItem('sv_access_token',  auth.accessToken);
+    localStorage.setItem('sv_refresh_token', auth.refreshToken);
+    try {
+      await auth.fetchMe();
+    } catch {
+      auth.accessToken = null; auth.refreshToken = null;
+      localStorage.removeItem('sv_access_token');
+      localStorage.removeItem('sv_refresh_token');
+      return { name: 'login' };
+    }
+    const { sso_token, sso_refresh, ...rest } = to.query;
+    if (to.name === 'login' || to.path === '/') return auth.rutaInicio();
+    return { path: to.path, query: rest, replace: true };
+  }
+
   // Pública → libre
   if (to.meta.publica) {
     // Si ya logueado y va a login → su ruta de inicio
