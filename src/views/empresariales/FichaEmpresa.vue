@@ -16,6 +16,7 @@ import PipelineVisual from '@/components/crm/PipelineVisual.vue';
 import RegistrarGestion from '@/components/crm/RegistrarGestion.vue';
 import AgendarProximaModal from '@/components/crm/AgendarProximaModal.vue';
 import ReasignarAsesorEmpresaModal from '@/components/crm/ReasignarAsesorEmpresaModal.vue';
+import EditarEmpresaModal          from '@/components/crm/EditarEmpresaModal.vue';
 import CategoriaPresupuestoModal from '@/components/crm/CategoriaPresupuestoModal.vue';
 import DocumentosEmpresaTab from '@/components/crm/DocumentosEmpresaTab.vue';
 import PropuestasArchivoTab from '@/components/crm/PropuestasArchivoTab.vue';
@@ -39,6 +40,7 @@ const showAgendar   = ref(false);
 const showFormContacto = ref(false);
 const showReasignarEmpresa = ref(false); // reasignar TODA la empresa al nuevo asesor
 const showCategoria = ref(false);
+const showEditarEmpresa = ref(false);
 const prospectoActivo = ref(null);
 
 // Fidelización
@@ -183,9 +185,12 @@ function agendar(p)   { prospectoActivo.value = p || prospectoPrincipal.value; s
           </div>
           <div class="flex flex-col items-end gap-2">
             <AreaBadge codigo="PREV-EMP" nombre="B2B" color-hex="#1A5C8A" size="sm" />
-            <div v-if="auth.puedeReasignar" class="flex gap-1 flex-wrap justify-end">
-              <BaseButton size="sm" variant="secondary" @click="showReasignarEmpresa = true">🔄 Reasignar</BaseButton>
-              <BaseButton size="sm" variant="secondary" @click="showCategoria = true">🏷️ Categoría</BaseButton>
+            <div class="flex gap-1 flex-wrap justify-end">
+              <BaseButton size="sm" variant="secondary" @click="showEditarEmpresa = true">✏️ Editar empresa</BaseButton>
+              <template v-if="auth.puedeReasignar">
+                <BaseButton size="sm" variant="secondary" @click="showReasignarEmpresa = true">🔄 Reasignar</BaseButton>
+                <BaseButton size="sm" variant="secondary" @click="showCategoria = true">🏷️ Categoría</BaseButton>
+              </template>
             </div>
           </div>
         </div>
@@ -347,6 +352,7 @@ function agendar(p)   { prospectoActivo.value = p || prospectoPrincipal.value; s
       <AgendarProximaModal :open="showAgendar" :prospecto="prospectoActivo" @close="showAgendar = false" @actualizado="cargar" />
       <ReasignarAsesorEmpresaModal :open="showReasignarEmpresa" :empresa="e" @close="showReasignarEmpresa = false" @reasignado="cargar" />
       <CategoriaPresupuestoModal :open="showCategoria" :empresa="e" @close="showCategoria = false" @actualizada="cargar" />
+      <EditarEmpresaModal v-if="e" v-model:open="showEditarEmpresa" :empresa="e" @guardado="cargar" />
       <FormContactoFideliz :open="showFormContacto" :empresa-id="parseInt(route.params.id)"
                            @close="showFormContacto = false"
                            @creado="cargarContactosFideliz" />
