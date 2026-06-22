@@ -55,6 +55,19 @@ async function cargarContactosFideliz() {
 
 const e = computed(() => store.activa);
 
+// Migración 019: edición inline de la periodicidad de seguimiento
+const periodicidadInline   = ref('');
+const savingPeriodicidad   = ref(false);
+watch(e, (nv) => { if (nv) periodicidadInline.value = nv.empresa_periodicidad_seguimiento || ''; }, { immediate: true });
+async function guardarPeriodicidad() {
+  if (!e.value) return;
+  savingPeriodicidad.value = true;
+  try {
+    await store.actualizar(e.value.empresa_id, { empresa_periodicidad_seguimiento: periodicidadInline.value || null });
+  } catch (err) { notify(err); }
+  finally { savingPeriodicidad.value = false; }
+}
+
 // Helpers categoría / presupuesto
 const CATEGORIA_INFO = {
   BRONCE:   { icono: '🥉', color: '#cd7f32', label: 'Bronce' },
@@ -148,6 +161,21 @@ function agendar(p)   { prospectoActivo.value = p || prospectoPrincipal.value; s
             </div>
             <div v-if="e.grupoEmpresarial?.grupemp_nombre" class="text-xs text-text2 mt-1">
               🏢 Grupo empresarial: <strong>{{ e.grupoEmpresarial.grupemp_nombre }}</strong>
+            </div>
+            <div class="text-xs text-text2 mt-1 flex items-center gap-2">
+              🔁 Seguimiento:
+              <select
+                v-model="periodicidadInline"
+                @change="guardarPeriodicidad"
+                :disabled="savingPeriodicidad"
+                class="text-xs border border-text3/40 rounded-sv px-2 py-0.5 bg-white"
+              >
+                <option value="">Sin seguimiento automático</option>
+                <option value="BIMENSUAL">Bimensual (2 meses)</option>
+                <option value="TRIMESTRAL">Trimestral (3 meses)</option>
+                <option value="ANUAL">Anual (12 meses)</option>
+              </select>
+              <span v-if="savingPeriodicidad" class="text-text3">guardando…</span>
             </div>
             <div v-if="prospectoPrincipal?.asesor" class="text-xs text-text3 mt-2">
               👤 Asesor: <strong>{{ prospectoPrincipal.asesor.usr_nombre }} {{ prospectoPrincipal.asesor.usr_apellido }}</strong>

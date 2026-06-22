@@ -53,8 +53,17 @@ const empresa = ref({
   empresa_nota: '',
   // Migración 017
   empresa_tipo_id: null,
-  empresa_grupo_empresarial_id: null
+  empresa_grupo_empresarial_id: null,
+  // Migración 019
+  empresa_periodicidad_seguimiento: ''
 });
+
+const opcPeriodicidad = [
+  { value: '',           label: 'Sin seguimiento automático' },
+  { value: 'BIMENSUAL',  label: 'Bimensual (cada 2 meses)' },
+  { value: 'TRIMESTRAL', label: 'Trimestral (cada 3 meses)' },
+  { value: 'ANUAL',      label: 'Anual (cada 12 meses)' }
+];
 
 const contacto = ref({
   persona_nombre: '',
@@ -107,7 +116,8 @@ watch(() => props.open, (v) => {
     empresa.value = { empresa_nit: '', empresa_razon_social: '', empresa_nombre_comercial: '', empresa_sector: '',
       empresa_num_empleados: null, empresa_telefono: '', empresa_email_corporativo: '', empresa_sitio_web: '',
       empresa_direccion: '', empresa_ciudad: 'Cucuta', empresa_nota: '',
-      empresa_tipo_id: null, empresa_grupo_empresarial_id: null };
+      empresa_tipo_id: null, empresa_grupo_empresarial_id: null,
+      empresa_periodicidad_seguimiento: '' };
     contacto.value = { persona_nombre: '', persona_apellido: '', persona_telefono_principal: '', persona_email: '', persona_cargo: '' };
     prospecto.value = { prosp_estado_id: '', prosp_fuente_id: '', prosp_punto_id: '', prosp_prioridad: 3, prosp_nota_inicial: '', productos: [] };
     if (opcEstados.value.length) prospecto.value.prosp_estado_id = opcEstados.value[0].value;
@@ -189,7 +199,10 @@ async function finalizar() {
     if (empresaExistente.value) {
       empresaId = empresaExistente.value.empresa_id;
     } else {
-      const emp = await empresasStore.crear(empresa.value);
+      // '' → null para la periodicidad si el asesor no eligió
+      const payload = { ...empresa.value };
+      if (!payload.empresa_periodicidad_seguimiento) payload.empresa_periodicidad_seguimiento = null;
+      const emp = await empresasStore.crear(payload);
       empresaId = emp.empresa_id;
     }
 
@@ -264,6 +277,9 @@ async function finalizar() {
         <BaseInput  v-model="empresa.empresa_nombre_comercial" label="Nombre comercial" :disabled="!!empresaExistente" class="sm:col-span-2" />
         <BaseSelect v-model="empresa.empresa_tipo_id" label="Categoría" required :options="opcTipos" :disabled="!!empresaExistente" />
         <BaseSelect v-model="empresa.empresa_sector" label="Sector" :options="opcSectores" :disabled="!!empresaExistente" />
+        <BaseSelect v-model="empresa.empresa_periodicidad_seguimiento"
+                    label="Periodicidad de seguimiento" :options="opcPeriodicidad"
+                    :disabled="!!empresaExistente" class="sm:col-span-2" />
         <div class="sm:col-span-2">
           <SelectorGrupoEmpresarial v-model="empresa.empresa_grupo_empresarial_id" />
         </div>
