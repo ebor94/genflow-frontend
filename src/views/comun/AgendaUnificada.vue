@@ -63,14 +63,17 @@ const tipoBadge = {
 };
 
 const itemsCalendar = computed(() => {
-  // MiniCalendar espera array de eventos por fecha — adaptamos al formato esperado
+  // MiniCalendar usa dayjs para parsear `fecha`. Si pasamos string 'YYYY-MM-DD',
+  // dayjs lo interpreta como UTC midnight y en zona Bogota (UTC-5) se corre un
+  // día atrás. Forzamos Date local al mediodía para que el día sea el correcto
+  // en cualquier zona horaria.
   const out = [];
   for (const [fecha, info] of Object.entries(eventosPorDia.value)) {
     if (info.total > 0) {
       out.push({
-        fecha,
-        cantidad: info.total,
-        color: info.eventos > 0 ? '#9333ea' : '#C8902A'  // morado si hay eventos manuales, dorado si solo gestiones
+        fecha: new Date(`${fecha}T12:00:00`),
+        total: info.total,
+        color: info.eventos > 0 ? '#9333ea' : '#C8902A'
       });
     }
   }
