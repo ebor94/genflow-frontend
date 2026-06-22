@@ -33,8 +33,17 @@ const form = ref({
   zona_pap: '',
   resultado_codigo: 'AFILIADO_HOY',
   plan: null,
-  comentario: ''
+  comentario: '',
+  prox_fecha: '',     // requerido solo si resultado_codigo === 'VOLVER'
+  prox_hora:  '09:00'
 });
+
+// Fecha default sugerida cuando el asesor marca VOLVER: mañana
+function fechaDefaultManana() {
+  const d = new Date();
+  d.setDate(d.getDate() + 1);
+  return d.toISOString().slice(0, 10);
+}
 const saving = ref(false);
 
 const RESULTADOS = [
@@ -55,7 +64,8 @@ watch(() => props.open, async (v) => {
       nombre: '', telefono: '', direccion: '',
       zona_pap: pap.zonaActiva || '',
       resultado_codigo: 'AFILIADO_HOY',
-      plan: null, comentario: ''
+      plan: null, comentario: '',
+      prox_fecha: '', prox_hora: '09:00'
     };
     // Geoloc en background (no bloquea)
     getCurrent({ timeout: 8000 }).catch(() => {});
@@ -67,6 +77,10 @@ async function guardarYsiguiente() {
     toast.warning('Nombre y teléfono son obligatorios');
     return;
   }
+  if (form.value.resultado_codigo === 'VOLVER' && !form.value.prox_fecha) {
+    toast.warning('Indica cuándo debes volver a visitar');
+    return;
+  }
   await registrar(true);
 }
 
@@ -75,8 +89,19 @@ async function guardar() {
     toast.warning('Nombre y teléfono son obligatorios');
     return;
   }
+  if (form.value.resultado_codigo === 'VOLVER' && !form.value.prox_fecha) {
+    toast.warning('Indica cuándo debes volver a visitar');
+    return;
+  }
   await registrar(false);
 }
+
+// Auto-sugerir fecha mañana al cambiar a VOLVER si aún no se eligió ninguna
+watch(() => form.value.resultado_codigo, (codigo) => {
+  if (codigo === 'VOLVER' && !form.value.prox_fecha) {
+    form.value.prox_fecha = fechaDefaultManana();
+  }
+});
 
 async function sinRespuesta() {
   // Atajo: marcar como SIN_RESPUESTA con datos mínimos (nombre puede ser "Sin respuesta")
@@ -97,7 +122,10 @@ async function registrar(continuar = false) {
       resultado_codigo: form.value.resultado_codigo,
       comentario: form.value.comentario.trim() || null,
       lat: coords.value?.lat || null,
-      lng: coords.value?.lng || null
+      lng: coords.value?.lng || null,
+      // Solo se envían cuando resultado es VOLVER; backend los ignora en otros casos
+      prox_fecha: form.value.resultado_codigo === 'VOLVER' ? form.value.prox_fecha || null : null,
+      prox_hora:  form.value.resultado_codigo === 'VOLVER' ? form.value.prox_hora  || null : null
     };
     const r = await pap.registrar(payload);
 
@@ -112,6 +140,8 @@ async function registrar(continuar = false) {
       form.value.direccion = '';
       form.value.resultado_codigo = 'AFILIADO_HOY';
       form.value.comentario = '';
+      form.value.prox_fecha = '';
+      form.value.prox_hora  = '09:00';
       // Refrescar coords
       getCurrent({ timeout: 5000 }).catch(() => {});
     } else {
@@ -168,6 +198,17 @@ function colorResultado(r) {
               <div class="mt-1 text-xs sm:text-sm">{{ r.label }}</div>
             </button>
           </div>
+        </div>
+
+        <!-- Fecha de retorno (si VOLVER) -->
+        <div v-if="form.resultado_codigo === 'VOLVER'"
+             class="sv-card border-2 border-area-emp/40 bg-area-emp/5 p-3 space-y-2">
+          <label class="sv-label flex items-center gap-1">🗓️ ¿Cuándo debes volver? <span class="text-danger">*</span></label>
+          <div class="grid grid-cols-2 gap-2">
+            <BaseInput v-model="form.prox_fecha" type="date" label="Fecha" required />
+            <BaseInput v-model="form.prox_hora"  type="time" label="Hora"  required />
+          </div>
+          <p class="text-xs text-text3">Se agendará automáticamente en tu calendario para esa fecha.</p>
         </div>
 
         <!-- Planes (si Afiliado o Interesado) -->
