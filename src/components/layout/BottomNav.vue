@@ -26,7 +26,7 @@ const items = computed(() => {
     } else {
       base.push({ to: { name: 'emp-panel' },    label: 'Empresas', icon: '🏢' });
       base.push({ to: { name: 'emp-kanban' },   label: 'Kanban',   icon: '🔄' });
-      base.push({ to: { name: 'emp-agenda' },   label: 'Agenda',   icon: '📅' });
+      base.push({ to: { name: 'agenda' },       label: 'Agenda',   icon: '📅' });
       base.push({ to: { name: 'emp-metricas' }, label: 'Métricas', icon: '📊' });
     }
   } else if (cod === 'PREV-PAP') {

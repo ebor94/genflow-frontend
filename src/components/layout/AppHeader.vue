@@ -90,7 +90,7 @@ const nav = computed(() => {
         items: [
           { to: { name: 'emp-panel' },   label: 'Empresas',    desc: 'Listado y búsqueda' },
           { to: { name: 'emp-kanban' },  label: 'Pipeline',    desc: 'Vista Kanban' },
-          { to: { name: 'emp-agenda' },  label: 'Agenda',      desc: 'Próximas gestiones' },
+          { to: { name: 'agenda' },      label: 'Agenda',      desc: 'EMP + Individual + eventos' },
           { to: { name: 'emp-metricas' },label: 'Métricas',    desc: 'KPIs de la cartera' },
           { to: { name: 'emp-renovaciones' }, label: 'Renovaciones', desc: 'Convenios por vencer y vencidos' },
           ...(esSup ? [

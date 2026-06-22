@@ -25,6 +25,10 @@ const routes = [
   { path: '/perfil', name: 'mi-perfil', component: () => import('@/views/perfil/MiPerfil.vue'),
     meta: { requiereAuth: true } },
 
+  // ─── Agenda transversal (Migración 018) ───
+  { path: '/agenda', name: 'agenda', component: () => import('@/views/comun/AgendaUnificada.vue'),
+    meta: { requiereAuth: true } },
+
   // Admin (SUPER_ADMIN, ADMIN_AREA)
   { path: '/admin',                name: 'admin',             component: () => import('@/views/admin/AdminPanel.vue'),
     meta: { requiereAuth: true, nivelMaximo: 2 } },
@@ -76,8 +80,7 @@ const routes = [
     meta: { requiereAuth: true, areaCodigo: 'PREV-EMP' } },
   { path: '/emp/kanban',       name: 'emp-kanban',       component: () => import('@/views/empresariales/KanbanPipeline.vue'),
     meta: { requiereAuth: true, areaCodigo: 'PREV-EMP' } },
-  { path: '/emp/agenda',       name: 'emp-agenda',       component: () => import('@/views/empresariales/AgendaEmp.vue'),
-    meta: { requiereAuth: true, areaCodigo: 'PREV-EMP' } },
+  { path: '/emp/agenda',       name: 'emp-agenda',       redirect: { name: 'agenda' } },
   { path: '/emp/metricas',     name: 'emp-metricas',     component: () => import('@/views/empresariales/MisMetricasEmp.vue'),
     meta: { requiereAuth: true, areaCodigo: 'PREV-EMP' } },
   { path: '/emp/supervisor',   name: 'emp-supervisor',   component: () => import('@/views/empresariales/PanelSupervisorEmp.vue'),
@@ -99,8 +102,7 @@ const routes = [
     meta: { requiereAuth: true, areaCodigo: 'PREV-PAP' } },
   { path: '/pap/metricas',    name: 'pap-metricas',     component: () => import('@/views/pap/MisMetricasPap.vue'),
     meta: { requiereAuth: true, areaCodigo: 'PREV-PAP' } },
-  { path: '/pap/agenda',      name: 'pap-agenda',       component: () => import('@/views/pap/AgendaPap.vue'),
-    meta: { requiereAuth: true, areaCodigo: 'PREV-PAP' } },
+  { path: '/pap/agenda',      name: 'pap-agenda',       redirect: { name: 'agenda' } },
   { path: '/pap/supervisor',  name: 'pap-supervisor',   component: () => import('@/views/pap/PanelSupervisorPap.vue'),
     meta: { requiereAuth: true, areaCodigo: 'PREV-PAP', nivelMaximo: 3 } },
 
