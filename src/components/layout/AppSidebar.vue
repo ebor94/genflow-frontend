@@ -137,6 +137,16 @@ function itemsDeArea(codigo) {
   }
 }
 
+// Override de labels visibles por código. Garantiza que el menú siempre
+// muestre los nombres acordados sin depender del cache de localStorage
+// ni de futuros cambios en BD.
+const LABELS_AREA = {
+  'PRENEC':   'Prenecesidad',
+  'PREV-EMP': 'Previsión Empresariales',
+  'PREV-PAP': 'Previsión Individual',
+  'SVC':      'Servicio al Cliente'
+};
+
 // Lista de áreas a mostrar como grupos (las accesibles al usuario)
 const areasMenu = computed(() => {
   const lista = (auth.areasAccesibles || []).slice().sort((a, b) => {
@@ -146,10 +156,10 @@ const areasMenu = computed(() => {
   // Para asesores con area principal (sin multi-area), también muestra la suya
   if (!lista.length && auth.usuario?.area) lista.push(auth.usuario.area);
   return lista.map(a => ({
-    area_codigo: a.area_codigo,
-    area_nombre: a.area_nombre,
+    area_codigo:    a.area_codigo,
+    area_nombre:    LABELS_AREA[a.area_codigo] || a.area_nombre,
     area_color_hex: a.area_color_hex || '#C8902A',
-    area_icono:    a.area_icono || '📂'
+    area_icono:     a.area_icono || '📂'
   }));
 });
 
