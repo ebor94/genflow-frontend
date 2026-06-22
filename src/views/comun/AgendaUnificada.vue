@@ -28,6 +28,19 @@ const { notify } = useApiError();
 const hoy = new Date().toISOString().slice(0, 10);
 const fechaSel  = ref(hoy);
 const mesActual = ref({ anio: new Date().getFullYear(), mes: new Date().getMonth() + 1 });
+
+// MiniCalendar trabaja con Date — proxy bidireccional con el string fechaSel
+const fechaSelDate = computed({
+  get: () => new Date(fechaSel.value + 'T12:00:00'),
+  set: (d) => {
+    if (!d) return;
+    fechaSel.value = (d instanceof Date ? d : new Date(d)).toISOString().slice(0, 10);
+  }
+});
+
+function onMesCambio(anio, mes) {
+  mesActual.value = { anio, mes };
+}
 const eventosPorDia = ref({});           // { 'YYYY-MM-DD': { gestiones, eventos, total } }
 const gestionesDia  = ref([]);
 const eventosDia    = ref([]);
@@ -176,9 +189,9 @@ async function onEventoGuardado() {
       <!-- Calendario -->
       <aside class="sv-card p-4">
         <MiniCalendar
-          v-model:fecha="fechaSel"
+          v-model="fechaSelDate"
           :eventos="itemsCalendar"
-          @mes-cambio="mesActual = $event"
+          @month-change="onMesCambio"
         />
         <p class="text-xs text-text3 mt-3">
           <span class="inline-block w-2 h-2 rounded-full bg-purple-600 mr-1"></span>Eventos
