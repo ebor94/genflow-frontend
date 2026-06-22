@@ -21,6 +21,7 @@ import BaseInput from '@/components/ui/BaseInput.vue';
 import BaseSelect from '@/components/ui/BaseSelect.vue';
 import BaseTextarea from '@/components/ui/BaseTextarea.vue';
 import BaseButton from '@/components/ui/BaseButton.vue';
+import SelectorGrupoEmpresarial from '@/components/crm/SelectorGrupoEmpresarial.vue';
 
 const props = defineProps({ open: { type: Boolean, required: true } });
 const emit = defineEmits(['close', 'creada']);
@@ -49,7 +50,10 @@ const empresa = ref({
   empresa_sitio_web: '',
   empresa_direccion: '',
   empresa_ciudad: 'Cucuta',
-  empresa_nota: ''
+  empresa_nota: '',
+  // Migración 017
+  empresa_tipo_id: null,
+  empresa_grupo_empresarial_id: null
 });
 
 const contacto = ref({
@@ -74,6 +78,11 @@ const opcSectores = [
   'Servicios','Logística','Financiero','Gobierno','Agropecuario','Otro'
 ].map(s => ({ value: s, label: s }));
 
+// Catálogo de categorías (viene del bootstrap como tipos_empresa — migración 017)
+const opcTipos = computed(() => (config.actual?.tipos_empresa || [])
+  .filter(t => t.tipoemp_activo)
+  .map(t => ({ value: t.tipoemp_id, label: t.tipoemp_nombre })));
+
 const opcEstados = computed(() => (config.actual?.estados || [])
   .filter(e => e.estado_grupo_id === auth.usuario?.usr_grupo_id && e.estado_activo)
   .sort((a, b) => a.estado_orden - b.estado_orden)
@@ -97,7 +106,8 @@ watch(() => props.open, (v) => {
     empresaExistente.value = null;
     empresa.value = { empresa_nit: '', empresa_razon_social: '', empresa_nombre_comercial: '', empresa_sector: '',
       empresa_num_empleados: null, empresa_telefono: '', empresa_email_corporativo: '', empresa_sitio_web: '',
-      empresa_direccion: '', empresa_ciudad: 'Cucuta', empresa_nota: '' };
+      empresa_direccion: '', empresa_ciudad: 'Cucuta', empresa_nota: '',
+      empresa_tipo_id: null, empresa_grupo_empresarial_id: null };
     contacto.value = { persona_nombre: '', persona_apellido: '', persona_telefono_principal: '', persona_email: '', persona_cargo: '' };
     prospecto.value = { prosp_estado_id: '', prosp_fuente_id: '', prosp_punto_id: '', prosp_prioridad: 3, prosp_nota_inicial: '', productos: [] };
     if (opcEstados.value.length) prospecto.value.prosp_estado_id = opcEstados.value[0].value;
@@ -136,6 +146,16 @@ function usarExistente() {
 function descartarExistente() {
   empresaExistente.value = null;
   paso.value = 2;
+}
+
+function irPaso3() {
+  if (!empresa.value.empresa_razon_social) {
+    toast.warning('Razón social requerida'); return;
+  }
+  if (!empresa.value.empresa_tipo_id) {
+    toast.warning('La categoría de la empresa es obligatoria'); return;
+  }
+  paso.value = 3;
 }
 
 function toggleProducto(prodId) {
@@ -242,7 +262,11 @@ async function finalizar() {
         <BaseInput  v-model="empresa.empresa_nit" label="NIT" required :disabled="!!empresaExistente" />
         <BaseInput  v-model="empresa.empresa_razon_social" label="Razón social" required :disabled="!!empresaExistente" />
         <BaseInput  v-model="empresa.empresa_nombre_comercial" label="Nombre comercial" :disabled="!!empresaExistente" class="sm:col-span-2" />
+        <BaseSelect v-model="empresa.empresa_tipo_id" label="Categoría" required :options="opcTipos" :disabled="!!empresaExistente" />
         <BaseSelect v-model="empresa.empresa_sector" label="Sector" :options="opcSectores" :disabled="!!empresaExistente" />
+        <div class="sm:col-span-2">
+          <SelectorGrupoEmpresarial v-model="empresa.empresa_grupo_empresarial_id" />
+        </div>
         <BaseInput  v-model.number="empresa.empresa_num_empleados" label="# empleados" type="number" :disabled="!!empresaExistente" />
         <BaseInput  v-model="empresa.empresa_telefono" label="Teléfono empresa" :disabled="!!empresaExistente" />
         <BaseInput  v-model="empresa.empresa_email_corporativo" label="Email corporativo" type="email" :disabled="!!empresaExistente" />
@@ -297,7 +321,8 @@ async function finalizar() {
       </template>
       <template v-else-if="paso === 2">
         <BaseButton variant="secondary" @click="paso = 1">← Atrás</BaseButton>
-        <BaseButton variant="primary"   @click="paso = 3" :disabled="!empresa.empresa_razon_social">Siguiente →</BaseButton>
+        <BaseButton variant="primary"   @click="irPaso3"
+                    :disabled="!empresa.empresa_razon_social || !empresa.empresa_tipo_id">Siguiente →</BaseButton>
       </template>
       <template v-else>
         <BaseButton variant="secondary" @click="paso = 2">← Atrás</BaseButton>

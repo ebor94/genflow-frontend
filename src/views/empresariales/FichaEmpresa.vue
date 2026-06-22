@@ -139,9 +139,15 @@ function agendar(p)   { prospectoActivo.value = p || prospectoPrincipal.value; s
             <div v-if="e.empresa_nombre_comercial" class="text-sm text-text3">{{ e.empresa_nombre_comercial }}</div>
             <div class="flex flex-wrap gap-3 mt-2 text-sm text-text2">
               <span><strong>NIT:</strong> {{ fmtNit(e.empresa_nit) }}</span>
+              <span v-if="e.tipo?.tipoemp_nombre">
+                · <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-area-emp/15 text-area-emp text-xs font-semibold">{{ e.tipo.tipoemp_nombre }}</span>
+              </span>
               <span v-if="e.empresa_sector">· {{ e.empresa_sector }}</span>
               <span v-if="e.empresa_num_empleados">· {{ e.empresa_num_empleados }} empleados</span>
               <span v-if="e.empresa_ciudad">· {{ e.empresa_ciudad }}</span>
+            </div>
+            <div v-if="e.grupoEmpresarial?.grupemp_nombre" class="text-xs text-text2 mt-1">
+              🏢 Grupo empresarial: <strong>{{ e.grupoEmpresarial.grupemp_nombre }}</strong>
             </div>
             <div v-if="prospectoPrincipal?.asesor" class="text-xs text-text3 mt-2">
               👤 Asesor: <strong>{{ prospectoPrincipal.asesor.usr_nombre }} {{ prospectoPrincipal.asesor.usr_apellido }}</strong>
