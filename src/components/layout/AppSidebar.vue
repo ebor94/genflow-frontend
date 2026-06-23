@@ -111,7 +111,7 @@ function itemsDeArea(codigo) {
     }
 
     case 'PREV-PAP': return [
-      { to: { name: 'pap-panel' },       label: 'Panel PAP',       icon: '🏠' },
+      { to: { name: 'pap-panel' },       label: 'Panel Individual', icon: '🏠' },
       { to: { name: 'pap-registrar' },   label: 'Registro rápido', icon: '➕' },
       { to: { name: 'pap-mis-visitas' }, label: 'Mis visitas',     icon: '🚪' },
       { to: { name: 'pap-mapa' },        label: 'Mapa de zona',    icon: '🗺️' },

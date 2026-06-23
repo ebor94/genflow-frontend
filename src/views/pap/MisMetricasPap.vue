@@ -31,7 +31,7 @@ const km = computed(() => data.value?.coords ? sumaDistancias(data.value.coords)
 
 // Filas de la distribución (todas las opciones del modal de gestión)
 const distribucion = computed(() => [
-  { label: '✅ Afiliados hoy',        valor: data.value?.afiliadas       ?? 0, color: '#2A6E47' },
+  { label: '✅ Afiliados',            valor: data.value?.afiliadas       ?? 0, color: '#2A6E47' },
   { label: '⭐ Interesados',           valor: data.value?.interesadas     ?? 0, color: '#C97B1A' },
   { label: '🔁 Volver a visitar',     valor: data.value?.volver          ?? 0, color: '#1A5C8A' },
   { label: '🚫 No interesados',       valor: data.value?.no_interesados  ?? 0, color: '#B83227' },
@@ -42,7 +42,7 @@ const distribucion = computed(() => [
 <template>
   <div class="max-w-5xl mx-auto px-4 sm:px-6 py-6 pb-24">
     <header class="flex items-center justify-between flex-wrap gap-3 mb-5">
-      <h1 class="font-serif text-3xl text-brown-deep">Métricas PAP</h1>
+      <h1 class="font-serif text-3xl text-brown-deep">Métricas Individual</h1>
       <div class="flex gap-2 items-end">
         <BaseInput v-model="desde" type="date" label="Desde" />
         <BaseInput v-model="hasta" type="date" label="Hasta" />
