@@ -112,3 +112,44 @@
 }
 .slide-in-right { animation: slideInRight 0.3s ease-out; }
 .fade-in        { animation: fadeIn 0.3s ease-out; }
+
+/* ===========================================================================
+   Modo oscuro (básico — invierte body, sidebar y header).
+   Los componentes (sv-card, BaseInput, modales) mantienen su tema claro
+   intencionalmente. Activar/desactivar desde /perfil → Tema.
+   =========================================================================== */
+html.dark {
+  background-color: #0f1419;
+  color: #e5e7eb;
+}
+html.dark body {
+  background-color: #0f1419;
+  color: #e5e7eb;
+}
+/* La clase bg-cream se usa como fondo general en App.vue */
+html.dark .bg-cream {
+  background-color: #1a1f26 !important;
+  color: #e5e7eb;
+}
+/* Sidebar y header (brown-deep) — un toque más oscuro */
+html.dark .bg-brown-deep {
+  background-color: #050b08 !important;
+}
+/* Texto secundario más legible sobre fondos oscuros */
+html.dark .text-text1 { color: #e5e7eb !important; }
+html.dark .text-text2 { color: #b8bcc4 !important; }
+html.dark .text-text3 { color: #8a8f96 !important; }
+/* Titulares en serif */
+html.dark .text-brown-deep:not(.bg-brown-deep) {
+  color: #e6c98a !important;  /* tono dorado-cream para destacar */
+}
+/* Cards y modales mantienen fondo blanco para no romper componentes; solo
+   se ajusta el borde para diferenciarlos del fondo oscuro general. */
+html.dark .sv-card {
+  border-color: rgba(255, 255, 255, 0.06);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+/* Scrollbar más sutil en oscuro */
+html.dark ::-webkit-scrollbar-track { background: #1a1f26; }
+html.dark ::-webkit-scrollbar-thumb { background: #2d3742; }
+html.dark ::-webkit-scrollbar-thumb:hover { background: #3f4a57; }
