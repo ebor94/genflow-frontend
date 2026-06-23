@@ -16,10 +16,13 @@ const areas = ref([]);
 const loading = ref(true);
 
 const areasVisibles = computed(() => {
-  if (auth.esSuperAdmin) return areas.value;
+  // Solo áreas activas (area_activa === 1) en el selector — las inactivas
+  // siguen siendo gestionables desde Admin/Áreas para reactivarlas.
+  const activas = areas.value.filter(a => a.area_activa === 1 || a.area_activa === true);
+  if (auth.esSuperAdmin) return activas;
   // Multi-área: muestra las que el usuario tiene acceso (principal + extras)
   const ids = new Set(auth.areasAccesibles.map(a => a.area_id));
-  return areas.value.filter(a => ids.has(a.area_id));
+  return activas.filter(a => ids.has(a.area_id));
 });
 
 onMounted(async () => {
