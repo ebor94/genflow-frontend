@@ -235,7 +235,7 @@ function colorResultado(r) {
         <div class="max-w-md mx-auto space-y-2">
           <BaseButton variant="success" :loading="saving" @click="guardarYsiguiente"
                       class="w-full text-base py-4">
-            ⚡ Guardar y siguiente casa
+            ⚡ Guardar y nuevo registro
           </BaseButton>
           <div class="grid grid-cols-2 gap-2">
             <BaseButton variant="secondary" size="sm" @click="guardar" :loading="saving">💾 Guardar</BaseButton>
