@@ -17,11 +17,6 @@ const password = ref('');
 const loading  = ref(false);
 const error    = ref('');
 
-const PORTAL_URL = import.meta.env.VITE_PORTAL_URL || 'https://losolivoscucuta.com/portal';
-function entrarConPortal() {
-  window.location.href = `${PORTAL_URL}/login?next=genflow`;
-}
-
 async function submit() {
   if (!email.value || !password.value) {
     error.value = 'Email y contraseña son requeridos';
@@ -75,20 +70,6 @@ async function submit() {
           Iniciar sesión
         </BaseButton>
       </form>
-
-      <div class="my-5 flex items-center gap-3">
-        <div class="flex-1 h-px bg-text3/30"></div>
-        <span class="text-xs text-text3 uppercase tracking-wider">o</span>
-        <div class="flex-1 h-px bg-text3/30"></div>
-      </div>
-
-      <button
-        type="button"
-        @click="entrarConPortal"
-        class="w-full flex items-center justify-center gap-2 rounded-sv border border-gold/40 bg-gold/10 hover:bg-gold/20 text-gold font-semibold py-2.5 text-sm transition-colors"
-      >
-        🌿 Iniciar sesión con Portal Serfunorte
-      </button>
 
       <p class="text-xs text-text3 text-center mt-6">
         ¿Olvidaste tu contraseña? Contacta a tu administrador.
