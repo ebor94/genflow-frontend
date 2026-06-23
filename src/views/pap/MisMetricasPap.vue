@@ -33,7 +33,7 @@ const km = computed(() => data.value?.coords ? sumaDistancias(data.value.coords)
 const distribucion = computed(() => [
   { label: '✅ Afiliados',            valor: data.value?.afiliadas       ?? 0, color: '#2A6E47' },
   { label: '⭐ Interesados',           valor: data.value?.interesadas     ?? 0, color: '#C97B1A' },
-  { label: '🔁 Volver a visitar',     valor: data.value?.volver          ?? 0, color: '#1A5C8A' },
+  { label: '🔁 Volver a contactar',     valor: data.value?.volver          ?? 0, color: '#1A5C8A' },
   { label: '🚫 No interesados',       valor: data.value?.no_interesados  ?? 0, color: '#B83227' },
   { label: '🏠 Sin respuesta',        valor: data.value?.sin_respuesta   ?? 0, color: '#8A6A52' }
 ]);
@@ -64,7 +64,7 @@ const distribucion = computed(() => [
       <!-- KPIs secundarios: todos los demás resultados -->
       <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
         <KpiCard label="Interesados"        icon="⭐"  :value="data.interesadas"              color-hex="#C97B1A" />
-        <KpiCard label="Volver a visitar"   icon="🔁"  :value="data.volver"                   color-hex="#1A5C8A" />
+        <KpiCard label="Volver a contactar"   icon="🔁"  :value="data.volver"                   color-hex="#1A5C8A" />
         <KpiCard label="No interesados"     icon="🚫"  :value="data.no_interesados"           color-hex="#B83227" />
         <KpiCard label="Sin respuesta"      icon="🏠"  :value="data.sin_respuesta"            color-hex="#8A6A52" />
       </div>
