@@ -31,9 +31,12 @@ export const useAuthStore = defineStore('svAuth', () => {
   const esSupervisor    = computed(() => rolCodigo.value === 'SUPERVISOR');
   const esJefePap       = computed(() => rolCodigo.value === 'JEFE_PAP');
   const esGerente       = computed(() => rolCodigo.value === 'GERENTE_GENERAL');
+  const esDirector      = computed(() => rolCodigo.value === 'DIRECTOR_COMERCIAL');
+  const esCoordinador   = computed(() => rolCodigo.value === 'COORDINADOR_PREVISION');
   // Roles autorizados a reasignar prospectos individualmente desde las fichas
   const puedeReasignar  = computed(() =>
-    ['SUPER_ADMIN','GERENTE_GENERAL','ADMIN_AREA','JEFE_PAP','SUPERVISOR'].includes(rolCodigo.value)
+    ['SUPER_ADMIN','GERENTE_GENERAL','DIRECTOR_COMERCIAL',
+     'ADMIN_AREA','JEFE_PAP','SUPERVISOR','COORDINADOR_PREVISION'].includes(rolCodigo.value)
   );
 
   // Áreas accesibles: combina principal + areas_extra (viene del backend en /auth/me y login)
@@ -70,7 +73,12 @@ export const useAuthStore = defineStore('svAuth', () => {
 
   function rutaInicio() {
     if (!isAuthenticated.value) return { name: 'login' };
-    if (esSuperAdmin.value || esAdminArea.value || esGerente.value) return { name: 'selector' };
+    // Roles multi-área van al selector para que elijan dónde trabajar.
+    if (esSuperAdmin.value || esAdminArea.value || esGerente.value || esDirector.value) {
+      return { name: 'selector' };
+    }
+    // Coordinador de Previsión es jefe de Empresariales: panel del área.
+    if (esCoordinador.value) return { name: 'emp-panel' };
     // JEFE_PAP → dashboard supervisor PAP (panel de equipo)
     if (esJefePap.value)                         return { name: 'pap-supervisor' };
     if (rolCodigo.value === 'AGENTE_SVC')        return { name: 'placeholder-svc' };
@@ -145,7 +153,7 @@ export const useAuthStore = defineStore('svAuth', () => {
   return {
     accessToken, refreshToken, usuario, areaActivaId,
     isAuthenticated, nombreCompleto, iniciales, rolCodigo, rolNivel,
-    esSuperAdmin, esAdminArea, esSupervisor, esJefePap, esGerente, puedeReasignar,
+    esSuperAdmin, esAdminArea, esSupervisor, esJefePap, esGerente, esDirector, esCoordinador, puedeReasignar,
     areasAccesibles, esMultiArea, areaActual,
     tieneAccesoArea, hasPermiso, rutaInicio, rutaArea,
     login, logout, fetchMe, setAreaActiva, restore

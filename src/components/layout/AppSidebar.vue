@@ -50,7 +50,8 @@ function toggleGrupo(cod) {
 
 // ── Helpers de permisos ────────────────────────────────────────────────────
 const esSup = computed(() =>
-  ['SUPER_ADMIN','ADMIN_AREA','JEFE_PAP','SUPERVISOR'].includes(auth.rolCodigo)
+  ['SUPER_ADMIN','GERENTE_GENERAL','DIRECTOR_COMERCIAL',
+   'ADMIN_AREA','JEFE_PAP','SUPERVISOR','COORDINADOR_PREVISION'].includes(auth.rolCodigo)
 );
 const esFidelizGrupo = computed(() => auth.usuario?.grupo?.grupo_codigo === 'FIDELIZACION');
 
@@ -113,7 +114,7 @@ function itemsDeArea(codigo) {
     case 'PREV-PAP': return [
       { to: { name: 'pap-panel' },       label: 'Panel Individual', icon: '🏠' },
       { to: { name: 'pap-registrar' },   label: 'Registro rápido', icon: '➕' },
-      { to: { name: 'pap-mis-visitas' }, label: 'Mis visitas',     icon: '🚪' },
+      { to: { name: 'pap-mis-visitas' }, label: 'Mis prospectos',  icon: '👤' },
       { to: { name: 'pap-mapa' },        label: 'Mapa de zona',    icon: '🗺️' },
       { to: { name: 'pap-metricas' },    label: 'Mis métricas',    icon: '📊' },
       ...(sup ? [{ to: { name: 'pap-supervisor' }, label: 'Panel supervisor', icon: '👁️' }] : []),

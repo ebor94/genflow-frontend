@@ -50,14 +50,19 @@ async function load() {
 }
 
 onMounted(async () => {
-  // Cargar roles vía un endpoint del config (no existe explícito de roles en Fase 0).
-  // Como workaround usamos la lista de roles del bootstrap del primer usuario o un hardcode mínimo.
+  // TODO: reemplazar este hardcode por GET /api/sv/usuarios/roles cuando exista
+  // el endpoint dedicado. Los rol_id corresponden al estado actual de sv_org_roles
+  // en producción — si se reordenan, romperán el form.
   roles.value = [
-    { rol_id: 1, rol_codigo: 'SUPER_ADMIN', rol_nombre: 'Super Administrador',         rol_nivel: 1 },
-    { rol_id: 2, rol_codigo: 'ADMIN_AREA',  rol_nombre: 'Administrador de Área',       rol_nivel: 2 },
-    { rol_id: 3, rol_codigo: 'SUPERVISOR',  rol_nombre: 'Supervisor de Grupo',         rol_nivel: 3 },
-    { rol_id: 4, rol_codigo: 'ASESOR',      rol_nombre: 'Asesor Comercial',            rol_nivel: 4 },
-    { rol_id: 5, rol_codigo: 'AGENTE_SVC',  rol_nombre: 'Agente Servicio al Cliente',  rol_nivel: 4 }
+    { rol_id: 1,  rol_codigo: 'SUPER_ADMIN',           rol_nombre: 'Super Administrador',          rol_nivel: 1 },
+    { rol_id: 11, rol_codigo: 'GERENTE_GENERAL',       rol_nombre: 'Gerente General',              rol_nivel: 2 },
+    { rol_id: 51, rol_codigo: 'DIRECTOR_COMERCIAL',    rol_nombre: 'Director Comercial',           rol_nivel: 2 },
+    { rol_id: 2,  rol_codigo: 'ADMIN_AREA',            rol_nombre: 'Administrador de Área',        rol_nivel: 2 },
+    { rol_id: 49, rol_codigo: 'JEFE_PAP',              rol_nombre: 'Jefe PAP',                     rol_nivel: 2 },
+    { rol_id: 3,  rol_codigo: 'SUPERVISOR',            rol_nombre: 'Supervisor de Grupo',          rol_nivel: 3 },
+    { rol_id: 52, rol_codigo: 'COORDINADOR_PREVISION', rol_nombre: 'Coordinador de Previsión',     rol_nivel: 3 },
+    { rol_id: 4,  rol_codigo: 'ASESOR',                rol_nombre: 'Asesor Comercial',             rol_nivel: 4 },
+    { rol_id: 5,  rol_codigo: 'AGENTE_SVC',            rol_nombre: 'Agente Servicio al Cliente',   rol_nivel: 4 }
   ];
   await load();
 });

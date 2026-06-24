@@ -122,7 +122,7 @@ const nav = computed(() => {
   // PAP
   if (cod === 'PREV-PAP') {
     grupos.push({ tipo: 'link', to: { name: 'pap-panel' },       label: 'Panel' });
-    grupos.push({ tipo: 'link', to: { name: 'pap-mis-visitas' }, label: 'Visitas' });
+    grupos.push({ tipo: 'link', to: { name: 'pap-mis-visitas' }, label: 'Prospectos' });
     grupos.push({ tipo: 'link', to: { name: 'pap-mapa' },        label: 'Mapa' });
     grupos.push({ tipo: 'link', to: { name: 'pap-metricas' },    label: 'Métricas' });
     if (esSup) {

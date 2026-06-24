@@ -94,10 +94,10 @@ async function cargarAsesores() {
 }
 
 const tituloVista = computed(() => {
-  if (!puedeVerEquipo.value) return 'Mis visitas';
-  if (!asesorFiltro.value) return 'Visitas del equipo PAP';
+  if (!puedeVerEquipo.value) return 'Mis prospectos';
+  if (!asesorFiltro.value) return 'Prospectos del equipo Individual';
   const a = asesoresPap.value.find(u => String(u.usr_id) === asesorFiltro.value);
-  return a ? `Visitas de ${a.usr_nombre} ${a.usr_apellido || ''}` : 'Visitas';
+  return a ? `Prospectos de ${a.usr_nombre} ${a.usr_apellido || ''}` : 'Prospectos';
 });
 
 async function cargar() {
@@ -136,11 +136,11 @@ watch(q, () => {
     </div>
 
     <div v-if="puedeVerEquipo" class="text-xs text-text3 mb-2">
-      Mostrando {{ store.items.length }} visitas · scope: {{ asesorFiltro ? 'un asesor' : 'todo el equipo PAP' }}
+      Mostrando {{ store.items.length }} prospectos · scope: {{ asesorFiltro ? 'un asesor' : 'todo el equipo Individual' }}
     </div>
 
     <div v-if="store.loading" class="text-center py-12 text-text3">Cargando...</div>
-    <EmptyState v-else-if="!store.items.length" titulo="Sin visitas" mensaje="Registra una visita desde el panel." icono="🚶" />
+    <EmptyState v-else-if="!store.items.length" titulo="Sin prospectos" mensaje="Registra un prospecto desde el panel." icono="👤" />
 
     <ul v-else class="sv-card divide-y divide-text3/10">
       <li v-for="p in store.items" :key="p.prosp_id"
@@ -165,13 +165,13 @@ watch(q, () => {
             🔁 Volver: {{ fmtRelativo(p.prosp_prox_gestion_fecha) }}
           </div>
         </div>
-        <!-- Si el prospecto ya está afiliado (estado final-ganado), no se muestra "+ Visitar" -->
+        <!-- Si el prospecto ya está afiliado (estado final-ganado), no se muestra el botón de gestión -->
         <button v-if="!p.estado?.estado_es_ganado"
                 type="button"
                 class="shrink-0 px-3 py-2 rounded-sv bg-area-pap text-white text-xs font-semibold hover:opacity-90 transition-opacity"
                 @click.stop="abrirGestion(p)"
-                title="Registrar nueva visita">
-          + Visitar
+                title="Registrar nuevo prospecto">
+          + Nuevo
         </button>
         <span v-else
               class="shrink-0 px-3 py-2 rounded-sv bg-sage/15 text-sage text-xs font-semibold"
