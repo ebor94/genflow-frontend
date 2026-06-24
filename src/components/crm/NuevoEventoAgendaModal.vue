@@ -88,7 +88,7 @@ watch(() => props.show, async (v) => {
       const r = await usuariosApi.list({ activo: 1, limit: 200 });
       const lista = (r.data?.items || r.data || []);
       asesoresList.value = lista
-        .filter(u => ['ASESOR','AGENTE_SVC'].includes(u.rol?.rol_codigo))
+        .filter(u => ['ASESOR','AGENTE_SVC','COORDINADOR_PREVISION','JEFE_PAP','SUPERVISOR'].includes(u.rol?.rol_codigo))
         .map(u => ({ value: u.usr_id, label: `${u.usr_nombre} ${u.usr_apellido || ''} — ${u.grupo?.grupo_codigo || ''}` }));
     } catch (_) { /* silencioso */ }
   }

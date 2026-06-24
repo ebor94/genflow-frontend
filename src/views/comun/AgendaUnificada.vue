@@ -111,7 +111,9 @@ async function cargarAsesores() {
     asesoresList.value = [
       { value: '', label: '— Todo mi equipo —' },
       ...lista
-        .filter(u => ['ASESOR','AGENTE_SVC'].includes(u.rol?.rol_codigo))
+        // Cualquier rol que pueda tener eventos asignados o gestiones propias
+        // (incluye coordinadores y jefes que también hacen gestión comercial).
+        .filter(u => ['ASESOR','AGENTE_SVC','COORDINADOR_PREVISION','JEFE_PAP','SUPERVISOR'].includes(u.rol?.rol_codigo))
         .map(u => ({ value: u.usr_id, label: `${u.usr_nombre} ${u.usr_apellido || ''} — ${u.grupo?.grupo_codigo || ''}` }))
     ];
   } catch (_) { /* silencioso */ }
