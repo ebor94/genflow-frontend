@@ -164,6 +164,21 @@ const areasMenu = computed(() => {
   }));
 });
 
+// Items del módulo Afiliaciones, gateados por permisos (super admin ve todo).
+// Coinciden con la autorización del backend (afiliaciones.* y caja.*).
+const itemsAfiliacion = computed(() => {
+  const can = (m, a) => auth.puedeAfiliacion(m, a);
+  const items = [];
+  if (can('afiliaciones', 'crear'))       items.push({ to: { name: 'registro' },       label: 'Registrar afiliación', icon: '📝' });
+  if (can('afiliaciones', 'ver_propias')) items.push({ to: { name: 'misAfiliaciones' }, label: 'Mis afiliaciones',     icon: '📋' });
+  if (can('afiliaciones', 'aprobar') || can('afiliaciones', 'rechazar'))
+                                          items.push({ to: { name: 'aprobaciones' },     label: 'Aprobaciones',         icon: '✅' });
+  if (can('caja', 'ver_propios'))         items.push({ to: { name: 'misRecibos' },       label: 'Mis recibos',          icon: '🧾' });
+  if (can('caja', 'cobrar_posfechado'))   items.push({ to: { name: 'posfechados' },      label: 'Posfechados',          icon: '📆' });
+  if (can('caja', 'ver_cuadre'))          items.push({ to: { name: 'cuadreCaja' },       label: 'Cuadre de caja',       icon: '💰' });
+  return items;
+});
+
 const itemActivo = (item) => route.name === item.to?.name;
 
 async function cerrarSesion() {
@@ -255,6 +270,27 @@ async function cerrarSesion() {
               <span class="truncate">{{ item.label }}</span>
             </RouterLink>
           </template>
+        </div>
+      </div>
+
+      <!-- Afiliaciones (módulo integrado) -->
+      <div v-if="auth.tieneAfiliacion && itemsAfiliacion.length" class="mt-4 pt-3 border-t border-cream/10">
+        <button
+          @click="!colapsado ? toggleGrupo('afiliacion') : null"
+          title="Afiliaciones"
+          class="w-full flex items-center gap-3 px-2 py-2 rounded-sv text-sm hover:bg-cream/10 text-cream/80 font-semibold"
+        >
+          <span class="text-base">🪪</span>
+          <span v-if="!colapsado" class="flex-1 text-left">Afiliaciones</span>
+          <span v-if="!colapsado" class="text-xs text-cream/40">{{ gruposAbiertos['afiliacion'] ? '▾' : '▸' }}</span>
+        </button>
+        <div v-if="!colapsado && gruposAbiertos['afiliacion']" class="ml-3 mt-0.5 pl-3 border-l border-cream/10 space-y-0.5">
+          <RouterLink v-for="(item, idx) in itemsAfiliacion" :key="idx" :to="item.to" :title="item.label"
+                      class="flex items-center gap-2 px-2 py-1.5 rounded-sv text-xs hover:bg-cream/10 text-cream/70"
+                      :class="itemActivo(item) ? 'bg-gold/15 text-gold-bright' : ''">
+            <span class="text-sm">{{ item.icon }}</span>
+            <span class="truncate">{{ item.label }}</span>
+          </RouterLink>
         </div>
       </div>
 

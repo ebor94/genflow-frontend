@@ -48,7 +48,7 @@ async function submit() {
         <BaseInput
           v-model="email"
           label="Correo electrónico"
-          type="email"
+          type="text"
           placeholder="usuario@serfunorte.com"
           required
           autocomplete="username"

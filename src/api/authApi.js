@@ -1,10 +1,13 @@
-import api from './axios';
+import axios from 'axios';
+import api, { API_ROOT } from './axios';
 import publicApi from './publicAxios';
 
 export const authApi = {
-  login    : (payload) => publicApi.post('/auth/login', payload).then(r => r.data),
-  refresh  : (refreshToken) => publicApi.post('/auth/refresh', { refreshToken }).then(r => r.data),
-  logout   : (refreshToken) => api.post('/auth/logout', { refreshToken }).then(r => r.data).catch(() => null),
+  // Login unificado por SSO de identidad: el token resultante sirve para CRM (/api/sv)
+  // y afiliación (/api/afiliados, /api/recibos). Devuelve { accessToken, refreshToken, identidad }.
+  login    : (payload) => axios.post(`${API_ROOT}/identidad/login`, payload).then(r => r.data),
+  refresh  : (refreshToken) => axios.post(`${API_ROOT}/identidad/refresh`, { refreshToken }).then(r => r.data),
+  logout   : (refreshToken) => axios.post(`${API_ROOT}/identidad/logout`, { refreshToken }).then(r => r.data).catch(() => null),
   me       : () => api.get('/auth/me').then(r => r.data),
   changePassword: (payload) => api.patch('/auth/me/password', payload).then(r => r.data),
   updatePreferencias: (payload) => api.patch('/auth/me/preferencias', payload).then(r => r.data)

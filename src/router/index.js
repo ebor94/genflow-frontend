@@ -164,6 +164,35 @@ const routes = [
     component: () => import('@/views/tracking/LiveEquipo.vue'),
     meta: { requiereAuth: true, nivelMaximo: 3 } },
 
+  // ─── Afiliaciones (módulo integrado) ───
+  // Autenticación por SSO; la autorización fina (afiliaciones.*, caja.*) la aplica
+  // el backend contra el usuario Mantix vinculado a la identidad. Rutas públicas
+  // (Veolia, corrección por hash, consulta por documento) van sin auth.
+  { path: '/afi',                name: 'afi-home',          redirect: { name: 'registro' } },
+  { path: '/registro',           name: 'registro',          component: () => import('@afi/views/RegistroView.vue'),
+    meta: { requiereAuth: true } },
+  { path: '/aprobaciones',       name: 'aprobaciones',      component: () => import('@afi/views/AprobacionesView.vue'),
+    meta: { requiereAuth: true } },
+  { path: '/mis-afiliaciones',   name: 'misAfiliaciones',   component: () => import('@afi/views/MisAfiliacionesView.vue'),
+    meta: { requiereAuth: true } },
+  { path: '/mis-afiliaciones-dia', name: 'misAfiliacionesDia', component: () => import('@afi/views/MisAfiliacionesDelDiaView.vue'),
+    meta: { requiereAuth: true } },
+  { path: '/mis-recibos',        name: 'misRecibos',        component: () => import('@afi/views/MisRecibosView.vue'),
+    meta: { requiereAuth: true } },
+  { path: '/posfechados',        name: 'posfechados',       component: () => import('@afi/views/CobrarPosfechadoView.vue'),
+    meta: { requiereAuth: true } },
+  { path: '/cuadre-caja',        name: 'cuadreCaja',        component: () => import('@afi/views/CuadreCajaView.vue'),
+    meta: { requiereAuth: true } },
+  // Públicas (sin token)
+  { path: '/veolia',             name: 'registroVeolia',    component: () => import('@afi/views/RegistroVeoliaView.vue'),
+    meta: { publica: true } },
+  { path: '/corregir/:hash',     name: 'corregirAfiliacion', component: () => import('@afi/views/CorregirView.vue'),
+    meta: { publica: true } },
+  { path: '/corregir-veolia/:hash', name: 'corregirVeolia', component: () => import('@afi/views/CorregirVeoliaView.vue'),
+    meta: { publica: true } },
+  { path: '/afiliaciones/:numerodocumento', name: 'consultaAfiliado', component: () => import('@afi/views/ConsultaAfiliadoView.vue'),
+    meta: { publica: true } },
+
   // Errors
   { path: '/403',     name: 'forbidden', component: () => import('@/views/Forbidden.vue'), meta: { publica: true } },
   { path: '/:any(.*)', name: 'not-found', component: () => import('@/views/NotFound.vue'), meta: { publica: true } }

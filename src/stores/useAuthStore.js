@@ -63,6 +63,35 @@ export const useAuthStore = defineStore('svAuth', () => {
     return Array.isArray(arr) && arr.includes(accion);
   }
 
+  // ── Afiliaciones (módulo integrado) ───────────────────────────────────────
+  // El backend (/auth/me, /auth/login) incluye `afiliacion: { es_super_admin, permisos }`
+  // resuelto desde el usuario Mantix vinculado por identidad. Los permisos vienen en
+  // formato objeto: { afiliaciones: { crear:true, ... }, caja: { ver_cuadre:true, ... } }.
+  const afiliacion = computed(() => usuario.value?.afiliacion || null);
+
+  // Permiso de afiliación. Fallback: super admin del CRM ve todo (útil para pruebas
+  // aunque el backend aún no devuelva el bloque `afiliacion`).
+  function puedeAfiliacion(modulo, accion) {
+    if (esSuperAdmin.value) return true;
+    const afi = afiliacion.value;
+    if (!afi) return false;
+    if (afi.es_super_admin) return true;
+    const perms = typeof afi.permisos === 'string' ? JSON.parse(afi.permisos) : afi.permisos;
+    return perms?.[modulo]?.[accion] === true;
+  }
+
+  // ¿Mostrar el grupo Afiliaciones en el sidebar? (tiene algún acceso)
+  const tieneAfiliacion = computed(() => {
+    if (esSuperAdmin.value) return true;
+    const afi = afiliacion.value;
+    if (!afi) return false;
+    if (afi.es_super_admin) return true;
+    const perms = typeof afi.permisos === 'string' ? JSON.parse(afi.permisos) : afi.permisos;
+    const afiMod = perms?.afiliaciones || {};
+    const cajaMod = perms?.caja || {};
+    return Object.values(afiMod).some(Boolean) || Object.values(cajaMod).some(Boolean);
+  });
+
   // Mapeo área_codigo → ruta default de esa área (paneles funcionales)
   const RUTA_AREA = {
     'PRENEC':   { name: 'prenec-panel' },
@@ -103,12 +132,14 @@ export const useAuthStore = defineStore('svAuth', () => {
   }
 
   async function login(email, password) {
+    // Login por SSO de identidad → tokens válidos para CRM y afiliación.
     const res = await authApi.login({ email, password });
     accessToken.value  = res.data.accessToken;
     refreshToken.value = res.data.refreshToken;
-    usuario.value      = res.data.user;
-    // Por defecto el área activa = la del usuario (o null si SUPER_ADMIN)
-    areaActivaId.value = res.data.user?.usr_area_id || null;
+    persist(); // persistir tokens antes de fetchMe (su interceptor los lee de localStorage)
+    // El perfil CRM (rol, áreas, afiliación) se obtiene de /api/sv/auth/me.
+    const me = await fetchMe();
+    areaActivaId.value = me?.usr_area_id || null;
     persist();
     return res.data;
   }
@@ -156,6 +187,7 @@ export const useAuthStore = defineStore('svAuth', () => {
     esSuperAdmin, esAdminArea, esSupervisor, esJefePap, esGerente, esDirector, esCoordinador, puedeReasignar,
     areasAccesibles, esMultiArea, areaActual,
     tieneAccesoArea, hasPermiso, rutaInicio, rutaArea,
+    afiliacion, puedeAfiliacion, tieneAfiliacion,
     login, logout, fetchMe, setAreaActiva, restore
   };
 });
