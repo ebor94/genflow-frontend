@@ -27,6 +27,13 @@ export const useJornadaObligatoriaStore = defineStore('svJornadaObligatoria', ()
       else if (data.requiere_popup)              estado.value = 'bloqueado';
       else                                       estado.value = 'ok';
       ultimoChequeoAt.value = Date.now();
+    } catch (e) {
+      // Fail CLOSED: no permitir bypass de política de tracking por caída de red.
+      // El popup se muestra; iniciarJornada intentará de nuevo contra el backend
+      // (allí el usuario ve el toast de error si sigue caído).
+      estado.value = 'bloqueado';
+      ultimoChequeoAt.value = Date.now();
+      console.warn('[jornada-obligatoria] chequear falló → fail-closed:', e?.message || e);
     } finally {
       chequeando.value = false;
     }

@@ -52,6 +52,14 @@ describe('useJornadaObligatoriaStore', () => {
     expect(s.estado).toBe('ausente');
   });
 
+  it('chequear con error de red → fail closed (bloqueado)', async () => {
+    trackingApi.estadoJornadaHoy.mockRejectedValue(new Error('Network Error'));
+    const s = useJornadaObligatoriaStore();
+    await s.chequear();
+    expect(s.estado).toBe('bloqueado');
+    expect(s.debeBloquear).toBe(true);
+  });
+
   it('cachea 60s salvo force=true', async () => {
     trackingApi.estadoJornadaHoy.mockResolvedValue({
       data: { estado: 'sin_iniciar', requiere_popup: true }
