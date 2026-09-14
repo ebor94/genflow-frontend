@@ -125,6 +125,10 @@ function abrirNuevo() {
 }
 
 function editar(ev) {
+  // NOTA (SP-1b): el modal rediseñado (multi-asesor) sólo soporta creación;
+  // ya no recibe evento-edit. Esto abre el formulario de "nuevo evento" sin
+  // precargar datos. La edición real de un evento existente se resuelve en
+  // EventoDetalleView (/eventos/:id, SP-1b Task 3).
   eventoEdit.value = ev;
   showModal.value = true;
 }
@@ -279,11 +283,10 @@ async function onEventoGuardado() {
     </div>
 
     <NuevoEventoAgendaModal
-      v-model:show="showModal"
-      :fecha-default="fechaSel"
-      :asesor-id-default="asesorSel || auth.usuario?.usr_id"
-      :evento-edit="eventoEdit"
-      @guardado="onEventoGuardado"
+      :open="showModal"
+      :fecha-defecto="fechaSel"
+      @close="showModal = false"
+      @created="onEventoGuardado"
     />
   </div>
 </template>
