@@ -48,7 +48,6 @@ const asesorSel     = ref(null);          // null = "yo" (asesor) o "todo el equ
 const asesoresList  = ref([]);
 const loading       = ref(false);
 const showModal     = ref(false);
-const eventoEdit    = ref(null);
 
 const esAsesor = computed(() => ['ASESOR','AGENTE_SVC'].includes(auth.rolCodigo));
 const puedeVerOtros = computed(() => !esAsesor.value);
@@ -120,17 +119,15 @@ async function cargarAsesores() {
 }
 
 function abrirNuevo() {
-  eventoEdit.value = null;
   showModal.value = true;
 }
 
 function editar(ev) {
-  // NOTA (SP-1b): el modal rediseñado (multi-asesor) sólo soporta creación;
-  // ya no recibe evento-edit. Esto abre el formulario de "nuevo evento" sin
-  // precargar datos. La edición real de un evento existente se resuelve en
-  // EventoDetalleView (/eventos/:id, SP-1b Task 3).
-  eventoEdit.value = ev;
-  showModal.value = true;
+  // La edición inline se removió en SP-1b Task 2 (el modal rediseñado sólo
+  // soporta creación). Task 3 (EventoDetalleView) proveerá /eventos/:id para
+  // editar; hasta entonces avisamos en vez de abrir "nuevo evento" en blanco
+  // (foot-gun: parecía editar pero creaba un evento vacío).
+  toast.info('La edición estará disponible en la vista de detalle del evento (próximamente).');
 }
 
 async function toggleCompletado(ev) {

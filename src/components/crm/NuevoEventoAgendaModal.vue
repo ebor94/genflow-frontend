@@ -89,8 +89,8 @@
             </div>
           </div>
 
-          <!-- Apoyo (opcional) -->
-          <div>
+          <!-- Apoyo (opcional) — sólo para roles supervisores; un asesor no puede seleccionar apoyo -->
+          <div v-if="puedeVerOtrosUsuarios">
             <label class="text-xs font-medium text-text2">Apoyo (opcional)</label>
             <select v-model="form.apoyo_usr_id" data-testid="select-apoyo"
                     class="mt-1 w-full py-2 px-3 border border-gray-300 rounded-lg text-sm">
@@ -169,6 +169,15 @@ const cargando = ref(false);
 const usuarios = ref([]);
 const asistentesIds = ref([]);
 
+// GET /usuarios está gated en el backend por ROLES_SUPERVISORES; para ASESOR/
+// AGENTE_SVC devuelve 403. Evitamos la llamada y pre-poblamos con el propio
+// usuario (único asistente permitido para esos roles).
+const ROLES_SUPERVISORES_FRONT = ['SUPER_ADMIN','GERENTE_GENERAL','DIRECTOR_COMERCIAL','ADMIN_AREA','JEFE_PAP','SUPERVISOR','COORDINADOR_PREVISION'];
+
+const puedeVerOtrosUsuarios = computed(() =>
+  ROLES_SUPERVISORES_FRONT.includes(auth.usuario?.rol?.rol_codigo)
+);
+
 const form = reactive({
   titulo: '',
   tipo: 'REUNION',
@@ -199,17 +208,33 @@ function reset() {
 watch(() => props.open, (v) => { if (v) reset(); });
 
 onMounted(async () => {
-  try {
-    const r = await usuariosApi.list({ activo: 1, limit: 200 });
-    usuarios.value = r.data || r;
-  } catch (e) {
-    toast.error('No se pudieron cargar los usuarios');
+  if (puedeVerOtrosUsuarios.value) {
+    try {
+      const r = await usuariosApi.list({ activo: 1, limit: 200 });
+      usuarios.value = r.data || r;
+    } catch (e) {
+      toast.error('No se pudieron cargar los usuarios');
+    }
+  } else {
+    // ASESOR/AGENTE_SVC: sólo puede crear eventos consigo mismo como único asistente.
+    if (auth.usuario) {
+      usuarios.value = [{
+        usr_id:       auth.usuario.usr_id,
+        usr_nombre:   auth.usuario.usr_nombre,
+        usr_apellido: auth.usuario.usr_apellido,
+        rol:          auth.usuario.rol
+      }];
+    }
   }
   if (props.open) reset();
 });
 
 function toLocal(iso) {
-  const d = new Date(iso);
+  if (!iso) return '';
+  // Si es sólo fecha (YYYY-MM-DD), anclar a mediodía local para evitar drift UTC
+  // (new Date('2026-09-14') se interpreta en UTC y en Colombia -5h cae en el día anterior).
+  const soloFecha = /^\d{4}-\d{2}-\d{2}$/.test(iso);
+  const d = soloFecha ? new Date(iso + 'T12:00:00') : new Date(iso);
   const p = (n) => String(n).padStart(2, '0');
   return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
 }
