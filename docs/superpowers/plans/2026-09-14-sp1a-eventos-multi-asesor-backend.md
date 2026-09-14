@@ -803,10 +803,14 @@ const crearEvento = Joi.object({
   tipo:        Joi.string().valid(...TIPOS_EVENTO).required(),
   modo_fechas: Joi.string().valid(...MODOS_FECHA).required(),
   fecha_inicio: Joi.date().iso().required(),
+  // UNICO: opcional (evento de fecha única). DIA_COMPLETO_MULTI: requerido (marca el fin del rango).
+  // SLOTS: opcional (los slots ya definen las fechas; fecha_fin es info decorativa si viene).
   fecha_fin:   Joi.when('modo_fechas', {
-    is:  'UNICO',
-    then: Joi.date().iso().greater(Joi.ref('fecha_inicio')).optional().allow(null),
-    otherwise: Joi.date().iso().greater(Joi.ref('fecha_inicio')).required()
+    switch: [
+      { is: 'UNICO',              then: Joi.date().iso().greater(Joi.ref('fecha_inicio')).optional().allow(null) },
+      { is: 'SLOTS',              then: Joi.date().iso().greater(Joi.ref('fecha_inicio')).optional().allow(null) },
+      { is: 'DIA_COMPLETO_MULTI', then: Joi.date().iso().greater(Joi.ref('fecha_inicio')).required() }
+    ]
   }),
   slots: Joi.when('modo_fechas', {
     is:  'SLOTS',
