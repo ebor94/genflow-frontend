@@ -1429,11 +1429,12 @@ Path: `mantix-backend/tests/eventoPool.service.test.js`
 const mockPool     = { findAll: jest.fn(), findByPk: jest.fn(), update: jest.fn() };
 const mockEvento   = { findByPk: jest.fn() };
 const mockAsis     = { findOne: jest.fn() };
-const mockPersona  = { create: jest.fn(), findOne: jest.fn() };
+const mockPersona  = { create: jest.fn() };
 const mockProsp    = { create: jest.fn() };
 const mockFuente   = { findOne: jest.fn() };
 const mockEstado   = { findOne: jest.fn() };
 const mockUsr      = { findByPk: jest.fn() };
+const mockPersonasSvc = { buscarPorTelefono: jest.fn() };
 
 jest.mock('../src/sv/models', () => ({
   SvEventoPoolRegistro: mockPool,
@@ -1444,6 +1445,11 @@ jest.mock('../src/sv/models', () => ({
   SvFuente:             mockFuente,
   SvEstado:             mockEstado,
   SvUsuario:            mockUsr
+}));
+jest.mock('../src/sv/services/personas.service', () => mockPersonasSvc);
+jest.mock('../src/sv/utils/telefono', () => ({
+  normalizar: (t) => String(t || '').replace(/\D/g, ''),
+  esValido:   () => true
 }));
 
 jest.mock('../src/sv/services/eventosAgenda.service', () => ({
@@ -1490,7 +1496,7 @@ describe('asignar', () => {
     mockUsr.findByPk.mockResolvedValue({ usr_id: 15, usr_activo: 1 });
     mockFuente.findOne.mockResolvedValue({ fuente_id: 99 });
     mockEstado.findOne.mockResolvedValue({ estado_id: 1 });
-    mockPersona.findOne.mockResolvedValue(null);
+    mockPersonasSvc.buscarPorTelefono.mockResolvedValue(null);
     mockPersona.create.mockResolvedValue({ persona_id: 700 });
     mockProsp.create.mockResolvedValue({ prosp_id: 900 });
 
@@ -1596,17 +1602,21 @@ async function asignar(eventoId, poolId, payload, actor) {
   });
   if (!estado) throw err('No hay estado inicial configurado para el área del evento', 'VALIDATION_ERROR');
 
-  // Persona: reutilizar si ya existe por teléfono, si no crear
-  let persona = await SvPersona.findOne({ where: { persona_telefono: pool.pool_telefono } });
+  // Persona: reutilizar si ya existe por teléfono (unique en persona_telefono_norm),
+  // si no crear. La normalización la hace utils/telefono.normalizar().
+  const personasSvc = require('./personas.service');
+  const { normalizar } = require('../utils/telefono');
+  let persona = await personasSvc.buscarPorTelefono(pool.pool_telefono);
   if (!persona) {
     const nombreParts = pool.pool_nombre.trim().split(/\s+/);
-    const persona_nombre  = nombreParts[0] || pool.pool_nombre.trim();
-    const persona_apellido = nombreParts.slice(1).join(' ') || null;
+    const persona_nombre    = nombreParts[0] || pool.pool_nombre.trim();
+    const persona_apellido  = nombreParts.slice(1).join(' ') || null;
     persona = await SvPersona.create({
       persona_nombre,
       persona_apellido,
-      persona_telefono: pool.pool_telefono,
-      persona_correo:   pool.pool_correo || null
+      persona_telefono_principal: pool.pool_telefono.trim(),
+      persona_telefono_norm:      normalizar(pool.pool_telefono),
+      persona_email:              pool.pool_correo || null
     });
   }
 
@@ -2376,7 +2386,7 @@ DELETE FROM sv_org_eventos_agenda WHERE evento_titulo = 'Smoke SP-1a';
 ## Notas para el implementador
 
 - **Migración 020 idempotente**: si la corres dos veces, no falla. El `INSERT IGNORE` en `sv_cfg_fuentes_prospecto` respeta el unique `(fuente_area_id, fuente_codigo)`.
-- **`SvPersona` model shape**: si `persona_apellido` es NOT NULL en el modelo actual, ajusta el service para poner `''` en lugar de `null`. Verifica con `head src/sv/models/Persona.js`.
+- **`SvPersona` model shape**: campos son `persona_telefono_principal` + `persona_telefono_norm` (unique) + `persona_email`. La normalización viene de `utils/telefono.normalizar()`. El service usa `personas.service.buscarPorTelefono()` para reutilizar existentes. Ya reflejado en Task 5.
 - **`SvEstado` primer estado**: el service asume que existe `estado_orden=1` para el área. Si en producción hay áreas sin estado configurado, el asignar responderá VALIDATION_ERROR — mejor así que crear un prospecto sin estado válido.
 - **`crearEvento` handler existente**: el controller tiene un `crearEvento` desde SP anterior. Verifica si su lógica ya llama `eventos.crear(req.body, req.user)` — si sí, no toques. Si tiene lógica custom (ej. defaults del asesor solo), respétala y sólo agrega la validación Joi en la ruta.
 - **Attribution**: cada commit debe llevar EXACTAMENTE `Co-Authored-By: Claude Opus 4.7 <noreply@anthropic.com>` — no substituir por el nombre del subagent.
