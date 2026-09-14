@@ -1,15 +1,18 @@
 <script setup>
-import { computed, onMounted, onUnmounted, ref } from 'vue';
+import { computed, onMounted, onUnmounted, onBeforeUnmount, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { useAuthStore } from '@/stores/useAuthStore';
+import { useJornadaObligatoriaStore } from '@/stores/useJornadaObligatoriaStore';
 import AppHeader from '@/components/layout/AppHeader.vue';
 import AppSidebar from '@/components/layout/AppSidebar.vue';
 import BottomNav from '@/components/layout/BottomNav.vue';
 import ToastContainer from '@/components/ui/ToastContainer.vue';
 import BusquedaGlobalModal from '@/components/crm/BusquedaGlobalModal.vue';
+import ModalInicioJornadaObligatorio from '@/components/tracking/ModalInicioJornadaObligatorio.vue';
 
 const route = useRoute();
 const auth = useAuthStore();
+const jornObl = useJornadaObligatoriaStore();
 
 const hideShell = computed(() => route.meta.publica || route.name === 'login');
 const showBusqueda = ref(false);
@@ -28,6 +31,21 @@ onMounted(() => {
   window.addEventListener('keydown', onKeydown);
 });
 onUnmounted(() => window.removeEventListener('keydown', onKeydown));
+
+// SP-4: chequeo de jornada obligatoria al autenticarse / al volver a foreground
+function onVisibilityChange() {
+  if (document.visibilityState === 'visible' && auth.isAuthenticated) {
+    jornObl.chequear({ force: true });
+  }
+}
+
+watch(() => auth.isAuthenticated, (v) => {
+  if (v) jornObl.chequear();
+  else   jornObl.reset();
+}, { immediate: true });
+
+onMounted(() => document.addEventListener('visibilitychange', onVisibilityChange));
+onBeforeUnmount(() => document.removeEventListener('visibilitychange', onVisibilityChange));
 </script>
 
 <template>
@@ -49,5 +67,7 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown));
     </div>
     <ToastContainer />
     <BusquedaGlobalModal :open="showBusqueda" @close="showBusqueda = false" />
+    <!-- SP-4: bloqueo obligatorio de inicio de jornada -->
+    <ModalInicioJornadaObligatorio v-if="jornObl.debeBloquear" />
   </div>
 </template>
