@@ -8,7 +8,8 @@ import { useTrackingStore } from '@/stores/useTrackingStore';
 function factory() {
   return mount(ModalInicioJornadaObligatorio, {
     global: {
-      plugins: [createTestingPinia({ createSpy: vi.fn, stubActions: false })]
+      plugins: [createTestingPinia({ createSpy: vi.fn, stubActions: false })],
+      stubs: { teleport: true }
     },
     attachTo: document.body
   });

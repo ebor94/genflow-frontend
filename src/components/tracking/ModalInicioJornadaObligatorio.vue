@@ -1,4 +1,5 @@
 <template>
+  <Teleport to="body">
   <div
     class="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900/95 backdrop-blur-sm"
     role="dialog"
@@ -43,7 +44,7 @@
           Al iniciar, el sistema empezará a registrar tu ubicación durante la jornada.
           Este dato es obligatorio por política de la empresa.
         </p>
-        <div v-if="permisoGpsFallido" class="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+        <div v-if="tracking.errorPermiso" class="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
           No pudimos leer tu GPS. Verifica que le diste permiso al navegador y vuelve a intentar.
         </div>
         <button
@@ -103,6 +104,7 @@
       </section>
     </div>
   </div>
+  </Teleport>
 </template>
 
 <script setup>
@@ -119,7 +121,6 @@ const toast    = useToastStore();
 
 const tab      = ref('iniciar');
 const cargando = ref(false);
-const permisoGpsFallido = ref(false);
 const ausencia = reactive({ tipo: 'PERMISO', motivo: '' });
 
 const ausenciaValida = computed(() => ausencia.motivo.trim().length >= 5);
@@ -137,16 +138,23 @@ const saludo = (() => {
 
 async function iniciarJornada() {
   cargando.value = true;
-  permisoGpsFallido.value = false;
+  tracking.errorPermiso = null;
   try {
     await tracking.iniciar();
     jornObl.marcarJornadaIniciada();
-    toast.success('Jornada iniciada. Tracking activo.');
-  } catch (e) {
-    if (String(e?.message || '').toLowerCase().includes('geoloc')) {
-      permisoGpsFallido.value = true;
+    if (tracking.errorPermiso) {
+      toast.warning(
+        'Jornada iniciada, pero no pudimos leer el GPS. ' +
+        'Concede permiso de ubicación para que el tracking sea preciso.'
+      );
+    } else {
+      toast.success('Jornada iniciada. Tracking activo.');
     }
-    toast.error('No se pudo iniciar la jornada. Verifica el permiso de ubicación.');
+  } catch (e) {
+    toast.error(
+      e?.response?.data?.error?.message
+      || 'No se pudo iniciar la jornada. Intenta de nuevo.'
+    );
   } finally {
     cargando.value = false;
   }
@@ -168,7 +176,7 @@ async function confirmarAusencia() {
   }
 }
 
-// Bloquear Escape y navegación con Tab fuera del modal
+// Bloquear Escape para impedir cierre accidental del modal obligatorio
 function onKeyDown(e) {
   if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); }
 }
