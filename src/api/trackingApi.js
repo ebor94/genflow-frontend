@@ -17,5 +17,10 @@ export const trackingApi = {
   // Habeas Data
   aceptarConsentimiento: () => api.post('/tracking/me/consentimiento').then(r => r.data),
   exportarMisDatos:      (desde, hasta) =>
-    api.get('/tracking/me/exportar', { params: { desde, hasta }, responseType: 'blob' }).then(r => r.data)
+    api.get('/tracking/me/exportar', { params: { desde, hasta }, responseType: 'blob' }).then(r => r.data),
+
+  // SP-4 · Popup obligatorio
+  estadoJornadaHoy:      () => api.get('/tracking/jornadas/hoy').then(r => r.data),
+  registrarAusenciaHoy:  (payload) => api.post('/tracking/jornadas/ausencia', payload).then(r => r.data),
+  eliminarAusenciaHoy:   () => api.delete('/tracking/jornadas/ausencia/hoy').then(r => r.data)
 };
