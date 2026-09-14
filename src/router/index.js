@@ -29,6 +29,11 @@ const routes = [
   { path: '/agenda', name: 'agenda', component: () => import('@/views/comun/AgendaUnificada.vue'),
     meta: { requiereAuth: true } },
 
+  // SP-1b · Eventos multi-asesor
+  { path: '/eventos/:id', name: 'evento-detalle',
+    component: () => import('@/views/comun/EventoDetalleView.vue'),
+    meta: { requiereAuth: true } },
+
   // Admin (SUPER_ADMIN, ADMIN_AREA)
   { path: '/admin',                name: 'admin',             component: () => import('@/views/admin/AdminPanel.vue'),
     meta: { requiereAuth: true, nivelMaximo: 2 } },
