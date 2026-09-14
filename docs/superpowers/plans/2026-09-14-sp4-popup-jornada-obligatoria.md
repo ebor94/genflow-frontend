@@ -1066,16 +1066,24 @@ describe('ModalInicioJornadaObligatorio', () => {
     expect(btn.attributes('disabled')).toBeDefined();
   });
 
-  it('bloquea Escape', async () => {
-    const wrapper = factory();
-    const stop = vi.fn();
-    const ev = new KeyboardEvent('keydown', { key: 'Escape' });
-    Object.defineProperty(ev, 'stopPropagation', { value: stop });
-    Object.defineProperty(ev, 'preventDefault',  { value: vi.fn() });
+  it('bloquea Escape: preventDefault + stopPropagation', () => {
+    factory();
+    const preventDefault  = vi.fn();
+    const stopPropagation = vi.fn();
+    const ev = new KeyboardEvent('keydown', { key: 'Escape', bubbles: true });
+    Object.defineProperty(ev, 'preventDefault',  { value: preventDefault });
+    Object.defineProperty(ev, 'stopPropagation', { value: stopPropagation });
     document.dispatchEvent(ev);
-    // No hay assertion directa — sólo que no rompe y el store no cambia
-    const s = useJornadaObligatoriaStore();
-    expect(s.estado).toBe('sin_chequear');
+    expect(preventDefault).toHaveBeenCalled();
+    expect(stopPropagation).toHaveBeenCalled();
+  });
+
+  it('bloquea overflow del body mientras está montado', () => {
+    document.body.style.overflow = '';
+    const wrapper = factory();
+    expect(document.body.style.overflow).toBe('hidden');
+    wrapper.unmount();
+    expect(document.body.style.overflow).toBe('');
   });
 
   it('al confirmar iniciar jornada, llama tracking.iniciar y marcarJornadaIniciada', async () => {
