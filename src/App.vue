@@ -67,7 +67,7 @@ onBeforeUnmount(() => document.removeEventListener('visibilitychange', onVisibil
     </div>
     <ToastContainer />
     <BusquedaGlobalModal :open="showBusqueda" @close="showBusqueda = false" />
-    <!-- SP-4: bloqueo obligatorio de inicio de jornada -->
-    <ModalInicioJornadaObligatorio v-if="jornObl.debeBloquear" />
+    <!-- SP-4: bloqueo obligatorio de inicio de jornada (nunca en rutas públicas) -->
+    <ModalInicioJornadaObligatorio v-if="jornObl.debeBloquear && !hideShell" />
   </div>
 </template>
