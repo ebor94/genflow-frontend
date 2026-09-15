@@ -13,7 +13,14 @@ export const agendaApi = {
 
   // Agregado por día para colorear el calendario
   mes: ({ anio, mes, asesorId = null }) =>
-    api.get('/agenda/mes', { params: { anio, mes, asesor_id: asesorId || undefined } }).then(r => r.data)
+    api.get('/agenda/mes', { params: { anio, mes, asesor_id: asesorId || undefined } }).then(r => r.data),
+
+  // Semana de seguimiento multi-asesor (SP-2)
+  semanaSeguimiento: ({ anio, semana, asesoresIds = [] }) =>
+    api.get('/agenda/semana', { params: {
+      anio, semana,
+      asesores_ids: asesoresIds.length ? asesoresIds.join(',') : undefined
+    }}).then(r => r.data)
 };
 
 export const eventosAgendaApi = {
@@ -27,7 +34,10 @@ export const eventosAgendaApi = {
   pool:               (id, params = {})            => api.get(`/eventos-agenda/${id}/pool`, { params }).then(r => r.data),
   asignarPool:        (id, poolId, payload)        => api.post(`/eventos-agenda/${id}/pool/${poolId}/asignar`, payload).then(r => r.data),
   metricasAsistente:  (evaId, payload)             => api.patch(`/eventos-agenda/asistentes/${evaId}/metricas`, payload).then(r => r.data),
-  resumen:            (id)                          => api.get(`/eventos-agenda/${id}/resumen`).then(r => r.data)
+  resumen:            (id)                          => api.get(`/eventos-agenda/${id}/resumen`).then(r => r.data),
+
+  // SP-2 · Listado con filtros
+  listado:            (filtros = {})                => api.get('/eventos-agenda/listado', { params: filtros }).then(r => r.data)
 };
 
 // SP-1a · Endpoints públicos (sin auth). Usan la misma instancia axios;
