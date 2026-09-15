@@ -11,12 +11,12 @@
           <!-- Título + tipo -->
           <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div class="sm:col-span-2">
-              <label class="text-xs font-medium text-text2">Título</label>
+              <label class="text-xs font-medium text-slate-600">Título</label>
               <input v-model="form.titulo" data-testid="input-titulo" type="text" required
                      class="mt-1 w-full py-2 px-3 border border-gray-300 rounded-lg text-sm" />
             </div>
             <div>
-              <label class="text-xs font-medium text-text2">Tipo</label>
+              <label class="text-xs font-medium text-slate-600">Tipo</label>
               <select v-model="form.tipo" data-testid="select-tipo"
                       class="mt-1 w-full py-2 px-3 border border-gray-300 rounded-lg text-sm">
                 <option v-for="t in TIPOS" :key="t" :value="t">{{ t }}</option>
@@ -26,7 +26,7 @@
 
           <!-- Modo de fechas -->
           <div>
-            <label class="text-xs font-medium text-text2">Modo de fechas</label>
+            <label class="text-xs font-medium text-slate-600">Modo de fechas</label>
             <div class="mt-2 flex flex-wrap gap-3 text-sm">
               <label class="inline-flex items-center gap-1">
                 <input type="radio" v-model="form.modo_fechas" value="UNICO" data-testid="radio-modo-UNICO" @change="onModoChange">
@@ -46,12 +46,12 @@
           <!-- Fechas -->
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label class="text-xs font-medium text-text2">Fecha inicio</label>
+              <label class="text-xs font-medium text-slate-600">Fecha inicio</label>
               <input v-model="form.fecha_inicio" data-testid="input-fecha-inicio" type="datetime-local" required
                      class="mt-1 w-full py-2 px-3 border border-gray-300 rounded-lg text-sm" />
             </div>
             <div v-if="form.modo_fechas === 'DIA_COMPLETO_MULTI'">
-              <label class="text-xs font-medium text-text2">Fecha fin</label>
+              <label class="text-xs font-medium text-slate-600">Fecha fin</label>
               <input v-model="form.fecha_fin" data-testid="input-fecha-fin" type="datetime-local" required
                      class="mt-1 w-full py-2 px-3 border border-gray-300 rounded-lg text-sm" />
             </div>
@@ -60,7 +60,7 @@
           <!-- Slots (modo SLOTS) -->
           <div v-if="form.modo_fechas === 'SLOTS'" data-testid="slots-picker" class="border border-gray-200 rounded-lg p-3 space-y-2">
             <div class="flex items-center justify-between">
-              <span class="text-xs font-medium text-text2">Slots</span>
+              <span class="text-xs font-medium text-slate-600">Slots</span>
               <button type="button" class="text-xs text-primary hover:underline" @click="agregarSlot">+ Agregar slot</button>
             </div>
             <div v-for="(s, i) in form.slots" :key="i" class="grid grid-cols-4 gap-2 text-sm">
@@ -75,14 +75,14 @@
 
           <!-- Asistentes -->
           <div>
-            <label class="text-xs font-medium text-text2">Asistentes</label>
+            <label class="text-xs font-medium text-slate-600">Asistentes</label>
             <div class="mt-2 flex flex-wrap gap-1.5 max-h-40 overflow-y-auto">
               <button v-for="u in usuarios" :key="u.usr_id" type="button"
                       :data-testid="`chip-usr-${u.usr_id}`"
                       class="text-xs px-2 py-1 rounded-full border transition"
                       :class="isAsistente(u.usr_id)
                         ? 'bg-primary text-white border-primary'
-                        : 'bg-white text-text2 border-gray-300 hover:border-primary'"
+                        : 'bg-white text-slate-600 border-gray-300 hover:border-primary'"
                       @click="toggleAsistente(u.usr_id)">
                 {{ u.usr_nombre }} {{ u.usr_apellido }}
               </button>
@@ -91,7 +91,7 @@
 
           <!-- Apoyo (opcional) — sólo para roles supervisores; un asesor no puede seleccionar apoyo -->
           <div v-if="puedeVerOtrosUsuarios">
-            <label class="text-xs font-medium text-text2">Apoyo (opcional)</label>
+            <label class="text-xs font-medium text-slate-600">Apoyo (opcional)</label>
             <select v-model="form.apoyo_usr_id" data-testid="select-apoyo"
                     class="mt-1 w-full py-2 px-3 border border-gray-300 rounded-lg text-sm">
               <option :value="null">-- Sin apoyo --</option>
@@ -103,7 +103,7 @@
 
           <!-- Descripción -->
           <div>
-            <label class="text-xs font-medium text-text2">Descripción</label>
+            <label class="text-xs font-medium text-slate-600">Descripción</label>
             <textarea v-model="form.descripcion" rows="2"
                       class="mt-1 w-full py-2 px-3 border border-gray-300 rounded-lg text-sm resize-none"></textarea>
           </div>
@@ -112,10 +112,10 @@
           <div class="border-t pt-4 space-y-3">
             <label class="inline-flex items-center gap-2">
               <input type="checkbox" v-model="form.registros_publicos_habilitado" data-testid="toggle-publico">
-              <span class="text-sm text-text1">Habilitar link público de registro</span>
+              <span class="text-sm text-slate-800">Habilitar link público de registro</span>
             </label>
             <div v-if="form.registros_publicos_habilitado">
-              <label class="text-xs font-medium text-text2">Meta de leads (opcional)</label>
+              <label class="text-xs font-medium text-slate-600">Meta de leads (opcional)</label>
               <input v-model.number="form.meta_leads" data-testid="input-meta-leads" type="number" min="0"
                      class="mt-1 w-full py-2 px-3 border border-gray-300 rounded-lg text-sm" />
             </div>
@@ -123,7 +123,7 @@
         </form>
 
         <footer class="border-t px-6 py-3 flex justify-end gap-2">
-          <button type="button" class="px-4 py-2 text-sm text-text2 hover:text-text1" @click="cerrar">Cancelar</button>
+          <button type="button" class="px-4 py-2 text-sm text-slate-600 hover:text-slate-900" @click="cerrar">Cancelar</button>
           <button type="button" data-testid="btn-crear" :disabled="!puedeCrear || cargando"
                   class="px-4 py-2 text-sm bg-primary hover:bg-primary/90 disabled:bg-gray-300 text-white rounded-lg"
                   @click="crear">
