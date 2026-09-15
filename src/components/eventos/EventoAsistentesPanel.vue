@@ -80,6 +80,9 @@ function nombre(a) {
 
 function seedEdits() {
   asistentes.value.forEach(a => {
+    // No sobrescribir filas con edits en progreso — protege al usuario
+    // si el padre refresca (parent.cargar) mientras está editando.
+    if (dirty[a.eva_id]) return;
     edits[a.eva_id] = {
       estado:              a.eva_estado || 'CONFIRMADO',
       leads_captados:      a.eva_leads_captados     ?? null,

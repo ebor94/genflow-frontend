@@ -4,7 +4,8 @@
          class="text-sm text-text3 text-center py-6 bg-gray-50 rounded-lg">
       El link público no está habilitado para este evento.
       <span class="block mt-1 text-xs">
-        Edita el evento y marca "Habilitar link público de registro" para generar uno.
+        Para eventos con link público, crea un nuevo evento marcando "Habilitar link público de registro"
+        en el modal de creación. La edición inline llegará en una próxima entrega.
       </span>
     </div>
     <div v-else class="space-y-4">
