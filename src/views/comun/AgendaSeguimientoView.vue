@@ -39,7 +39,7 @@
           <SemanaGrid v-else-if="semanaData" :semana-data="semanaData" />
         </div>
         <div v-else-if="tab === 'listado'">
-          <EventoListadoTabla />
+          <EventoListadoTabla :asesores-ids="asesoresIds" />
         </div>
       </div>
     </div>

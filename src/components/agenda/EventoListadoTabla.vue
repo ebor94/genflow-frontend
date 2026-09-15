@@ -88,12 +88,14 @@
 </template>
 
 <script setup>
-import { reactive, ref, onMounted } from 'vue';
+import { reactive, ref, onMounted, watch } from 'vue';
 import { RouterLink } from 'vue-router';
 import { eventosAgendaApi } from '@/api/agendaApi';
 import { useToastStore } from '@/stores/useToastStore';
 
 const toast = useToastStore();
+
+const props = defineProps({ asesoresIds: { type: Array, default: () => [] } });
 
 const TIPOS = ['REUNION','VISITA','CAPACITACION','LLAMADA','FERIA','PERSONAL','OTRO','SEGUIMIENTO'];
 
@@ -104,6 +106,10 @@ const cargando = ref(false);
 function payloadLimpio() {
   const p = {};
   for (const k of ['q','tipo','link_publico','desde','hasta']) if (filtros[k]) p[k] = filtros[k];
+  // MVP: backend `listado` sólo soporta un asesor_id singular. Si hay varios
+  // seleccionados, sólo aplicamos el primero.
+  // TODO follow-up: extender backend a asesores_ids CSV para soportar N.
+  if (props.asesoresIds?.length) p.asesor_id = props.asesoresIds[0];
   return p;
 }
 
@@ -118,6 +124,8 @@ async function cargar() {
     cargando.value = false;
   }
 }
+
+watch(() => props.asesoresIds, cargar, { deep: true });
 
 function limpiar() {
   for (const k of Object.keys(filtros)) filtros[k] = '';

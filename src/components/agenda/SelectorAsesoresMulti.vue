@@ -110,7 +110,7 @@ function limpiar() { seleccionados.value = []; }
 
 onMounted(async () => {
   try {
-    const r = await usuariosApi.list({ activo: 1, limit: 200 });
+    const r = await usuariosApi.accesibles();
     usuarios.value = r.data || r;
   } catch (e) {
     toast.error('No se pudieron cargar los asesores');
