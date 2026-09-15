@@ -486,7 +486,7 @@ watch(() => props.open, (v) => { if (v) reset(); });
 
 onMounted(async () => {
   try {
-    const r = await usuariosApi.listar({ activo: 1, limit: 200 });
+    const r = await usuariosApi.list({ activo: 1, limit: 200 });
     usuarios.value = r.data || r;
   } catch (e) {
     toast.error('No se pudieron cargar los usuarios');
@@ -1531,7 +1531,7 @@ Si algún paso falla, reportar con captura + request/response de la consola.
 
 ## Notas para el implementador
 
-- **`usuariosApi.listar`** ya existe (endpoint `/api/sv/usuarios?activo=1&limit=200` verificado en SP-4). Si el import no compila, buscar con `grep "usuariosApi" src/api/` y ajustar el path del import.
+- **`usuariosApi.list`** ya existe (endpoint `/api/sv/usuarios?activo=1&limit=200` verificado en SP-4). Si el import no compila, buscar con `grep "usuariosApi" src/api/` y ajustar el path del import.
 - **vitest configurado** desde SP-4 Task 6. `stubs: { teleport: true }` es el patrón para modales.
 - **`window.location.origin`** en producción devuelve `https://losolivoscucuta.com`. Con base `/genflow/` (vite.config.js), la URL pública compilada es `https://losolivoscucuta.com/genflow/registro-evento/:hash`. Verificar visualmente al probar.
 - **PWA cache**: cambios de router requieren hard-refresh + re-registrar SW. Los usuarios pueden ver la versión vieja hasta el próximo prompt "Nueva versión disponible".
