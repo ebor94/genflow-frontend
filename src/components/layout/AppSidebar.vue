@@ -233,6 +233,13 @@ async function cerrarSesion() {
         <span v-if="!colapsado">Mi agenda</span>
       </RouterLink>
 
+      <RouterLink v-if="auth.rolNivel <= 3" :to="{ name: 'agenda-seguimiento' }" title="Seguimiento de agenda"
+                  class="flex items-center gap-3 px-2 py-2 rounded-sv text-sm hover:bg-cream/10 text-cream/80"
+                  :class="route.name === 'agenda-seguimiento' ? 'bg-gold/15 text-gold-bright' : ''">
+        <span class="text-base">🗓️</span>
+        <span v-if="!colapsado">Seguimiento</span>
+      </RouterLink>
+
       <RouterLink :to="{ name: 'mi-perfil' }" title="Mi perfil"
                   class="flex items-center gap-3 px-2 py-2 rounded-sv text-sm hover:bg-cream/10 text-cream/80"
                   :class="route.name === 'mi-perfil' ? 'bg-gold/15 text-gold-bright' : ''">

@@ -34,6 +34,11 @@ const routes = [
     component: () => import('@/views/comun/EventoDetalleView.vue'),
     meta: { requiereAuth: true } },
 
+  // SP-2 · Seguimiento de agenda (supervisor+)
+  { path: '/agenda/seguimiento', name: 'agenda-seguimiento',
+    component: () => import('@/views/comun/AgendaSeguimientoView.vue'),
+    meta: { requiereAuth: true, nivelMaximo: 3 } },
+
   // Admin (SUPER_ADMIN, ADMIN_AREA)
   { path: '/admin',                name: 'admin',             component: () => import('@/views/admin/AdminPanel.vue'),
     meta: { requiereAuth: true, nivelMaximo: 2 } },
