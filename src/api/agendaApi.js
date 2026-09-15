@@ -27,6 +27,8 @@ export const eventosAgendaApi = {
   get:              (id)                 => api.get(`/eventos-agenda/${id}`).then(r => r.data),
   create:           (data)               => api.post('/eventos-agenda', data).then(r => r.data),
   update:           (id, data)           => api.put(`/eventos-agenda/${id}`, data).then(r => r.data),
+  otpSolicitar:     (id, cambios)        => api.post(`/eventos-agenda/${id}/otp/solicitar`, { cambios }).then(r => r.data),
+  otpConfirmar:     (id, otp_id, otp)    => api.post(`/eventos-agenda/${id}/otp/confirmar`, { otp_id, otp }).then(r => r.data),
   marcarCompletado: (id, completado)     => api.patch(`/eventos-agenda/${id}/completado`, { completado }).then(r => r.data),
   remove:           (id)                 => api.delete(`/eventos-agenda/${id}`).then(r => r.data),
 
