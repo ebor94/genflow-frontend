@@ -16,6 +16,11 @@
             <p class="text-xs text-text3 mt-1">{{ fechasFmt }}</p>
           </div>
           <div class="flex gap-1 flex-shrink-0">
+            <button type="button"
+                    class="text-xs px-3 py-1.5 bg-primary hover:opacity-90 text-white rounded"
+                    @click="editar = true">
+              Editar
+            </button>
             <RouterLink :to="{ name: 'agenda' }" class="text-xs px-3 py-1.5 border border-gray-300 rounded hover:bg-gray-50">
               Volver
             </RouterLink>
@@ -65,6 +70,9 @@
         </div>
       </div>
     </div>
+
+    <EditarEventoModal v-if="evento" :open="editar" :evento="evento"
+                       @close="editar = false" @guardado="cargar" />
   </div>
 </template>
 
@@ -76,6 +84,7 @@ import { useToastStore } from '@/stores/useToastStore';
 import EventoAsistentesPanel  from '@/components/eventos/EventoAsistentesPanel.vue';
 import EventoPoolPanel        from '@/components/eventos/EventoPoolPanel.vue';
 import EventoLinkPublicoShare from '@/components/eventos/EventoLinkPublicoShare.vue';
+import EditarEventoModal from '@/components/eventos/EditarEventoModal.vue';
 
 const route  = useRoute();
 const toast  = useToastStore();
@@ -83,6 +92,7 @@ const cargando = ref(true);
 const evento   = ref(null);
 const resumen  = ref(null);
 const tab      = ref('asistentes');
+const editar   = ref(false);
 
 const tabs = computed(() => [
   { key: 'asistentes', label: 'Asistentes', badge: evento.value?.asistentes?.length || 0 },
