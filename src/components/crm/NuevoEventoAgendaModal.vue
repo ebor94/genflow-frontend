@@ -2,7 +2,7 @@
   <Teleport to="body">
     <div v-if="open" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4">
       <div class="w-full max-w-2xl bg-white rounded-2xl shadow-2xl overflow-hidden max-h-[92vh] flex flex-col">
-        <header class="bg-primary px-6 py-4 text-white flex items-center justify-between">
+        <header class="bg-green-700 px-6 py-4 text-white flex items-center justify-between">
           <h3 class="font-bold">Nuevo evento</h3>
           <button type="button" class="text-white/80 hover:text-white" @click="cerrar">✕</button>
         </header>
@@ -81,10 +81,10 @@
                       :data-testid="`chip-usr-${u.usr_id}`"
                       class="text-xs px-2 py-1 rounded-full border transition"
                       :class="isAsistente(u.usr_id)
-                        ? 'bg-primary text-white border-primary'
+                        ? 'bg-green-700 text-white border-green-700'
                         : 'bg-white text-slate-600 border-gray-300 hover:border-primary'"
                       @click="toggleAsistente(u.usr_id)">
-                {{ u.usr_nombre }} {{ u.usr_apellido }}
+                {{ nombreChip(u) }}
               </button>
             </div>
           </div>
@@ -96,7 +96,7 @@
                     class="mt-1 w-full py-2 px-3 border border-gray-300 rounded-lg text-sm">
               <option :value="null">-- Sin apoyo --</option>
               <option v-for="u in usuarios" :key="u.usr_id" :value="u.usr_id">
-                {{ u.usr_nombre }} {{ u.usr_apellido }} ({{ u.rol?.rol_codigo }})
+                {{ nombreChip(u) }} ({{ u.rol?.rol_codigo }})
               </option>
             </select>
           </div>
@@ -125,7 +125,7 @@
         <footer class="border-t px-6 py-3 flex justify-end gap-2">
           <button type="button" class="px-4 py-2 text-sm text-slate-600 hover:text-slate-900" @click="cerrar">Cancelar</button>
           <button type="button" data-testid="btn-crear" :disabled="!puedeCrear || cargando"
-                  class="px-4 py-2 text-sm bg-primary hover:bg-primary/90 disabled:bg-gray-300 text-white rounded-lg"
+                  class="px-4 py-2 text-sm bg-green-700 hover:bg-green-800 disabled:bg-gray-300 text-white rounded-lg"
                   @click="crear">
             {{ cargando ? 'Creando...' : 'Crear evento' }}
           </button>
@@ -239,6 +239,12 @@ function toLocal(iso) {
   return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
 }
 
+function nombreChip(u) {
+  const nom = `${u.usr_nombre || ''} ${u.usr_apellido || ''}`.trim();
+  if (nom) return nom;
+  if (u.usr_email) return u.usr_email.split('@')[0];
+  return `Usuario #${u.usr_id}`;
+}
 function isAsistente(id) { return asistentesIds.value.includes(id); }
 function toggleAsistente(id) {
   const i = asistentesIds.value.indexOf(id);
