@@ -198,6 +198,11 @@ const routes = [
   { path: '/afiliaciones/:numerodocumento', name: 'consultaAfiliado', component: () => import('@afi/views/ConsultaAfiliadoView.vue'),
     meta: { publica: true } },
 
+  // SP-1b · Registro público de eventos
+  { path: '/registro-evento/:hash', name: 'registro-evento-publico',
+    component: () => import('@/views/public/RegistroPublicoEventoView.vue'),
+    meta: { publica: true } },
+
   // Errors
   { path: '/403',     name: 'forbidden', component: () => import('@/views/Forbidden.vue'), meta: { publica: true } },
   { path: '/:any(.*)', name: 'not-found', component: () => import('@/views/NotFound.vue'), meta: { publica: true } }
