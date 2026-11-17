@@ -12,20 +12,20 @@ const auth   = useAuthStore();
 const toast  = useToastStore();
 const { extract } = useApiError();
 
-const email    = ref('');
+const usuario  = ref('');
 const password = ref('');
 const loading  = ref(false);
 const error    = ref('');
 
 async function submit() {
-  if (!email.value || !password.value) {
-    error.value = 'Email y contraseña son requeridos';
+  if (!usuario.value.trim() || !password.value) {
+    error.value = 'Usuario y contraseña son requeridos';
     return;
   }
   loading.value = true;
   error.value = '';
   try {
-    await auth.login(email.value.trim(), password.value);
+    await auth.login(usuario.value.trim(), password.value);
     toast.success(`Bienvenido/a ${auth.usuario.usr_nombre}`);
     router.push(auth.rutaInicio());
   } catch (e) {
@@ -44,15 +44,18 @@ async function submit() {
         <p class="text-sm text-text3 mt-1">CRM Serfunorte Los Olivos</p>
       </div>
 
-      <form @submit.prevent="submit" class="space-y-4">
-        <BaseInput
-          v-model="email"
-          label="Correo electrónico"
-          type="text"
-          placeholder="usuario@serfunorte.com"
-          required
-          autocomplete="username"
-        />
+      <form @submit.prevent="submit" class="space-y-4" novalidate>
+        <div>
+          <BaseInput
+            v-model="usuario"
+            label="Usuario de red o correo"
+            type="text"
+            placeholder="psantafe"
+            required
+            autocomplete="username"
+          />
+          <p class="mt-1 text-xs text-text3">Usa el mismo usuario y clave de Windows</p>
+        </div>
         <BaseInput
           v-model="password"
           label="Contraseña"
@@ -72,7 +75,7 @@ async function submit() {
       </form>
 
       <p class="text-xs text-text3 text-center mt-6">
-        ¿Olvidaste tu contraseña? Contacta a tu administrador.
+        ¿Olvidaste tu contraseña? Contacta a TI.
       </p>
     </div>
   </div>

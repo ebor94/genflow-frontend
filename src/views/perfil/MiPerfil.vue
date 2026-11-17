@@ -3,12 +3,9 @@ import { ref, computed } from 'vue';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { useToastStore } from '@/stores/useToastStore';
 import { useApiError } from '@/composables/useApiError';
-import { authApi } from '@/api/authApi';
 import { useRouter } from 'vue-router';
 
-import BaseInput from '@/components/ui/BaseInput.vue';
 import BaseButton from '@/components/ui/BaseButton.vue';
-import BaseModal from '@/components/ui/BaseModal.vue';
 import AreaBadge from '@/components/common/AreaBadge.vue';
 import { trackingApi } from '@/api/trackingApi';
 import dayjs from 'dayjs';
@@ -24,28 +21,6 @@ function aplicarTema() {
   localStorage.setItem('sv_tema', tema.value);
   document.documentElement.classList.toggle('dark', tema.value === 'dark');
   toast.info(`Tema ${tema.value === 'dark' ? 'oscuro' : 'claro'} aplicado`);
-}
-
-// Modal cambiar contraseña
-const showPwd = ref(false);
-const pwd = ref({ actual: '', nueva: '', repetir: '' });
-const pwdLoading = ref(false);
-
-async function cambiarPassword() {
-  if (pwd.value.nueva.length < 6) return toast.warning('La nueva contraseña debe tener al menos 6 caracteres.');
-  if (pwd.value.nueva !== pwd.value.repetir) return toast.warning('Las contraseñas no coinciden.');
-  pwdLoading.value = true;
-  try {
-    await authApi.changePassword({ actual: pwd.value.actual, nueva: pwd.value.nueva });
-    toast.success('Contraseña actualizada. Inicia sesión de nuevo.');
-    showPwd.value = false;
-    await auth.logout();
-    router.push({ name: 'login' });
-  } catch (e) {
-    notify(e);
-  } finally {
-    pwdLoading.value = false;
-  }
 }
 
 async function cerrarSesion() {
@@ -96,13 +71,15 @@ async function descargarMisDatosTracking() {
     </section>
 
     <section class="sv-card divide-y divide-text3/10">
-      <div class="px-5 py-4 flex items-center gap-4">
+      <div class="px-5 py-4 flex items-center gap-4" data-testid="fila-usuario-red">
         <span class="text-xl" aria-hidden="true">🔐</span>
         <div class="flex-1">
-          <div class="font-semibold text-text1">Cambiar contraseña</div>
-          <div class="text-xs text-text3">Recomendado cada 90 días.</div>
+          <div class="font-semibold text-text1">Usuario de red</div>
+          <div class="text-xs text-text3">La clave se cambia en Windows o con TI.</div>
         </div>
-        <BaseButton variant="secondary" size="sm" @click="showPwd = true">Cambiar</BaseButton>
+        <span class="font-mono text-sm" :class="u.ad_usuario ? 'text-text2' : 'text-danger'">
+          {{ u.ad_usuario || 'sin vincular' }}
+        </span>
       </div>
 
       <div class="px-5 py-4 flex items-center gap-4">
@@ -160,17 +137,5 @@ async function descargarMisDatosTracking() {
         </div>
       </div>
     </section>
-
-    <BaseModal :open="showPwd" title="Cambiar contraseña" @close="showPwd = false">
-      <div class="space-y-4">
-        <BaseInput v-model="pwd.actual"  label="Contraseña actual" type="password" required autocomplete="current-password" />
-        <BaseInput v-model="pwd.nueva"   label="Nueva contraseña"  type="password" required autocomplete="new-password" />
-        <BaseInput v-model="pwd.repetir" label="Repetir nueva contraseña" type="password" required autocomplete="new-password" />
-      </div>
-      <template #footer>
-        <BaseButton variant="secondary" @click="showPwd = false">Cancelar</BaseButton>
-        <BaseButton variant="primary" :loading="pwdLoading" @click="cambiarPassword">Actualizar</BaseButton>
-      </template>
-    </BaseModal>
   </div>
 </template>

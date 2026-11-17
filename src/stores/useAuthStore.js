@@ -131,9 +131,9 @@ export const useAuthStore = defineStore('svAuth', () => {
     if (areaActivaId.value) localStorage.setItem(KEYS.AREA,    String(areaActivaId.value)); else localStorage.removeItem(KEYS.AREA);
   }
 
-  async function login(email, password) {
-    // Login por SSO de identidad → tokens válidos para CRM y afiliación.
-    const res = await authApi.login({ email, password });
+  async function login(usuario, password) {
+    // Login por SSO de identidad (directorio activo) → tokens válidos para CRM y afiliación.
+    const res = await authApi.login({ usuario, password });
     accessToken.value  = res.data.accessToken;
     refreshToken.value = res.data.refreshToken;
     persist(); // persistir tokens antes de fetchMe (su interceptor los lee de localStorage)
