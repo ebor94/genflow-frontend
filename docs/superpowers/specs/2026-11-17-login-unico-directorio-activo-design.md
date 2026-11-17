@@ -43,7 +43,7 @@ Modelo Sequelize `identity/models/Identidad.js`: agregar `ad_usuario` y `passwor
 
 ## 4. Flujo de login
 
-`identidad.service.login({ usuario, email, password, ua, ip })`. El body acepta `usuario` y, por compatibilidad, `email` (el Portal y el frontend viejo envían `email`). Se usa `usuario ?? email`.
+`identidad.service.login({ usuario, email, password, ua, ip })`. El body acepta `usuario` y, por compatibilidad, `email` (el Portal y el frontend viejo envían `email`). Se usa `usuario ?? email`. Usuario y clave deben ser texto no vacío; si no → `VALIDATION_ERROR` (422) sin consultar el AD. Una clave que no es texto haría fallar el bind solo en cuentas existentes y permitiría averiguar qué cuentas hay.
 
 1. **Resolver la cuenta del AD (`sam`).**
    - Si la entrada contiene `@`: buscar `org_identidad` por `email_norm`.
@@ -105,11 +105,15 @@ Alcance: todas las identidades activas (incluye usuarios de Afiliaciones, que en
   - Fuente: `ldapService.listarUsuariosDirectorio()` con caché en memoria de 10 minutos (módulo `sv/services/directorioAd.service.js`). No se modifica `ldap.service`.
   - AD caído → 503.
 - `POST /api/sv/usuarios` (crear): el campo `usr_password` se elimina del schema Joi y se reemplaza por `ad_usuario` **requerido**.
-  1. `ldapService.buscarUsuarioPorSam(ad_usuario)`; si `null` → 422 *"El usuario de red no existe en el directorio"*.
-  2. Si otra identidad ya tiene ese `ad_usuario` → 409 indicando el correo de esa identidad.
-  3. Buscar identidad por `email_norm = usr_email`; si existe, asignarle `ad_usuario`; si no, crearla con `ad_usuario` y `password_hash = NULL`.
-  4. Crear `sv_org_usuarios` con `usr_id_identidad` y sin clave.
-- `PUT /api/sv/usuarios/:id` (editar): acepta `ad_usuario` opcional con las mismas validaciones (existencia en AD, 409 si está tomado). Si el usuario no tiene identidad, se crea como en el alta.
+  1. Si ya existe un usuario de ventas con ese `usr_email` → 409 *"Email ya registrado"*, **antes** de tocar identidades (sin efectos secundarios).
+  2. `ldapService.buscarUsuarioPorSam(ad_usuario)`; si `null` → 422 *"No se encontró ese usuario de red en el directorio activo."*.
+  3. Buscar identidad por `email_norm = usr_email`; si no existe, crearla con `password_hash = NULL`.
+  4. Si esa identidad ya pertenece a otro usuario de ventas → 409 `IDENTIDAD_EN_USO`. Una identidad nunca se reutiliza entre usuarios de GenFlow.
+  5. Vincular `ad_usuario`: si otra identidad ya lo tiene → 409 indicando su correo; si la identidad ya tenía otra cuenta del AD → 409 `CORREO_CON_OTRO_AD`.
+  6. Crear `sv_org_usuarios` con `usr_id_identidad` y sin clave.
+- `PUT /api/sv/usuarios/:id` (editar): acepta `ad_usuario` opcional con las mismas validaciones. Si el usuario ya tiene identidad, se le puede cambiar la cuenta del AD; si no la tiene, se resuelve como en el alta (sin cambiar la cuenta de una identidad ajena). Si el correo nuevo pertenece a otro usuario de ventas → 409 antes de tocar nada.
+- Cada vínculo o cambio de cuenta hecho por un administrador deja un log `ADMIN_AD_VINCULO` (§8).
+- Los handlers de usuarios y de `/auth/me` reenvían los errores inesperados con `next(e)`. Un `throw` en un handler async de Express 4 termina todo el proceso del backend.
 - `GET /api/sv/usuarios`, `GET /api/sv/usuarios/:id` y `GET /api/sv/auth/me`: incluyen `ad_usuario` (vía la identidad) para mostrarlo.
 
 ### 6.2 Frontend (`crm-frontend/src/views/admin/GestionUsuarios.vue`)
@@ -163,6 +167,7 @@ Logs estructurados `console.log(JSON.stringify({ tag, ... }))`, nunca con la cla
 | `AUTH_AD_UNAVAILABLE` | detalle (máx. 200 caracteres) |
 | `AUTH_AD_SIN_ACCESO` | ad_usuario |
 | `AUTH_AD_VINCULADO_AUTO` | ad_usuario, id_identidad |
+| `ADMIN_AD_VINCULO` | actor_usr_id, usr_id, id_identidad, ad_anterior, ad_nuevo |
 
 ## 9. Pruebas
 
@@ -186,17 +191,36 @@ Con `ldap.service` y los modelos simulados mediante `jest.mock`, como los tests 
 
 ## 10. Despliegue y reversión
 
-Orden obligatorio por el corte total:
+**Hecho que condiciona el orden:** el backend termina el proceso ante cualquier promesa rechazada sin manejar (`server.js`: `unhandledRejection → process.exit(1)`) y pm2 lo reinicia con el código que haya en disco. El código viejo hace `bcrypt.compare(clave, NULL)`, que lanza error. Por eso **no existe un estado intermedio seguro** con el código nuevo en disco, el viejo corriendo y identidades sin clave ya escritas.
+
+**Verificaciones previas:**
+- pm2: número de instancias y que no esté en modo *watch* (`pm2 describe <app>`). Los limitadores de login son en memoria por instancia.
+- Política de bloqueo del dominio (`net accounts /domain`): umbral y ventana de observación. Debe superar los intentos que permiten juntos GenFlow/Portal (5 fallos por entrada cada 15 min), Portería (10) y H360 en la misma ventana.
+- Respaldo de las carpetas publicadas de GenFlow y del Portal, para revertir copiando.
+
+**Secuencia:**
 
 1. **Migración 022** en producción.
-2. **`git pull` en el servidor sin reiniciar pm2.** `node src/identity/scripts/vincular-ad.js` (simulación) → revisar reporte → `--aplicar`. Vincular los casos "revisar" con SQL. **Condición para seguir:** las cuentas de los administradores (`SUPER_ADMIN`, `ADMIN_AREA`) quedan vinculadas. La simulación sirve además como prueba de conexión al AD.
-3. **`deploy-mantix`** (reinicio de pm2): aquí ocurre el corte.
-4. **Build + rsync** de `crm-frontend`; build + despliegue de `portal-frontend`. El orden entre ambos no importa (el backend acepta `usuario` y `email`).
-5. **Smoke:** login con usuario de red, con correo vinculado, con clave errada, con cuenta AD sin acceso a GenFlow; alta de un usuario desde Gestión de usuarios; Portal → selector de apps.
+2. **`git pull` en el servidor sin reiniciar pm2** y script en **simulación**. La simulación no escribe nada, así que es segura con el código viejo corriendo, y sirve como prueba de conexión al AD.
+3. Con el reporte, vincular por SQL (solo `UPDATE org_identidad SET ad_usuario = …`, inofensivo para el código viejo):
+   - las cuentas de los administradores (`SUPER_ADMIN`, `GERENTE_GENERAL`, `ADMIN_AREA`);
+   - **todos** los casos "revisar" con varios candidatos, porque la vinculación automática del login no aplica la regla de candidato único.
+   **Condición para seguir:** administradores vinculados.
+4. **`--aplicar` e inmediatamente `deploy-mantix`**, sin pausa: `--aplicar` crea identidades sin clave que el código viejo no tolera. Aquí ocurre el corte.
+5. SQL de los casos restantes ("revisar" de un candidato y "sin coincidencia").
+6. **Build + rsync** de `crm-frontend` y despliegue de `portal-frontend`, en seguida del reinicio. El Portal viejo tiene un campo `type="email"` que bloquea los usuarios de red.
+7. **Smoke:** login con usuario de red, con correo vinculado, con clave errada, con cuenta AD sin acceso a GenFlow; alta de un usuario desde Gestión de usuarios; Portal → selector de apps.
 
 **Configuración:** `LDAP_URL`, `LDAP_BIND_USER`, `LDAP_BIND_PASS`, `LDAP_BASE_DN` ya existen en el `.env` de producción (H360 y Portería corren en el mismo proceso). No hay variables nuevas.
 
-**Reversión:** revertir los commits del backend y reiniciar pm2; el login con clave local vuelve a funcionar porque los hashes no se borraron. La columna `ad_usuario` no estorba. Revertir el frontend si se quiere recuperar la pantalla de cambio de clave.
+**Reversión (en este orden):**
+
+1. SQL, antes de arrancar el código viejo: `UPDATE org_identidad SET password_hash = '!' WHERE password_hash IS NULL; UPDATE sv_org_usuarios SET usr_password_hash = '!' WHERE usr_password_hash IS NULL;`. El valor `'!'` nunca coincide con una clave y bcrypt no falla con él; con NULL el código viejo tumba el proceso en cada intento.
+2. Revertir los commits del backend y `deploy-mantix`.
+3. Restaurar los builds anteriores de GenFlow y del Portal desde el respaldo: los nuevos envían `usuario` y el backend viejo exige `email`.
+4. Conservar `SV_JWT_SECRET` y `SV_JWT_REFRESH_SECRET` en el `.env` hasta cerrar la ventana de reversión.
+
+Los usuarios creados después del corte quedan sin clave usable tras revertir; habría que asignársela a mano.
 
 ## 11. Fuera de alcance
 
@@ -205,3 +229,12 @@ Orden obligatorio por el corte total:
 - Mover `ldap.service.js` fuera de `h360/` a un módulo compartido.
 - MFA / federación OIDC con ADFS o Entra ID.
 - Exigir un grupo del AD para entrar a GenFlow o derivar roles desde grupos del AD.
+
+**Pendientes registrados en la revisión final (no bloquean el corte):**
+- Alta en una sola transacción (identidad + usuario de ventas) y re-vínculo de identidades ya vinculadas restringido a `SUPER_ADMIN`.
+- Vinculación automática del login solo si el `mail` es único en el directorio.
+- Límite de intentos por cuenta del AD resuelta (no por texto tecleado), si la política de bloqueo del dominio lo exige.
+- `refresh` no revalida contra el AD: un usuario deshabilitado en el AD conserva la sesión hasta 14 días si no se desactiva también en GenFlow (documentar en la baja de personal).
+- Mensajes: `SIN_ACCESO` menciona GenFlow también en el Portal; una identidad sin usuario de ventas entra al SSO y GenFlow responde "Token inválido".
+- Buscador del directorio: registrar la causa de la caída del AD, compartir la carga en curso entre búsquedas concurrentes y considerar la primera carga (hasta 60 s) frente al timeout de 15 s de GenFlow.
+- Mi perfil: refrescar el perfil al abrir para que las sesiones previas al corte muestren el usuario de red.

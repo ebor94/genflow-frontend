@@ -3634,22 +3634,36 @@ git commit -m "feat(auth): portal entra con usuario de red; sin cambio de clave 
 
 Esta task la ejecuta el controlador junto con el usuario: varios pasos corren en el servidor o en MySQL de producción y **los hace el usuario**. No es para un subagente.
 
+**Hecho que condiciona el orden:** el backend termina el proceso ante cualquier promesa rechazada sin manejar (`server.js`: `unhandledRejection → process.exit(1)`) y pm2 lo reinicia con el código que haya en disco. El código viejo hace `bcrypt.compare(clave, NULL)`, que lanza error. No existe un estado intermedio seguro con el código nuevo en disco, el viejo corriendo y identidades sin clave ya escritas: `--aplicar` y el reinicio van seguidos.
+
 **Files:** ninguno.
 
-- [ ] **Step 1: Suite completa antes de publicar**
+- [ ] **Step 1: Suites completas antes de publicar**
 
-Run (backend): `npx jest 2>&1 | tail -15` → solo fallan las dos suites preexistentes (`test/grupoIndivII.test.js`, `tests/invitacion.service.test.js`).
-Run (GenFlow): `npx vitest run 2>&1 | tail -8` → todo verde; `npm run build` limpio.
-Run (Portal): `npm run build` limpio.
+Backend: `npx jest 2>&1 | tail -15` → solo fallan las cinco suites preexistentes (`test/grupoIndivII.test.js`, `tests/invitacion.service.test.js`, `src/masajes/__tests__/adapters.test.js`, `src/masajes/__tests__/adapters.n8n.test.js`, `tests/afiliadoEmpresaAccess.test.js`).
+GenFlow: `npx vitest run 2>&1 | tail -8` → todo verde; `npm run build` limpio.
+Portal: `npm run build` limpio.
 
-- [ ] **Step 2: Push de backend y GenFlow (pedir confirmación al usuario antes)**
+- [ ] **Step 2 (usuario): Verificaciones previas**
+
+1. pm2: `pm2 describe <app>` → número de instancias y que **no** esté en modo *watch* (con *watch*, el `git pull` del Step 5 reiniciaría solo).
+2. Política de bloqueo del dominio: `net accounts /domain` → umbral y ventana de observación. Debe superar lo que permiten juntos GenFlow/Portal (5 fallos por entrada cada 15 min, por instancia de pm2), Portería (10) y H360 en la misma ventana. Si es más estricta, detenerse y replantear el límite antes del corte.
+3. Respaldos para poder revertir copiando:
+   ```bash
+   cp -a /Volumes/AppServ/www/genflow /Volumes/AppServ/www/genflow.bak-2026-11-17
+   ```
+   y la carpeta publicada del Portal (preguntar al usuario la ruta; base `/portal/`). Revisar si esa carpeta tiene un `.htaccess` que un `rsync --delete` borraría.
+
+- [ ] **Step 3: Push de backend y GenFlow (pedir confirmación al usuario antes)**
 
 ```bash
 git -C "/Users/bortega/Shared/Files From c.localized/apps/mantix/mantix-backend" push origin main
 git -C "/Users/bortega/Shared/Files From c.localized/apps/mantix/crm-frontend" push origin main
 ```
 
-- [ ] **Step 3 (usuario): Migración 022 en producción**
+El Portal no tiene remoto: se publica copiando su `dist/` en el Step 9.
+
+- [ ] **Step 4 (usuario): Migración 022 en producción**
 
 ```bash
 mysql -u root -p serfuweb < src/sv/migrations/022_identidad_ad.sql
@@ -3662,7 +3676,9 @@ SHOW COLUMNS FROM org_identidad LIKE 'ad_usuario';
 SHOW INDEX FROM org_identidad WHERE Key_name = 'uq_identidad_ad_usuario';
 ```
 
-- [ ] **Step 4 (usuario): `git pull` en el servidor SIN reiniciar pm2, y simulación del script**
+La migración es inofensiva para el código viejo: solo agrega una columna y permite NULL en las claves, sin escribir ninguna.
+
+- [ ] **Step 5 (usuario): `git pull` sin reiniciar y simulación**
 
 En el servidor, dentro de `mantix-backend`:
 
@@ -3671,15 +3687,13 @@ git pull origin main
 node src/identity/scripts/vincular-ad.js
 ```
 
-Revisar el reporte con el usuario. Si el script falla con `AD_NO_DISPONIBLE` o un error de bind, detenerse: el corte no puede hacerse sin conexión al AD.
+La simulación no escribe nada, así que es segura con el código viejo corriendo; además prueba la conexión al AD. Si falla con `AD_NO_DISPONIBLE` o un error de bind, detenerse: el corte no puede hacerse sin AD.
 
-- [ ] **Step 5 (usuario): Aplicar y vincular los casos a mano**
+Revisar el reporte con el usuario. Contar en "sin coincidencia" las identidades que no tienen usuario de ventas (gente que solo usa el Portal o Afiliaciones): perderán el Portal hasta vincularlas.
 
-```bash
-node src/identity/scripts/vincular-ad.js --aplicar
-```
+- [ ] **Step 6 (usuario): Vincular por SQL lo que no puede esperar al corte**
 
-Para cada caso de "revisar" o "sin coincidencia" que el usuario resuelva:
+Solo `UPDATE` de `ad_usuario`; no afecta al código viejo:
 
 ```sql
 UPDATE org_identidad
@@ -3687,28 +3701,38 @@ UPDATE org_identidad
  WHERE email_norm = '<correo>' AND ad_usuario IS NULL;
 ```
 
-Condición para seguir — los administradores deben quedar vinculados:
+Obligatorio antes del Step 7:
+1. Las cuentas de los administradores.
+2. **Todos** los casos "revisar" con **varios candidatos**: la vinculación automática del login no aplica la regla de candidato único y vincularía al primero que entre.
+
+Comprobación de administradores (ninguna fila con `ad_usuario` NULL):
 
 ```sql
 SELECT u.usr_email, r.rol_codigo, i.ad_usuario
   FROM sv_org_usuarios u
-  JOIN sv_org_roles r     ON r.rol_id = u.usr_rol_id
+  JOIN sv_org_roles r       ON r.rol_id = u.usr_rol_id
   LEFT JOIN org_identidad i ON i.id_identidad = u.usr_id_identidad
  WHERE u.usr_activo = 1
    AND r.rol_codigo IN ('SUPER_ADMIN', 'GERENTE_GENERAL', 'ADMIN_AREA');
 ```
 
-Ninguna fila debe tener `ad_usuario` NULL.
+Si un administrador no tiene identidad (`usr_id_identidad` NULL), el `--aplicar` del Step 7 se la crea a partir de su correo y la vincula si su `mail` del AD coincide. Si no coincide, vincularla en el Step 8.
 
-- [ ] **Step 6 (usuario): Corte**
+- [ ] **Step 7 (usuario): Aplicar e, inmediatamente, el corte**
+
+En una sola línea, sin pausa:
 
 ```bash
-deploy-mantix
+node src/identity/scripts/vincular-ad.js --aplicar && deploy-mantix
 ```
 
 Confirmar en los logs de pm2 que el proceso arrancó sin `Cannot find module`.
 
-- [ ] **Step 7: Frontends**
+- [ ] **Step 8 (usuario): SQL de los casos restantes**
+
+Con el `UPDATE` del Step 6: los "revisar" de un solo candidato, los "sin coincidencia" que se identifiquen y los administradores sin vincular.
+
+- [ ] **Step 9: Frontends, en seguida del corte**
 
 GenFlow:
 
@@ -3720,21 +3744,34 @@ rsync -av --delete dist/ /Volumes/AppServ/www/genflow/
 
 Verificar paridad de `dist/assets` local vs servidor (recuento de archivos); si el SMB perdió archivos, copiarlos con `cp`.
 
-Portal: preguntar al usuario la ruta de publicación del portal (base `/portal/`) antes de copiar `dist/`.
+Portal: copiar `portal-frontend/dist/` a su ruta de publicación (la confirmada en el Step 2), cuidando el `.htaccess` si existe. Hacerlo pronto: el Portal viejo tiene un campo `type="email"` que bloquea los usuarios de red.
 
-- [ ] **Step 8 (usuario): Smoke**
+- [ ] **Step 10 (usuario): Smoke**
 
 1. GenFlow: entrar con usuario de red → entra.
 2. GenFlow: entrar con el correo de una cuenta vinculada → entra.
 3. Clave errada → *"Usuario o contraseña incorrectos"*.
 4. Cuenta del AD sin usuario en GenFlow → *"Tu usuario de red no tiene acceso a GenFlow."*
-5. Mi perfil muestra el usuario de red y no ofrece cambiar la clave.
+5. Mi perfil muestra el usuario de red y no ofrece cambiar la clave (en una sesión previa al corte, cerrar sesión y volver a entrar).
 6. Gestión de usuarios: buscar una cuenta del AD, crear un usuario, cerrar sesión y entrar con él.
 7. Portal: entrar con usuario de red → selector de apps.
+8. Logs: sin `Unhandled Rejection`; revisar respuestas 429 inesperadas (oficinas detrás de una misma IP).
 
-- [ ] **Step 9: Reversión (solo si el smoke falla gravemente)**
+- [ ] **Step 11: Reversión (solo si el smoke falla gravemente)**
 
-En el servidor: `git revert` de los commits del backend de este plan, `deploy-mantix`. El login con clave vuelve porque los hashes no se borraron.
+En este orden:
+
+1. SQL, antes de arrancar el código viejo:
+   ```sql
+   UPDATE org_identidad   SET password_hash     = '!' WHERE password_hash     IS NULL;
+   UPDATE sv_org_usuarios SET usr_password_hash = '!' WHERE usr_password_hash IS NULL;
+   ```
+   `'!'` nunca coincide con una clave y bcrypt no falla con él; con NULL el código viejo tumba el proceso en cada intento.
+2. En el servidor: `git revert` de los commits del backend de este plan y `deploy-mantix`.
+3. Restaurar GenFlow y el Portal desde los respaldos del Step 2 (los builds nuevos envían `usuario` y el backend viejo exige `email`). El service worker de GenFlow puede servir la versión en caché: pedir recargar con Cmd/Ctrl+Shift+R.
+4. Conservar `SV_JWT_SECRET` y `SV_JWT_REFRESH_SECRET` en el `.env` hasta cerrar la ventana de reversión.
+
+Los usuarios creados después del corte quedan sin clave usable tras revertir; habría que asignársela a mano.
 
 ---
 
