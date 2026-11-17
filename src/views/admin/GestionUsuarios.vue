@@ -4,6 +4,7 @@ import { usuariosApi } from '@/api/usuariosApi';
 import { configApi } from '@/api/configApi';
 import { useToastStore } from '@/stores/useToastStore';
 import { useApiError } from '@/composables/useApiError';
+import { separarNombre } from '@/utils/nombres';
 
 import BaseButton from '@/components/ui/BaseButton.vue';
 import BaseInput from '@/components/ui/BaseInput.vue';
@@ -11,6 +12,7 @@ import BaseSelect from '@/components/ui/BaseSelect.vue';
 import BaseModal from '@/components/ui/BaseModal.vue';
 import EmptyState from '@/components/common/EmptyState.vue';
 import AreaBadge from '@/components/common/AreaBadge.vue';
+import BuscadorUsuarioRed from '@/components/admin/BuscadorUsuarioRed.vue';
 
 const toast = useToastStore();
 const { notify } = useApiError();
@@ -27,10 +29,6 @@ const showModal = ref(false);
 const editing = ref(null);
 const form = ref({});
 const saving = ref(false);
-
-const showResetModal = ref(false);
-const resetTarget = ref(null);
-const resetPwd = ref('');
 
 async function load() {
   loading.value = true;
@@ -74,7 +72,7 @@ const opcPunto = computed(() => [{ value: '', label: '—' }, ...puntos.value.ma
 
 function abrirNuevo() {
   editing.value = null;
-  form.value = { usr_area_id: '', usr_grupo_id: '', usr_rol_id: 4, usr_punto_id: '', usr_email: '', usr_nombre: '', usr_apellido: '', usr_telefono: '', usr_password: '', usr_activo: 1 };
+  form.value = { usr_area_id: '', usr_grupo_id: '', usr_rol_id: 4, usr_punto_id: '', usr_email: '', usr_nombre: '', usr_apellido: '', usr_telefono: '', ad_usuario: '', usr_activo: 1 };
   showModal.value = true;
 }
 
@@ -89,12 +87,26 @@ function abrirEdicion(u) {
     usr_nombre: u.usr_nombre,
     usr_apellido: u.usr_apellido,
     usr_telefono: u.usr_telefono || '',
+    ad_usuario: u.ad_usuario || '',
     usr_activo: u.usr_activo
   };
   showModal.value = true;
 }
 
+function onElegirCuentaAd(item) {
+  if (!form.value.usr_nombre && !form.value.usr_apellido) {
+    const { nombre, apellido } = separarNombre(item.nombre);
+    form.value.usr_nombre = nombre;
+    form.value.usr_apellido = apellido;
+  }
+  if (!form.value.usr_email && item.mail) form.value.usr_email = item.mail.toLowerCase();
+}
+
 async function guardar() {
+  if (!editing.value && !form.value.ad_usuario) {
+    toast.warning('Elige el usuario de red de la persona.');
+    return;
+  }
   saving.value = true;
   try {
     const payload = { ...form.value };
@@ -104,7 +116,7 @@ async function guardar() {
     }
     payload.usr_rol_id = parseInt(payload.usr_rol_id);
     if (editing.value) {
-      delete payload.usr_password;
+      if (!payload.ad_usuario || payload.ad_usuario === (editing.value.ad_usuario || '')) delete payload.ad_usuario;
       await usuariosApi.update(editing.value.usr_id, payload);
       toast.success('Usuario actualizado.');
     } else {
@@ -119,21 +131,6 @@ async function guardar() {
 
 async function toggle(u) {
   try { await usuariosApi.toggle(u.usr_id); await load(); } catch (e) { notify(e); }
-}
-
-function abrirReset(u) {
-  resetTarget.value = u;
-  resetPwd.value = '';
-  showResetModal.value = true;
-}
-
-async function ejecutarReset() {
-  if (resetPwd.value.length < 6) return toast.warning('Min 6 caracteres');
-  try {
-    await usuariosApi.resetPassword(resetTarget.value.usr_id, resetPwd.value);
-    toast.success(`Contraseña actualizada para ${resetTarget.value.usr_email}`);
-    showResetModal.value = false;
-  } catch (e) { notify(e); }
 }
 </script>
 
@@ -160,6 +157,7 @@ async function ejecutarReset() {
             <th class="text-left px-4 py-3">#</th>
             <th class="text-left px-4 py-3">Nombre</th>
             <th class="text-left px-4 py-3">Email</th>
+            <th class="text-left px-4 py-3">Usuario de red</th>
             <th class="text-left px-4 py-3">Rol</th>
             <th class="text-left px-4 py-3">Área</th>
             <th class="text-left px-4 py-3">Grupo</th>
@@ -172,6 +170,7 @@ async function ejecutarReset() {
             <td class="px-4 py-3 text-text3">{{ u.usr_id }}</td>
             <td class="px-4 py-3 font-semibold text-text1">{{ u.usr_nombre }} {{ u.usr_apellido }}</td>
             <td class="px-4 py-3 text-text2">{{ u.usr_email }}</td>
+            <td class="px-4 py-3 font-mono" :class="u.ad_usuario ? 'text-text2' : 'text-danger'">{{ u.ad_usuario || 'sin vincular' }}</td>
             <td class="px-4 py-3"><span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-gold/10 text-gold">{{ u.rol?.rol_codigo }}</span></td>
             <td class="px-4 py-3">
               <AreaBadge v-if="u.area" :codigo="u.area.area_codigo" :nombre="u.area.area_codigo" :color-hex="u.area.area_color_hex" size="sm" />
@@ -181,7 +180,6 @@ async function ejecutarReset() {
             <td class="px-4 py-3 text-text2">{{ u.punto?.punto_codigo || '—' }}</td>
             <td class="px-4 py-3 text-right whitespace-nowrap space-x-2">
               <BaseButton size="sm" variant="ghost" @click="abrirEdicion(u)">Editar</BaseButton>
-              <BaseButton size="sm" variant="ghost" @click="abrirReset(u)">🔑</BaseButton>
               <BaseButton size="sm" :variant="u.usr_activo ? 'secondary' : 'success'" @click="toggle(u)">
                 {{ u.usr_activo ? 'Desactivar' : 'Activar' }}
               </BaseButton>
@@ -194,6 +192,9 @@ async function ejecutarReset() {
     <!-- Modal crear/editar -->
     <BaseModal :open="showModal" :title="editing ? 'Editar usuario' : 'Nuevo usuario'" max-width="max-w-2xl" @close="showModal = false">
       <form @submit.prevent="guardar" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div class="sm:col-span-2">
+          <BuscadorUsuarioRed v-model="form.ad_usuario" :required="!editing" @seleccionar="onElegirCuentaAd" />
+        </div>
         <BaseInput  v-model="form.usr_nombre"   label="Nombres"  required />
         <BaseInput  v-model="form.usr_apellido" label="Apellidos" required />
         <BaseInput  v-model="form.usr_email"    label="Email" type="email" required class="sm:col-span-2" />
@@ -202,7 +203,6 @@ async function ejecutarReset() {
         <BaseSelect v-model="form.usr_area_id"  label="Área"   :options="opcArea" />
         <BaseSelect v-model="form.usr_grupo_id" label="Grupo"  :options="opcGrupo" />
         <BaseSelect v-model="form.usr_punto_id" label="Punto"  :options="opcPunto" />
-        <BaseInput  v-if="!editing" v-model="form.usr_password" label="Contraseña inicial" type="password" required class="sm:col-span-2" />
         <label class="flex items-center gap-3 cursor-pointer sm:col-span-2">
           <input type="checkbox" :checked="!!form.usr_activo" @change="form.usr_activo = $event.target.checked ? 1 : 0" class="w-4 h-4 rounded border-text3/40 text-gold focus:ring-gold" />
           <span class="text-sm text-text2 font-semibold">Activo</span>
@@ -211,18 +211,6 @@ async function ejecutarReset() {
       <template #footer>
         <BaseButton variant="secondary" @click="showModal = false">Cancelar</BaseButton>
         <BaseButton variant="primary" :loading="saving" @click="guardar">{{ editing ? 'Guardar' : 'Crear' }}</BaseButton>
-      </template>
-    </BaseModal>
-
-    <!-- Modal reset password -->
-    <BaseModal :open="showResetModal" title="Restablecer contraseña" @close="showResetModal = false">
-      <p class="text-sm text-text2 mb-4">
-        Vas a establecer una nueva contraseña para <strong>{{ resetTarget?.usr_email }}</strong>.
-      </p>
-      <BaseInput v-model="resetPwd" label="Nueva contraseña" type="password" required />
-      <template #footer>
-        <BaseButton variant="secondary" @click="showResetModal = false">Cancelar</BaseButton>
-        <BaseButton variant="primary" @click="ejecutarReset">Actualizar</BaseButton>
       </template>
     </BaseModal>
   </div>
