@@ -3653,13 +3653,28 @@ Portal: `npm run build` limpio.
    cp -a /Volumes/AppServ/www/genflow /Volumes/AppServ/www/genflow.bak-2026-11-17
    ```
    y la carpeta publicada del Portal (preguntar al usuario la ruta; base `/portal/`). Revisar si esa carpeta tiene un `.htaccess` que un `rsync --delete` borraría.
+4. Usuarios de ventas que comparten identidad (con el código nuevo, editarles la cuenta del AD responde `IDENTIDAD_EN_USO`; corregirlos por SQL si aparecen):
+   ```sql
+   SELECT usr_id_identidad, COUNT(*) FROM sv_org_usuarios
+    WHERE usr_id_identidad IS NOT NULL GROUP BY 1 HAVING COUNT(*) > 1;
+   ```
 
-- [ ] **Step 3: Push de backend y GenFlow (pedir confirmación al usuario antes)**
+- [ ] **Step 3: Integrar y publicar backend y GenFlow (pedir confirmación al usuario antes)**
+
+El backend vive en la rama `feat/login-directorio-activo`, no en `main`: otra sesión reseteó `main` a `origin/main` para publicar un commit ajeno. Integrarla en `main` justo antes del corte, sin reescribir lo publicado:
 
 ```bash
-git -C "/Users/bortega/Shared/Files From c.localized/apps/mantix/mantix-backend" push origin main
+cd "/Users/bortega/Shared/Files From c.localized/apps/mantix/mantix-backend"
+git status --short            # debe estar limpio; si hay cambios de otra sesión, detenerse
+git fetch origin
+git checkout main && git merge --ff-only origin/main
+git merge --no-ff feat/login-directorio-activo -m "Merge: login único contra el directorio activo"
+npx jest 2>&1 | tail -15      # solo las 5 suites preexistentes en rojo
+git push origin main
 git -C "/Users/bortega/Shared/Files From c.localized/apps/mantix/crm-frontend" push origin main
 ```
+
+Avisar a las demás sesiones que trabajan en `mantix-backend` antes de integrar: comparten el mismo árbol de trabajo.
 
 El Portal no tiene remoto: se publica copiando su `dist/` en el Step 9.
 
