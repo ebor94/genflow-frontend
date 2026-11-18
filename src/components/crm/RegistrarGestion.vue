@@ -1,7 +1,9 @@
 <script setup>
 /**
  * RegistrarGestion.vue — modal para registrar gestión inmutable.
- * Props: open, prospecto (objeto con prosp_id, prosp_grupo_id, prosp_area_id, persona, productos)
+ * Props: open, prospecto (objeto con prosp_id, prosp_grupo_id, prosp_area_id, persona, productos),
+ *        homenajeSalaId (modo sala: canal fijo "visita_sala" y guardado por /sv/salas),
+ *        resumenCliente (cliente de otro asesor: muestra resumen y oculta productos)
  * Emit: close, registrada (gestion)
  *
  * Incluye editor opcional de productos de interés del cliente.
@@ -14,6 +16,8 @@ import { useGestionesStore } from '@/stores/useGestionesStore';
 import { useToastStore } from '@/stores/useToastStore';
 import { useApiError } from '@/composables/useApiError';
 import { prospectosApi } from '@/api/prospectosApi';
+import { salasApi } from '@/api/salasApi';
+import { fmtFecha, fmtFechaHora } from '@/utils/format';
 
 import BaseModal from '@/components/ui/BaseModal.vue';
 import BaseSelect from '@/components/ui/BaseSelect.vue';
@@ -23,7 +27,9 @@ import BaseButton from '@/components/ui/BaseButton.vue';
 
 const props = defineProps({
   open: { type: Boolean, required: true },
-  prospecto: { type: Object, default: null }
+  prospecto: { type: Object, default: null },
+  homenajeSalaId: { type: Number, default: null },
+  resumenCliente: { type: Object, default: null }
 });
 const emit = defineEmits(['close', 'registrada']);
 
@@ -32,15 +38,26 @@ const gestiones = useGestionesStore();
 const toast = useToastStore();
 const { notify } = useApiError();
 
-const form = ref({
-  gest_canal: 'llamada',
-  gest_resultado_id: '',
-  gest_estado_nuevo_id: '',
-  gest_comentario: '',
-  gest_duracion_seg: null,
-  gest_prox_fecha: '',
-  gest_prox_hora: ''
-});
+const modoSala = computed(() => props.homenajeSalaId != null);
+// Quien visita el cliente de otro asesor no edita sus productos.
+const conProductos = computed(() => !props.resumenCliente);
+
+const ETIQUETAS_CANAL = { llamada: '📞 Llamada', presencial: '🤝 Presencial', correo: '✉️ Correo', visita_sala: '🏛️ Visita en sala' };
+function etiquetaCanal(canal) { return ETIQUETAS_CANAL[canal] || canal; }
+
+function formVacio() {
+  return {
+    gest_canal: props.homenajeSalaId != null ? 'visita_sala' : 'llamada',
+    gest_resultado_id: '',
+    gest_estado_nuevo_id: '',
+    gest_comentario: '',
+    gest_duracion_seg: null,
+    gest_prox_fecha: '',
+    gest_prox_hora: ''
+  };
+}
+
+const form = ref(formVacio());
 const saving = ref(false);
 
 // ─── Productos de interés (editor opcional) ───
@@ -97,15 +114,7 @@ const opcCanales = [
 
 watch(() => props.open, (v) => {
   if (v) {
-    form.value = {
-      gest_canal: 'llamada',
-      gest_resultado_id: '',
-      gest_estado_nuevo_id: '',
-      gest_comentario: '',
-      gest_duracion_seg: null,
-      gest_prox_fecha: '',
-      gest_prox_hora: ''
-    };
+    form.value = formVacio();
     // Cargar productos actuales del prospecto
     const actuales = (props.prospecto?.productos || []).map(p => ({
       prod_id:      p.pp_prod_id,
@@ -170,23 +179,30 @@ async function submit() {
   saving.value = true;
   try {
     // 1) Si los productos cambiaron, guardarlos primero
-    if (productosCambiaron.value) {
+    if (conProductos.value && productosCambiaron.value) {
       await prospectosApi.actualizarProductos(props.prospecto.prosp_id, productosSel.value);
       toast.info(`Productos actualizados (${productosSel.value.length})`);
     }
 
     // 2) Registrar gestión
-    const payload = {
-      gest_prosp_id: props.prospecto.prosp_id,
-      gest_canal: form.value.gest_canal,
+    const base = {
       gest_resultado_id: parseInt(form.value.gest_resultado_id),
       gest_estado_nuevo_id: form.value.gest_estado_nuevo_id ? parseInt(form.value.gest_estado_nuevo_id) : null,
       gest_comentario: form.value.gest_comentario || null,
-      gest_duracion_seg: form.value.gest_duracion_seg || null,
       gest_prox_fecha: form.value.gest_prox_fecha || null,
       gest_prox_hora:  form.value.gest_prox_hora || null
     };
-    const g = await gestiones.registrar(payload);
+    let g;
+    if (modoSala.value) {
+      g = (await salasApi.registrarVisita(props.homenajeSalaId, base)).data;
+    } else {
+      g = await gestiones.registrar({
+        gest_prosp_id: props.prospecto.prosp_id,
+        gest_canal: form.value.gest_canal,
+        gest_duracion_seg: form.value.gest_duracion_seg || null,
+        ...base
+      });
+    }
     toast.success('Gestión registrada');
     emit('registrada', g);
     emit('close');
@@ -208,8 +224,29 @@ async function submit() {
       <div class="text-xs text-text3">{{ prospecto.persona.persona_telefono_principal }}</div>
     </div>
 
+    <div v-if="resumenCliente" data-testid="resumen-cliente-sala"
+         class="sv-card border border-gold/30 bg-gold/5 p-3 mb-4 text-sm space-y-1">
+      <div>
+        <span class="text-text3">Cliente de</span>
+        <strong>{{ resumenCliente.duenio_nombre || '—' }}</strong>
+        · {{ resumenCliente.estado_nombre || '—' }}
+      </div>
+      <div v-if="resumenCliente.prox_gestion_fecha">
+        <span class="text-text3">Próxima gestión:</span> {{ fmtFecha(resumenCliente.prox_gestion_fecha) }}
+      </div>
+      <div v-if="resumenCliente.ultima_gestion">
+        <span class="text-text3">Última gestión:</span>
+        {{ fmtFechaHora(resumenCliente.ultima_gestion.fecha_hora) }}
+        · {{ etiquetaCanal(resumenCliente.ultima_gestion.canal) }}
+        · {{ resumenCliente.ultima_gestion.resultado_nombre || 'sin resultado' }}
+      </div>
+    </div>
+
     <form @submit.prevent="submit" class="space-y-4">
-      <BaseSelect v-model="form.gest_canal"    label="Canal"     :options="opcCanales"   required />
+      <BaseSelect v-if="!modoSala" v-model="form.gest_canal" label="Canal" :options="opcCanales" required />
+      <div v-else data-testid="canal-fijo-sala" class="text-sm text-text2">
+        Canal: <strong>🏛️ Visita en sala</strong>
+      </div>
       <BaseSelect v-model="form.gest_resultado_id" label="Resultado *" :options="opcResultados" required />
       <BaseSelect v-model="form.gest_estado_nuevo_id" label="Cambiar estado a..." :options="opcEstados" />
 
@@ -228,7 +265,7 @@ async function submit() {
       </div>
 
       <!-- Editor de productos de interés -->
-      <div class="border-t border-text3/10 pt-3">
+      <div v-if="conProductos" class="border-t border-text3/10 pt-3">
         <div class="flex items-center justify-between mb-2">
           <div>
             <div class="text-sm font-semibold text-text1">🛒 Productos de interés</div>
