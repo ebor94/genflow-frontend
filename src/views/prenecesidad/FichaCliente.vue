@@ -7,6 +7,7 @@ import { useAuthStore } from '@/stores/useAuthStore';
 import { useApiError } from '@/composables/useApiError';
 import { useTelefono } from '@/composables/useTelefono';
 import { personasApi } from '@/api/personasApi';
+import { salasApi } from '@/api/salasApi';
 import { fmtFecha } from '@/utils/format';
 
 import StatusPill from '@/components/common/StatusPill.vue';
@@ -34,6 +35,23 @@ const showRegistrar = ref(false);
 const showAgendar = ref(false);
 const showReasignar = ref(false);
 
+// Visita en sala: solo si ?homenaje= apunta a un homenaje en curso de ESTE cliente.
+const visitaSala = ref(null);
+
+async function cargarVisitaSala() {
+  visitaSala.value = null;
+  const homenajeId = parseInt(route.query.homenaje);
+  if (!homenajeId) return;
+  try {
+    const h = (await salasApi.obtener(homenajeId)).data;
+    if (h && h.estado !== 'FINALIZADO' && h.cliente?.prosp_id === parseInt(route.params.id)) {
+      visitaSala.value = h;
+    }
+  } catch {
+    visitaSala.value = null; // cualquier error: la ficha funciona igual que siempre
+  }
+}
+
 const p = computed(() => store.activo);
 const persona = computed(() => p.value?.persona);
 const historial = computed(() => gestiones.historial.get(parseInt(route.params.id)) || { items: [], hasMore: false, loading: false });
@@ -49,6 +67,7 @@ async function cargar() {
       otrosProspectos.value = r.data || [];
     }
   } catch (e) { notify(e); }
+  await cargarVisitaSala();
 }
 
 onMounted(cargar);
@@ -98,6 +117,12 @@ function llamar() {
           @agendar="showAgendar = true"
         />
       </header>
+
+      <!-- Visita en sala de velación -->
+      <section v-if="visitaSala" data-testid="aviso-visita-sala"
+               class="sv-card p-4 mb-4 border-l-4 border-gold bg-gold/5 text-sm">
+        🏛️ Visita en sala — {{ visitaSala.sala_nombre }}, {{ visitaSala.sede_nombre }} · homenaje de {{ visitaSala.nombre_ser_querido }}
+      </section>
 
       <!-- Próxima gestión -->
       <section v-if="p.prosp_prox_gestion_fecha" class="sv-card p-4 mb-4 flex items-center justify-between"
@@ -187,7 +212,9 @@ function llamar() {
         </div>
       </section>
 
-      <RegistrarGestion :open="showRegistrar" :prospecto="p" @close="showRegistrar = false" @registrada="cargar" />
+      <RegistrarGestion :open="showRegistrar" :prospecto="p"
+                        :homenaje-sala-id="visitaSala ? visitaSala.id : null"
+                        @close="showRegistrar = false" @registrada="cargar" />
       <AgendarProximaModal :open="showAgendar" :prospecto="p" @close="showAgendar = false" @actualizado="cargar" />
       <ReasignarProspectoModal :open="showReasignar" :prospecto="p" @close="showReasignar = false" @reasignado="cargar" />
     </template>
