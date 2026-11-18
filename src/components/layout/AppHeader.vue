@@ -67,6 +67,7 @@ const nav = computed(() => {
   if (cod === 'PRENEC') {
     grupos.push({ tipo: 'link', to: { name: 'prenec-panel' },    label: 'Panel' });
     grupos.push({ tipo: 'link', to: { name: 'prenec-clientes' }, label: 'Clientes' });
+    grupos.push({ tipo: 'link', to: { name: 'prenec-salas' },    label: 'Salas' });
     grupos.push({ tipo: 'link', to: { name: 'prenec-agenda' },   label: 'Agenda' });
     grupos.push({ tipo: 'link', to: { name: 'prenec-metricas' }, label: 'Métricas' });
     if (esSup) {

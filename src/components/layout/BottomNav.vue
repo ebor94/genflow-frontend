@@ -13,6 +13,7 @@ const items = computed(() => {
   if (cod === 'PRENEC') {
     base.push({ to: { name: 'prenec-panel' },    label: 'Panel',   icon: '🏠' });
     base.push({ to: { name: 'prenec-clientes' }, label: 'Clientes', icon: '👥' });
+    base.push({ to: { name: 'prenec-salas' },    label: 'Salas',    icon: '🏛️' });
     base.push({ to: { name: 'prenec-agenda' },   label: 'Agenda',  icon: '📅' });
     base.push({ to: { name: 'prenec-metricas' }, label: 'Métricas', icon: '📊' });
   } else if (cod === 'PREV-EMP') {

@@ -79,6 +79,8 @@ const routes = [
     meta: { requiereAuth: true, areaCodigo: 'PRENEC', nivelMaximo: 3 } },
   { path: '/prenec/llamada/:id', name: 'prenec-llamada',   component: () => import('@/views/prenecesidad/EnLlamada.vue'),
     meta: { requiereAuth: true, areaCodigo: 'PRENEC' } },
+  { path: '/prenec/salas',       name: 'prenec-salas',     component: () => import('@/views/prenecesidad/SalasVelacion.vue'),
+    meta: { requiereAuth: true, areaCodigo: 'PRENEC' } },
 
   // ─── Empresariales B2B (Fase 2) ───
   { path: '/emp',              name: 'placeholder-emp',  redirect: { name: 'emp-panel' } },

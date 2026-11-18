@@ -73,6 +73,7 @@ function itemsDeArea(codigo) {
     case 'PRENEC': return [
       { to: { name: 'prenec-panel' },    label: 'Panel del día',    icon: '🏠' },
       { to: { name: 'prenec-clientes' }, label: 'Mis clientes',     icon: '👥' },
+      { to: { name: 'prenec-salas' },    label: 'Salas de velación', icon: '🏛️' },
       { to: { name: 'prenec-agenda' },   label: 'Agenda área',      icon: '📅' },
       { to: { name: 'prenec-metricas' }, label: 'Mis métricas',     icon: '📊' },
       ...(sup ? [{ to: { name: 'prenec-supervisor' }, label: 'Panel supervisor', icon: '👁️' }] : []),
