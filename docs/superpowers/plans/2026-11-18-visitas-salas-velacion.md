@@ -3027,3 +3027,13 @@ ls -la /Volumes/AppServ/www/genflow/.htaccess
 1. GenFlow: restaura la carpeta respaldada en el Step 6 y pide recargar con Cmd/Ctrl+Shift+R.
 2. Backend: `git revert` del merge de `feat/salas-velacion`, push y `deploy-mantix`.
 3. La migración 023 puede quedarse. Es inofensiva para el código anterior: una fuente sin uso, una columna que puede estar vacía y una tabla nueva.
+
+- [ ] **Step 9: Desvincular un homenaje vinculado al cliente equivocado (operación manual)**
+
+Si "Atender contratante" vinculó un homenaje a un cliente que no corresponde, se desvincula a mano:
+
+```sql
+DELETE FROM sv_crm_salas_contratantes WHERE sc_homenaje_sala_id = <id>;
+```
+
+Las gestiones ya registradas en ese cliente quedan donde están, porque son inmutables. Después de desvincular, el próximo "Atender contratante" vuelve a vincular el homenaje.

@@ -311,3 +311,7 @@ Sin `homenajeSalaId`, el componente funciona igual que hoy. El selector de canal
 - Asignación de homenajes a asesores por el supervisor.
 - Reportes específicos de salas. La fuente `SALA_VELACION` ya permite filtrar en los reportes que existen.
 - El hueco de permisos de `/sv/gestiones`, que va en la sesión de `fix/permisos-gestiones`.
+- Seguimientos que quedan para después:
+  - Acción de supervisor para desvincular un homenaje, o confirmación antes de vincular cuando el teléfono lo escribió el asesor y ya pertenece a otro cliente.
+  - Regla de crédito del contrato cuando un visitante pasa a CERRADO al cliente de otro asesor. Hoy cuenta para quien registra la gestión (`gest_asesor_id`), también en el snapshot.
+  - Margen para registrar visitas después de FINALIZADO. No se hace: hoy se avisa y se suelta el modo sala.
