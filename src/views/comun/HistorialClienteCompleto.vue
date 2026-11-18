@@ -72,7 +72,7 @@ function iniciales(p) {
 }
 
 function colorCanal(canal) {
-  return { llamada: '📞', presencial: '🤝', correo: '✉️' }[canal] || '📝';
+  return { llamada: '📞', presencial: '🤝', correo: '✉️', visita_sala: '🏛️' }[canal] || '📝';
 }
 </script>
 
@@ -169,6 +169,7 @@ function colorCanal(canal) {
             <p v-if="g.gest_comentario" class="text-sm text-text2 mt-1 whitespace-pre-line">{{ g.gest_comentario }}</p>
             <div class="text-xs text-text3 mt-1">
               por <strong>{{ g.asesor?.usr_nombre }} {{ g.asesor?.usr_apellido }}</strong>
+              <span v-if="g.gest_canal === 'visita_sala'"> · Visita en sala</span>
               <span v-if="g.gest_duracion_seg"> · {{ Math.floor(g.gest_duracion_seg / 60) }}m {{ g.gest_duracion_seg % 60 }}s</span>
               <span v-if="g.gest_prox_fecha"> · próx: {{ g.gest_prox_fecha }}</span>
             </div>

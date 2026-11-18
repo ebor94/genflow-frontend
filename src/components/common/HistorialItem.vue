@@ -14,7 +14,7 @@ const color = computed(() => {
 });
 
 const iconoCanal = computed(() => ({
-  llamada: '📞', presencial: '🤝', correo: '✉️'
+  llamada: '📞', presencial: '🤝', correo: '✉️', visita_sala: '🏛️'
 }[props.gestion.gest_canal] || '📝'));
 </script>
 
@@ -38,6 +38,7 @@ const iconoCanal = computed(() => ({
     <p v-if="gestion.gest_comentario" class="text-sm text-text2 mt-1 whitespace-pre-line">{{ gestion.gest_comentario }}</p>
     <div class="text-xs text-text3 mt-1 flex items-center gap-2">
       <span v-if="gestion.asesor">por {{ gestion.asesor.usr_nombre }} {{ gestion.asesor.usr_apellido }}</span>
+      <span v-if="gestion.gest_canal === 'visita_sala'">· Visita en sala</span>
       <span v-if="gestion.gest_duracion_seg">· {{ Math.floor(gestion.gest_duracion_seg / 60) }}m {{ gestion.gest_duracion_seg % 60 }}s</span>
       <span v-if="gestion.gest_prox_fecha">· próx: {{ gestion.gest_prox_fecha }} {{ gestion.gest_prox_hora?.slice(0,5) || '' }}</span>
     </div>
