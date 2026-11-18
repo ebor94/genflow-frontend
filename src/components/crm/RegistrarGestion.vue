@@ -31,12 +31,12 @@ const props = defineProps({
   homenajeSalaId: { type: Number, default: null },
   resumenCliente: { type: Object, default: null }
 });
-const emit = defineEmits(['close', 'registrada']);
+const emit = defineEmits(['close', 'registrada', 'sala-cerrada']);
 
 const config = useConfigStore();
 const gestiones = useGestionesStore();
 const toast = useToastStore();
-const { notify } = useApiError();
+const { notify, extract } = useApiError();
 
 const modoSala = computed(() => props.homenajeSalaId != null);
 // Quien visita el cliente de otro asesor no edita sus productos.
@@ -207,7 +207,15 @@ async function submit() {
     emit('registrada', g);
     emit('close');
   } catch (e) {
-    notify(e);
+    const codigo = e?.response?.data?.error;
+    if (modoSala.value && (codigo === 'HOMENAJE_CERRADO' || codigo === 'HOMENAJE_NO_ENCONTRADO')) {
+      // El homenaje terminó mientras el formulario estaba abierto: avisar y soltar el modo sala.
+      toast.warning(extract(e));
+      emit('sala-cerrada');
+      emit('close');
+    } else {
+      notify(e);
+    }
   } finally {
     saving.value = false;
   }
@@ -227,8 +235,7 @@ async function submit() {
     <div v-if="resumenCliente" data-testid="resumen-cliente-sala"
          class="sv-card border border-gold/30 bg-gold/5 p-3 mb-4 text-sm space-y-1">
       <div>
-        <span class="text-text3">Cliente de</span>
-        <strong>{{ resumenCliente.duenio_nombre || '—' }}</strong>
+        <span class="text-text3">Cliente de</span>{{ ' ' }}<strong>{{ resumenCliente.duenio_nombre || '—' }}</strong>
         · {{ resumenCliente.estado_nombre || '—' }}
       </div>
       <div v-if="resumenCliente.prox_gestion_fecha">

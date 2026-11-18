@@ -44,7 +44,7 @@ async function cargarVisitaSala() {
   if (!homenajeId) return;
   try {
     const h = (await salasApi.obtener(homenajeId)).data;
-    if (h && h.estado !== 'FINALIZADO' && h.cliente?.prosp_id === parseInt(route.params.id)) {
+    if (h && h.estado !== 'FINALIZADO' && h.puede_atender && h.cliente?.prosp_id === parseInt(route.params.id)) {
       visitaSala.value = h;
     }
   } catch {
@@ -214,7 +214,8 @@ function llamar() {
 
       <RegistrarGestion :open="showRegistrar" :prospecto="p"
                         :homenaje-sala-id="visitaSala ? visitaSala.id : null"
-                        @close="showRegistrar = false" @registrada="cargar" />
+                        @close="showRegistrar = false" @registrada="cargar"
+                        @sala-cerrada="visitaSala = null" />
       <AgendarProximaModal :open="showAgendar" :prospecto="p" @close="showAgendar = false" @actualizado="cargar" />
       <ReasignarProspectoModal :open="showReasignar" :prospecto="p" @close="showReasignar = false" @reasignado="cargar" />
     </template>

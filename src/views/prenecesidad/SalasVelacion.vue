@@ -99,6 +99,19 @@ function onVisitaRegistrada() {
   cargar();
 }
 
+// Cerrar sin registrar: refresca para no dejar la tarjeta con una etiqueta vieja.
+// Si ya se registró, onVisitaRegistrada dejó visita en null y recargó, así que no se repite.
+function onVisitaCerrada() {
+  const habiaVisita = visita.value !== null;
+  visita.value = null;
+  if (habiaVisita) cargar();
+}
+
+function onSalaCerrada() {
+  visita.value = null;
+  cargar();
+}
+
 onMounted(cargar);
 </script>
 
@@ -155,7 +168,8 @@ onMounted(cargar);
                       :prospecto="visita ? visita.prospecto : null"
                       :homenaje-sala-id="visita ? visita.homenajeId : null"
                       :resumen-cliente="visita ? visita.resumen : null"
-                      @close="visita = null"
-                      @registrada="onVisitaRegistrada" />
+                      @close="onVisitaCerrada"
+                      @registrada="onVisitaRegistrada"
+                      @sala-cerrada="onSalaCerrada" />
   </div>
 </template>

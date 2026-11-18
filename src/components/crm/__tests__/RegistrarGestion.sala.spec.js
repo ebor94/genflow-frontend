@@ -8,6 +8,7 @@ vi.mock('@/api/prospectosApi', () => ({ prospectosApi: { actualizarProductos: vi
 import { salasApi } from '@/api/salasApi';
 import { prospectosApi } from '@/api/prospectosApi';
 import { useConfigStore } from '@/stores/useConfigStore';
+import { useToastStore } from '@/stores/useToastStore';
 import { useGestionesStore } from '@/stores/useGestionesStore';
 import RegistrarGestion from '@/components/crm/RegistrarGestion.vue';
 
@@ -33,7 +34,7 @@ function factory(props = {}) {
     props: { open: true, prospecto: PROSPECTO, ...props },
     global: { plugins: [pinia], stubs: { teleport: true } }
   });
-  return { w, gestiones: useGestionesStore(pinia) };
+  return { w, gestiones: useGestionesStore(pinia), toast: useToastStore(pinia) };
 }
 
 async function elegirResultadoYRegistrar(w, indiceSelectResultado) {
@@ -69,12 +70,30 @@ describe('RegistrarGestion en modo sala', () => {
     salasApi.registrarVisita.mockResolvedValue({ success: true, data: { gest_id: 78 } });
     const { w } = factory({ homenajeSalaId: 57, resumenCliente: RESUMEN });
     const resumen = w.find('[data-testid="resumen-cliente-sala"]');
-    expect(resumen.text()).toContain('Carmen Contreras');
-    expect(resumen.text()).toContain('Contactado');
+    expect(resumen.text().replace(/\s+/g, ' ')).toContain('Cliente de Carmen Contreras · Contactado');
     expect(resumen.text()).toContain('No contesta');
     expect(w.text()).not.toContain('Productos de interés');
     await elegirResultadoYRegistrar(w, 0);
     expect(prospectosApi.actualizarProductos).not.toHaveBeenCalled();
+  });
+
+  it('si el homenaje ya finalizó avisa, suelta el modo sala y cierra sin registrar', async () => {
+    salasApi.registrarVisita.mockRejectedValue({ response: { data: { error: 'HOMENAJE_CERRADO', message: 'Este homenaje ya finalizó' } } });
+    const { w, toast } = factory({ homenajeSalaId: 55 });
+    await elegirResultadoYRegistrar(w, 0);
+    expect(toast.warning).toHaveBeenCalledWith('Este homenaje ya finalizó');
+    expect(w.emitted('sala-cerrada')).toHaveLength(1);
+    expect(w.emitted('close')).toHaveLength(1);
+    expect(w.emitted('registrada')).toBeUndefined();
+  });
+
+  it('otros errores en modo sala siguen con el aviso de error y no cierran', async () => {
+    salasApi.registrarVisita.mockRejectedValue({ response: { data: { error: 'OTRO', message: 'Falla' } } });
+    const { w, toast } = factory({ homenajeSalaId: 55 });
+    await elegirResultadoYRegistrar(w, 0);
+    expect(toast.error).toHaveBeenCalledWith('Falla');
+    expect(w.emitted('sala-cerrada')).toBeUndefined();
+    expect(w.emitted('close')).toBeUndefined();
   });
 
   it('sin props de sala funciona como siempre', async () => {

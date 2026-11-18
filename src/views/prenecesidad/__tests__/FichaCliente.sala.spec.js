@@ -25,7 +25,7 @@ const PROSPECTO = {
 };
 const HOMENAJE = {
   id: 56, estado: 'ABIERTO', sala_nombre: 'Sala 3', sede_nombre: 'Sede Norte',
-  nombre_ser_querido: 'Luis Pérez', cliente: { prosp_id: 900, es_mio: true }
+  nombre_ser_querido: 'Luis Pérez', cliente: { prosp_id: 900, es_mio: true }, puede_atender: true
 };
 
 function factory() {
@@ -59,6 +59,29 @@ describe('FichaCliente con ?homenaje', () => {
     salasApi.obtener.mockResolvedValue({ success: true, data: { ...HOMENAJE, cliente: { prosp_id: 901, es_mio: false } } });
     const w = factory();
     await flushPromises();
+    expect(salasApi.obtener).toHaveBeenCalledWith(56);
+    expect(w.find('[data-testid="aviso-visita-sala"]').exists()).toBe(false);
+    expect(w.findComponent(RegistrarGestion).props('homenajeSalaId')).toBeNull();
+  });
+
+  it('ignora el homenaje si el usuario no puede atender', async () => {
+    ruta.query = { homenaje: '56' };
+    salasApi.obtener.mockResolvedValue({ success: true, data: { ...HOMENAJE, puede_atender: false } });
+    const w = factory();
+    await flushPromises();
+    expect(salasApi.obtener).toHaveBeenCalledWith(56);
+    expect(w.find('[data-testid="aviso-visita-sala"]').exists()).toBe(false);
+    expect(w.findComponent(RegistrarGestion).props('homenajeSalaId')).toBeNull();
+  });
+
+  it('al cerrarse el homenaje desde el formulario quita el aviso y suelta el modo sala', async () => {
+    ruta.query = { homenaje: '56' };
+    salasApi.obtener.mockResolvedValue({ success: true, data: HOMENAJE });
+    const w = factory();
+    await flushPromises();
+    expect(w.find('[data-testid="aviso-visita-sala"]').exists()).toBe(true);
+    w.findComponent(RegistrarGestion).vm.$emit('sala-cerrada');
+    await flushPromises();
     expect(w.find('[data-testid="aviso-visita-sala"]').exists()).toBe(false);
     expect(w.findComponent(RegistrarGestion).props('homenajeSalaId')).toBeNull();
   });
@@ -68,6 +91,7 @@ describe('FichaCliente con ?homenaje', () => {
     salasApi.obtener.mockResolvedValue({ success: true, data: { ...HOMENAJE, estado: 'FINALIZADO' } });
     let w = factory();
     await flushPromises();
+    expect(salasApi.obtener).toHaveBeenCalledWith(56);
     expect(w.find('[data-testid="aviso-visita-sala"]').exists()).toBe(false);
 
     salasApi.obtener.mockRejectedValue({ response: { status: 404 } });

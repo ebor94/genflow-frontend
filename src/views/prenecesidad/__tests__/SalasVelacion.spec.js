@@ -91,6 +91,37 @@ describe('SalasVelacion', () => {
     });
   });
 
+  async function abrirVisita() {
+    salasApi.atender.mockResolvedValue({ success: true, data: {
+      prosp_id: 901, prosp_area_id: 1, prosp_grupo_id: 1, es_mio: false, creado: false,
+      persona_nombre: 'Marta Gomez', persona_telefono: '3001234567',
+      resumen: { duenio_nombre: 'Carmen Contreras', estado_nombre: 'Contactado', prox_gestion_fecha: null, ultima_gestion: null }
+    } });
+    const w = factory();
+    await flushPromises();
+    await w.find('[data-testid="btn-visita-57"]').trigger('click');
+    await flushPromises();
+    return w;
+  }
+
+  it('al cancelar la visita recarga la lista para no dejar etiquetas viejas', async () => {
+    const w = await abrirVisita();
+    const antes = salasApi.listar.mock.calls.length;
+    w.findComponent(RegistrarGestion).vm.$emit('close');
+    await flushPromises();
+    expect(salasApi.listar).toHaveBeenCalledTimes(antes + 1);
+    expect(w.findComponent(RegistrarGestion).props('open')).toBe(false);
+  });
+
+  it('si el homenaje se cerró mientras tanto, suelta la visita y recarga', async () => {
+    const w = await abrirVisita();
+    const antes = salasApi.listar.mock.calls.length;
+    w.findComponent(RegistrarGestion).vm.$emit('sala-cerrada');
+    await flushPromises();
+    expect(salasApi.listar).toHaveBeenCalledTimes(antes + 1);
+    expect(w.findComponent(RegistrarGestion).props('open')).toBe(false);
+  });
+
   it('Atender contratante abre la ventana y, si el cliente queda propio, navega a la ficha', async () => {
     const w = factory();
     await flushPromises();
