@@ -28,7 +28,7 @@ Los asesores de Prenecesidad visitan las salas de velación donde hay un homenaj
 
 ## 4. Datos — migración `023_salas_velacion.sql`
 
-La migración es idempotente, como la 022: comprueba `information_schema` antes de cada `ALTER` y usa `INSERT IGNORE` para el catálogo.
+La migración es idempotente, como la 022: comprueba `information_schema` antes de cada `ALTER` y solo inserta la fuente si no existe (`INSERT … SELECT … WHERE NOT EXISTS`).
 
 1. **Fuente nueva.** Fila en `sv_cfg_fuentes_prospecto` con `fuente_area_id` del área `PRENEC` (buscada por código), `fuente_codigo = 'SALA_VELACION'`, `fuente_nombre = 'Sala de velación'`, `fuente_es_masiva = 0` y `fuente_orden = 7`.
 2. **Columna nueva en `sv_crm_gestiones`.** `gest_homenaje_sala_id INT NULL`, con el índice `idx_gest_homenaje (gest_homenaje_sala_id)`. No lleva clave foránea hacia `homenajes_sala`, para no acoplar los dos módulos.
@@ -98,19 +98,19 @@ Se montan como `router.use('/salas', svAuth, svAreaGuard, require('./salas.route
 Cuerpo opcional: `{ nombre, telefono }`. Solo se usa cuando la asistencia no trae un nombre o un teléfono válido.
 
 1. El homenaje debe existir (si no, 404) y estar en curso (si no, 409 `HOMENAJE_CERRADO`).
-2. Si ya hay una fila en `sv_crm_salas_contratantes` para el homenaje, se devuelve ese vínculo (paso 7) sin crear nada. El endpoint es idempotente: la pantalla lo llama también para abrir la ventana de visita.
+2. Si ya hay una fila en `sv_crm_salas_contratantes` para el homenaje, se devuelve ese vínculo (paso 8) sin crear nada. El endpoint es idempotente: la pantalla lo llama también para abrir la ventana de visita.
 3. **Teléfono.** Se toma `asistencias.telefono_contacto` y se parte por `/`, `,`, `;`, `|` o ` - `. Cada parte se normaliza con `sv/utils/telefono`, y gana la primera que `esValido` acepte. Si ninguna sirve, se usa `telefono` del cuerpo. Si tampoco es válido, responde 422 `TELEFONO_REQUERIDO`.
 4. **Nombre.** Se toma `asistencias.nombre_contacto` y, si viene vacío, `nombre` del cuerpo. Si los dos faltan, responde 422 `NOMBRE_REQUERIDO`. El nombre completo va a `persona_nombre` con mayúscula inicial en cada palabra; `persona_apellido` queda vacío.
-5. En una transacción:
-   1. **Persona.** Se busca por teléfono normalizado. Si existe, se reutiliza sin cambiar sus datos; si no, se crea. Si `personas.service` lanza `DUPLICATE_PHONE` por una creación simultánea, se reutiliza la persona que trae el error.
-   2. **Prospecto.** Si la persona tiene un prospecto activo de PRENEC (`prosp_activo = 1`), de cualquier asesor, se usa el más reciente. Si no, se crea uno con:
+5. **Persona**, antes de la transacción. Se busca por teléfono normalizado. Si existe, se reutiliza sin cambiar sus datos; si no, se crea con `personas.service.crear`. Si lanza `DUPLICATE_PHONE`, o el `INSERT` choca con el índice único del teléfono por una creación simultánea, se reutiliza la persona que ya existe. Una persona sin prospecto es inofensiva, por eso no necesita la transacción.
+6. En una transacción:
+   1. **Prospecto.** Si la persona tiene un prospecto activo de PRENEC (`prosp_activo = 1`), de cualquier asesor, se usa el más reciente. Si no, se crea uno con:
       - el asesor que atiende
       - área PRENEC y grupo `TELEMERCADEO`
       - fuente `SALA_VELACION`
       - el primer estado activo del grupo por `estado_orden`
-   3. **Vínculo.** Se inserta la fila en `sv_crm_salas_contratantes`.
-6. Si el `INSERT` del vínculo choca con `uq_sc_homenaje` (otro asesor atendió al mismo tiempo), se revierte la transacción y se devuelve el vínculo que ganó. Un prospecto creado en la transacción revertida no queda en la base.
-7. **Respuesta:** `{ prosp_id, es_mio, creado, resumen }`. `creado` indica si esta llamada creó el prospecto. `resumen` es:
+   2. **Vínculo.** Se inserta la fila en `sv_crm_salas_contratantes`.
+7. Si el `INSERT` del vínculo choca con `uq_sc_homenaje` (otro asesor atendió al mismo tiempo), se revierte la transacción y se devuelve el vínculo que ganó. Un prospecto creado en la transacción revertida no queda en la base.
+8. **Respuesta:** `{ prosp_id, prosp_area_id, prosp_grupo_id, es_mio, creado, persona_nombre, persona_telefono, resumen }`. `creado` indica si esta llamada creó el prospecto. El área, el grupo y los datos de la persona sirven para armar el formulario de gestión de quien visita, que no puede abrir la ficha. `resumen` es:
 
    ```json
    {
