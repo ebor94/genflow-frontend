@@ -80,7 +80,7 @@ async function guardarYsiguiente() {
     return;
   }
   if (pideFecha.value && !form.value.prox_fecha) {
-    toast.warning('Indica cuándo debes volver a visitar');
+    toast.warning('Indica la fecha de la próxima visita');
     return;
   }
   await registrar(true);
@@ -92,7 +92,7 @@ async function guardar() {
     return;
   }
   if (pideFecha.value && !form.value.prox_fecha) {
-    toast.warning('Indica cuándo debes volver a visitar');
+    toast.warning('Indica la fecha de la próxima visita');
     return;
   }
   await registrar(false);
@@ -111,7 +111,7 @@ async function sinRespuesta() {
   form.value.telefono = form.value.telefono || `SR-${Date.now()}`;
   form.value.resultado_codigo = 'SIN_RESPUESTA';
   if (pideFecha.value && !form.value.prox_fecha) {
-    toast.warning('Indica cuándo debes volver a visitar');
+    toast.warning('Indica la fecha de la próxima visita');
     return;
   }
   await registrar(true);
