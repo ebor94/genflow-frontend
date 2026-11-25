@@ -61,7 +61,7 @@ function abrirNuevo() {
   form.value = { ...props.presetValues };
   for (const c of props.campos) {
     if (form.value[c.key] === undefined) {
-      form.value[c.key] = c.type === 'switch' ? 1 : (c.type === 'number' ? 0 : '');
+      form.value[c.key] = c.default ?? (c.type === 'switch' ? 1 : (c.type === 'number' ? 0 : ''));
     }
   }
   showModal.value = true;

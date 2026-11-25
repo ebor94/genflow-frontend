@@ -8,6 +8,7 @@ import { useApiError } from '@/composables/useApiError';
 import { useTelefono } from '@/composables/useTelefono';
 import { personasApi } from '@/api/personasApi';
 import { salasApi } from '@/api/salasApi';
+import { detalleInteres } from '@/utils/catalogoProductos';
 import { fmtFecha } from '@/utils/format';
 
 import StatusPill from '@/components/common/StatusPill.vue';
@@ -167,10 +168,11 @@ function llamar() {
       <section v-if="p.productos?.length" class="sv-card p-4 mb-4">
         <h3 class="text-xs text-text3 uppercase tracking-wide mb-2">Productos de interés</h3>
         <div class="flex flex-wrap gap-2">
-          <span v-for="pp in p.productos" :key="pp.pp_id"
+          <span v-for="pp in p.productos" :key="pp.pp_id" data-testid="interes"
                 class="px-3 py-1 text-xs rounded-full bg-gold/10 text-gold border border-gold/30 font-semibold">
             <span v-if="pp.pp_es_principal">⭐</span>
             {{ pp.producto?.prod_nombre }}
+            <span v-if="detalleInteres(pp)" class="font-normal">· {{ detalleInteres(pp) }}</span>
           </span>
         </div>
       </section>

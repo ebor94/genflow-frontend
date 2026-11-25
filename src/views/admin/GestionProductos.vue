@@ -14,6 +14,7 @@ const columnas = [
   { key: 'prod_nombre', label: 'Nombre' },
   { key: 'prod_area_id', label: 'Área', render: (it) => areas.value.find(a => a.area_id === it.prod_area_id)?.area_codigo || '—' },
   { key: 'prod_categoria', label: 'Categoría' },
+  { key: 'prod_tipo', label: 'Tipo' },
   { key: 'prod_precio_base', label: 'Precio' },
   { key: 'prod_orden_display', label: 'Orden' }
 ];
@@ -24,6 +25,8 @@ const campos = computed(() => [
   { key: 'prod_nombre',      label: 'Nombre', type: 'text', required: true },
   { key: 'prod_descripcion', label: 'Descripción', type: 'textarea' },
   { key: 'prod_categoria',   label: 'Categoría', type: 'text' },
+  { key: 'prod_tipo',        label: 'Tipo', type: 'text' },
+  { key: 'prod_es_generico', label: 'Es "por definir" (representa al tipo, sin precio)', type: 'switch', default: 0 },
   { key: 'prod_precio_base', label: 'Precio base (COP)', type: 'number' },
   { key: 'prod_requiere_empresa', label: 'Requiere empresa (B2B)', type: 'switch' },
   { key: 'prod_orden_display', label: 'Orden de visualización', type: 'number' },
