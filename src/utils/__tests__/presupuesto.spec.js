@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { porcentaje, cumplimiento, estadoCumplimiento, mesesOpciones, mesLabel } from '@/utils/presupuesto';
+import { areaPrenec, porcentaje, cumplimiento, estadoCumplimiento, mesesOpciones, mesLabel } from '@/utils/presupuesto';
 
 describe('cumplimiento', () => {
   it('redondea al entero', () => {
@@ -56,5 +56,16 @@ describe('meses', () => {
     expect(o[0].label).toBe('Diciembre 2026');
     const e = mesesOpciones(3, new Date(2026, 11, 3));
     expect(e.map((x) => x.value)).toEqual(['2027-01', '2026-12', '2026-11']);
+  });
+});
+
+describe('areaPrenec', () => {
+  const PRENEC = { area_id: 3, area_codigo: 'PRENEC' };
+  it('usa la de Prenecesidad aunque la activa sea otra', () => {
+    expect(areaPrenec({ areasAccesibles: [{ area_id: 9, area_codigo: 'SVC' }, PRENEC], areaActivaId: 9 })).toBe(3);
+  });
+  it('sin Prenecesidad en la lista, usa la activa', () => {
+    expect(areaPrenec({ areasAccesibles: [{ area_id: 9, area_codigo: 'SVC' }], areaActivaId: 9 })).toBe(9);
+    expect(areaPrenec({ areasAccesibles: [], areaActivaId: null })).toBeNull();
   });
 });

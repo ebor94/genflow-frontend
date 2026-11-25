@@ -32,7 +32,9 @@ const detalle = (a) => `${fmtCOP(a.realizado)} de ${fmtCOP(a.presupuesto)}`;
         @click="$emit('seleccionar', a.usr_id)"
       >
         <div class="flex items-center justify-between gap-3 mb-1.5">
-          <span class="font-semibold text-text1 truncate">{{ a.nombre }}</span>
+          <span class="font-semibold text-text1 truncate">{{ a.nombre }}
+            <span v-if="a.activo === false" class="ml-1 rounded-full border border-text3/40 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-text2">Retirado</span>
+          </span>
           <ChipCumplimiento :realizado="a.realizado" :presupuesto="a.presupuesto" />
         </div>
         <div

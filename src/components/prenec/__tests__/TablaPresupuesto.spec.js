@@ -14,28 +14,35 @@ describe('TablaPresupuesto', () => {
     const w = montar();
     expect(w.findAll('thead th').map((t) => t.text())).toEqual(['Categoría', 'Presupuesto', 'Realizado', 'Cumplimiento']);
     const filas = w.findAll('[data-testid^="fila-"]:not([data-testid="fila-total"])');
-    expect(filas.map((f) => f.find('td').text())).toEqual(['Exequial', 'Cremación', 'Lote']);
-    const c = w.find('[data-testid="fila-Exequial"]').findAll('td');
+    expect(filas.map((f) => f.find('th').text())).toEqual(['Exequial', 'Cremación', 'Lote']);
+    const c = w.find('[data-testid="fila-Exequial"]').findAll('th,td');
     expect(c[1].text()).toBe(fmtCOP(2000));
     expect(c[2].text()).toBe(fmtCOP(2400));
     expect(c[3].text()).toContain('120 %');
   });
   it('sin presupuesto muestra — en cumplimiento', () => {
     const w = montar();
-    expect(w.find('[data-testid="fila-Cremación"]').findAll('td')[3].text()).toContain('—');
+    expect(w.find('[data-testid="fila-Cremación"]').findAll('th,td')[3].text()).toContain('—');
   });
   it('categoría que falta en el asesor cuenta como 0', () => {
     const w = montar({ ...ASESOR, categorias: {} });
-    expect(w.find('[data-testid="fila-Lote"]').findAll('td')[1].text()).toBe(fmtCOP(0));
+    expect(w.find('[data-testid="fila-Lote"]').findAll('th,td')[1].text()).toBe(fmtCOP(0));
   });
   it('fila Total en negrita con los totales del asesor', () => {
     const w = montar();
     const t = w.find('[data-testid="fila-total"]');
     expect(t.classes()).toContain('font-bold');
-    const c = t.findAll('td');
+    const c = t.findAll('th,td');
     expect(c[0].text()).toBe('Total');
     expect(c[1].text()).toBe(fmtCOP(3000));
     expect(c[2].text()).toBe(fmtCOP(2400));
     expect(c[3].text()).toContain('80 %');
+  });
+  it('accesibilidad: scope col en encabezados y row en cada fila', () => {
+    const w = montar();
+    expect(w.findAll('thead th').every((h) => h.attributes('scope') === 'col')).toBe(true);
+    const filas = w.findAll('tbody tr');
+    expect(filas).toHaveLength(4);
+    expect(filas.every((f) => f.find('th').attributes('scope') === 'row')).toBe(true);
   });
 });

@@ -2,6 +2,7 @@
 defineProps({
   modelValue: { type: [String, Number], default: '' },
   label: { type: String, default: '' },
+  ariaLabel: { type: String, default: undefined },
   options: { type: Array, default: () => [] }, // [{ value, label }]
   placeholder: { type: String, default: 'Seleccione...' },
   error: { type: String, default: '' },
@@ -20,6 +21,7 @@ defineEmits(['update:modelValue']);
     <select
       :value="modelValue"
       :disabled="disabled"
+      :aria-label="ariaLabel"
       @change="$emit('update:modelValue', $event.target.value)"
       class="sv-input"
       :class="{

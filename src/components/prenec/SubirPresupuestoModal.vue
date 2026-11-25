@@ -30,6 +30,8 @@ const guardando = ref(false);
 const resultado = ref(null);
 const errorArchivo = ref('');
 
+// Periodo con el que se revisó: se guarda siempre con ese.
+let revisado = null;
 let revision = 0;
 function limpiar() {
   revision++;
@@ -40,6 +42,8 @@ function limpiar() {
   if (input.value) input.value.value = '';
 }
 watch(() => props.open, (abierta) => { if (abierta) limpiar(); });
+// Si cambia el área o el mes con la ventana abierta, lo revisado ya no vale.
+watch(() => [props.areaId, props.anio, props.mes], limpiar);
 
 async function elegirArchivo(e) {
   const elegido = e.target.files?.[0];
@@ -49,11 +53,12 @@ async function elegirArchivo(e) {
   const mio = revision;
   revisando.value = true;
   try {
+    revisado = { area_id: props.areaId, anio: props.anio, mes: props.mes };
     const fd = new FormData();
     fd.append('archivo', elegido);
-    fd.append('area_id', props.areaId);
-    fd.append('anio', props.anio);
-    fd.append('mes', props.mes);
+    fd.append('area_id', revisado.area_id);
+    fd.append('anio', revisado.anio);
+    fd.append('mes', revisado.mes);
     const r = await presupuestosApi.revisar(fd);
     if (mio !== revision) return;
     resultado.value = r.data;
@@ -65,6 +70,14 @@ async function elegirArchivo(e) {
   }
 }
 
+const textoError = (e) => {
+  const donde = e.fila != null ? `Fila ${e.fila}${e.columna != null ? `, columna ${e.columna}` : ''}: ` : '';
+  return donde + e.mensaje;
+};
+const sinAsesores = computed(() => !(resultado.value?.filas || []).length);
+const enEspera = computed(() => revisando.value || guardando.value);
+function cerrar() { if (!guardando.value) emit('close'); }
+
 const errores = computed(() => resultado.value?.errores || []);
 const cambios = computed(() => resultado.value?.cambios || []);
 const puedeGuardar = computed(() => !!resultado.value && !errores.value.length && cambios.value.length > 0);
@@ -75,7 +88,7 @@ const titulo = computed(() => `${puedeGuardar.value ? 'Confirmar' : 'Subir'} pre
 async function confirmar() {
   guardando.value = true;
   try {
-    await presupuestosApi.guardar({ area_id: props.areaId, anio: props.anio, mes: props.mes, filas: resultado.value.filas });
+    await presupuestosApi.guardar({ ...revisado, filas: resultado.value.filas });
     toast.success('Presupuesto guardado');
     emit('guardado');
     emit('close');
@@ -88,30 +101,32 @@ async function confirmar() {
 </script>
 
 <template>
-  <BaseModal :open="open" :title="titulo" max-width="max-w-2xl" @close="emit('close')">
+  <BaseModal :open="open" :title="titulo" max-width="max-w-2xl" @close="cerrar">
     <div class="tabular-nums lining-nums">
     <label class="sv-label" for="presupuesto-archivo">Archivo de Excel (.xlsx)</label>
     <input
       id="presupuesto-archivo" ref="input" data-testid="archivo" type="file"
       accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+      :disabled="enEspera"
       class="block w-full text-sm text-text2 file:mr-3 file:py-2 file:px-4 file:rounded-sv file:border-0 file:bg-gold file:text-white file:font-semibold file:cursor-pointer hover:file:bg-gold-bright"
       @change="elegirArchivo"
     />
     <p v-if="archivo" data-testid="nombre-archivo" class="text-xs text-text3 mt-1">{{ archivo.name }} ({{ (archivo.size / 1024).toFixed(1) }} KB)</p>
     <p class="mt-1 text-xs text-text3">Usa la plantilla del mes. Hasta 2 MB.</p>
 
-    <p v-if="revisando" class="mt-4 text-sm text-text3">Revisando el archivo...</p>
-    <p v-if="errorArchivo" data-testid="error-archivo" class="mt-4 text-sm text-text1 border border-danger bg-danger/10 rounded-sv px-3 py-2">{{ errorArchivo }}</p>
+    <p aria-live="polite" class="mt-4 text-sm text-text3 empty:hidden">{{ revisando ? 'Revisando el archivo...' : '' }}</p>
+    <p v-if="errorArchivo" data-testid="error-archivo" role="alert" class="mt-4 text-sm text-text1 border border-danger bg-danger/10 rounded-sv px-3 py-2">{{ errorArchivo }}</p>
 
     <template v-if="resultado">
-      <div v-if="errores.length" data-testid="errores" class="mt-4">
+      <div v-if="errores.length" data-testid="errores" role="alert" class="mt-4">
         <p class="text-sm font-semibold text-text1 mb-2">Corrige el archivo y vuelve a subirlo. No se guardó nada.</p>
         <ul class="space-y-1 text-sm text-text1 max-h-64 overflow-y-auto">
           <li v-for="(e, i) in errores" :key="i" class="border-l-4 border-danger pl-2">
-            Fila {{ e.fila }}, columna {{ e.columna }}: {{ e.mensaje }}
+            {{ textoError(e) }}
           </li>
         </ul>
       </div>
+      <p v-else-if="sinAsesores" class="mt-4 text-sm text-text1">El archivo no trae asesores. Usa la plantilla del mes.</p>
       <p v-else-if="!cambios.length" class="mt-4 text-sm text-text1">El archivo no trae cambios: los valores son los que ya están guardados.</p>
       <div v-else class="mt-4">
         <p data-testid="resumen" class="text-sm font-semibold text-text1 mb-2">
@@ -129,7 +144,7 @@ async function confirmar() {
     </div>
 
     <template #footer>
-      <BaseButton variant="secondary" @click="emit('close')">Cancelar</BaseButton>
+      <BaseButton variant="secondary" data-testid="btn-cancelar" :disabled="guardando" @click="cerrar">Cancelar</BaseButton>
       <BaseButton v-if="puedeGuardar" data-testid="btn-confirmar" :loading="guardando" @click="confirmar">Confirmar y guardar</BaseButton>
     </template>
   </BaseModal>

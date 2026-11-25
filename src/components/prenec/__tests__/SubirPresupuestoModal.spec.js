@@ -23,10 +23,10 @@ const CAMBIOS = [
 const ok = (extra = {}) => ({ success: true, data: { filas: FILAS, cambios: CAMBIOS, errores: [], ...extra } });
 
 let pinia;
-function factory() {
+function factory(props = {}) {
   pinia = createTestingPinia({ createSpy: vi.fn });
   return mount(SubirPresupuestoModal, {
-    props: { open: true, areaId: 7, anio: 2026, mes: 10 },
+    props: { open: true, areaId: 7, anio: 2026, mes: 10, ...props },
     global: { plugins: [pinia], stubs: { teleport: true } }
   });
 }
@@ -151,18 +151,16 @@ describe('SubirPresupuestoModal', () => {
     expect(w.findAll('[data-testid="cambio"]')).toHaveLength(3);
   });
 
-  it('una revisión vieja no pisa la del archivo nuevo', async () => {
+  it('una revisión que llega tarde, después de cambiar el mes, no se muestra', async () => {
     let soltar;
-    presupuestosApi.revisar
-      .mockImplementationOnce(() => new Promise((res) => { soltar = () => res(ok({ errores: [{ fila: 9, columna: 'Z', mensaje: 'Vieja' }] })); }))
-      .mockResolvedValueOnce(ok());
+    presupuestosApi.revisar.mockImplementationOnce(() => new Promise((res) => { soltar = () => res(ok({ errores: [{ fila: 9, columna: 'Z', mensaje: 'Vieja' }] })); }));
     const w = factory();
     await elegir(w, 'a.xlsx');
-    await elegir(w, 'b.xlsx');
+    await w.setProps({ mes: 11 });
     soltar();
     await flushPromises();
     expect(w.text()).not.toContain('Vieja');
-    expect(w.find('[data-testid="btn-confirmar"]').exists()).toBe(true);
+    expect(w.find('[data-testid="archivo"]').attributes('disabled')).toBeUndefined();
   });
 
   it('al reabrir queda en blanco', async () => {
@@ -172,5 +170,124 @@ describe('SubirPresupuestoModal', () => {
     await w.setProps({ open: true });
     expect(w.find('[data-testid="resumen"]').exists()).toBe(false);
     expect(w.find('[data-testid="btn-confirmar"]').exists()).toBe(false);
+  });
+
+  it('errores del libro entero (fila y columna null) salen sin prefijo; con fila sin columna, solo la fila', async () => {
+    presupuestosApi.revisar.mockResolvedValue(ok({ errores: [
+      { fila: null, columna: null, mensaje: 'El archivo es de otro mes' },
+      { fila: 5, columna: 'F (Mausoleos)', mensaje: 'Debe ser un entero' },
+      { fila: 6, columna: null, mensaje: 'Falta el ID' },
+      { fila: 7, mensaje: 'Repetido' }
+    ] }));
+    const w = factory();
+    await elegir(w);
+    const e = w.findAll('[data-testid="errores"] li').map((l) => l.text());
+    expect(e).toEqual([
+      'El archivo es de otro mes',
+      'Fila 5, columna F (Mausoleos): Debe ser un entero',
+      'Fila 6: Falta el ID',
+      'Fila 7: Repetido'
+    ]);
+  });
+
+  it('archivo sin filas dice que no trae asesores, distinto de sin cambios', async () => {
+    presupuestosApi.revisar.mockResolvedValue(ok({ filas: [], cambios: [] }));
+    const w = factory();
+    await elegir(w);
+    expect(w.text()).toContain('El archivo no trae asesores');
+    expect(w.text()).not.toContain('no trae cambios');
+    expect(w.find('[data-testid="btn-confirmar"]').exists()).toBe(false);
+  });
+
+  it.each([['mes', { mes: 11 }], ['anio', { anio: 2027 }], ['areaId', { areaId: 8 }]])('si cambia %s con la ventana abierta se limpia lo revisado y el archivo', async (_n, cambio) => {
+    const w = factory();
+    await elegir(w);
+    expect(w.find('[data-testid="btn-confirmar"]').exists()).toBe(true);
+    await w.setProps(cambio);
+    expect(w.find('[data-testid="btn-confirmar"]').exists()).toBe(false);
+    expect(w.find('[data-testid="resumen"]').exists()).toBe(false);
+    expect(w.find('[data-testid="nombre-archivo"]').exists()).toBe(false);
+  });
+
+  it('guarda con el periodo y el área que se revisaron', async () => {
+    const w = factory({ areaId: 7, anio: 2026, mes: 10 });
+    await elegir(w);
+    const fd = presupuestosApi.revisar.mock.calls[0][0];
+    await w.find('[data-testid="btn-confirmar"]').trigger('click');
+    expect(presupuestosApi.guardar).toHaveBeenCalledWith({ area_id: Number(fd.get('area_id')), anio: Number(fd.get('anio')), mes: Number(fd.get('mes')), filas: FILAS });
+  });
+
+  it('mientras revisa, el selector de archivo queda en espera y avisa', async () => {
+    let soltar;
+    presupuestosApi.revisar.mockImplementation(() => new Promise((res) => { soltar = () => res(ok()); }));
+    const w = factory();
+    await elegir(w);
+    expect(w.find('[data-testid="archivo"]').attributes('disabled')).toBeDefined();
+    expect(w.find('[aria-live="polite"]').text()).toContain('Revisando');
+    soltar();
+    await flushPromises();
+    expect(w.find('[data-testid="archivo"]').attributes('disabled')).toBeUndefined();
+    expect(w.find('[aria-live="polite"]').text()).not.toContain('Revisando');
+  });
+
+  it('mientras guarda, Cancelar y Confirmar quedan en espera y no se cierra', async () => {
+    let soltar;
+    presupuestosApi.guardar.mockImplementation(() => new Promise((res) => { soltar = () => res({ success: true }); }));
+    const w = factory();
+    await elegir(w);
+    await w.find('[data-testid="btn-confirmar"]').trigger('click');
+    expect(w.find('[data-testid="btn-confirmar"]').attributes('disabled')).toBeDefined();
+    expect(w.find('[data-testid="btn-cancelar"]').attributes('disabled')).toBeDefined();
+    expect(w.find('[data-testid="archivo"]').attributes('disabled')).toBeDefined();
+    soltar();
+    await flushPromises();
+    expect(w.emitted('close')).toHaveLength(1);
+  });
+
+  it('mientras guarda, la X de la ventana no la cierra', async () => {
+    let soltar;
+    presupuestosApi.guardar.mockImplementation(() => new Promise((res) => { soltar = () => res({ success: true }); }));
+    const w = factory();
+    await elegir(w);
+    await w.find('[data-testid="btn-confirmar"]').trigger('click');
+    await w.find('[aria-label="Cerrar"]').trigger('click');
+    expect(w.emitted('close')).toBeUndefined();
+    soltar();
+    await flushPromises();
+  });
+
+  it('si guardar falla la ventana sigue abierta y se puede reintentar', async () => {
+    presupuestosApi.guardar.mockRejectedValueOnce(new Error('x'));
+    const w = factory();
+    await elegir(w);
+    await w.find('[data-testid="btn-confirmar"]').trigger('click');
+    await flushPromises();
+    expect(w.emitted('close')).toBeUndefined();
+    expect(w.find('[data-testid="btn-confirmar"]').attributes('disabled')).toBeUndefined();
+    await w.find('[data-testid="btn-confirmar"]').trigger('click');
+    await flushPromises();
+    expect(w.emitted('guardado')).toHaveLength(1);
+  });
+
+  it('volver a elegir el mismo archivo ya corregido lo revisa de nuevo', async () => {
+    presupuestosApi.revisar.mockResolvedValueOnce(ok({ errores: [{ fila: 4, columna: 'C', mensaje: 'Malo' }] }));
+    const w = factory();
+    await elegir(w, 'mismo.xlsx');
+    expect(w.find('[data-testid="errores"]').exists()).toBe(true);
+    await elegir(w, 'mismo.xlsx');
+    expect(presupuestosApi.revisar).toHaveBeenCalledTimes(2);
+    expect(w.find('[data-testid="errores"]').exists()).toBe(false);
+    expect(w.find('[data-testid="btn-confirmar"]').exists()).toBe(true);
+  });
+
+  it('accesibilidad: los errores tienen role alert', async () => {
+    presupuestosApi.revisar.mockResolvedValueOnce(ok({ errores: [{ fila: 4, columna: 'C', mensaje: 'Malo' }] }));
+    let w = factory();
+    await elegir(w);
+    expect(w.find('[data-testid="errores"]').attributes('role')).toBe('alert');
+    presupuestosApi.revisar.mockRejectedValueOnce(new Error('roto'));
+    w = factory();
+    await elegir(w);
+    expect(w.find('[data-testid="error-archivo"]').attributes('role')).toBe('alert');
   });
 });

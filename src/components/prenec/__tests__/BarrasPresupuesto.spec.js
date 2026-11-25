@@ -37,4 +37,25 @@ describe('BarrasPresupuesto', () => {
     expect(w.find('[data-testid="asesor-2"]').attributes('aria-pressed')).toBe('true');
     expect(w.find('[data-testid="asesor-1"]').attributes('aria-pressed')).toBe('false');
   });
+  it('el color de la barra sigue al semáforo', () => {
+    const w = montar({ asesores: [
+      { usr_id: 1, nombre: 'A', presupuesto: 1000, realizado: 1000 },
+      { usr_id: 2, nombre: 'B', presupuesto: 1000, realizado: 900 },
+      { usr_id: 3, nombre: 'C', presupuesto: 1000, realizado: 100 },
+      { usr_id: 4, nombre: 'D', presupuesto: 0, realizado: 100 }
+    ] });
+    const clases = (id) => w.find(`[data-testid="barra-${id}"]`).classes();
+    expect(clases(1)).toContain('bg-sage');
+    expect(clases(2)).toContain('bg-warning');
+    expect(clases(3)).toContain('bg-danger');
+    expect(clases(4)).not.toContain('bg-danger');
+  });
+  it('un asesor retirado lleva la etiqueta Retirado; uno activo no', () => {
+    const w = montar({ asesores: [
+      { usr_id: 1, nombre: 'A', presupuesto: 1, realizado: 1, activo: false },
+      { usr_id: 2, nombre: 'B', presupuesto: 1, realizado: 1, activo: true }
+    ] });
+    expect(w.find('[data-testid="asesor-1"]').text()).toContain('Retirado');
+    expect(w.find('[data-testid="asesor-2"]').text()).not.toContain('Retirado');
+  });
 });

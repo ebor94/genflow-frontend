@@ -46,6 +46,17 @@ describe('MisMetricas: tarjeta de presupuesto', () => {
     expect(t.attributes('data-to')).toContain('prenec-presupuesto');
   });
 
+  it('usa el área de Prenecesidad aunque la activa sea otra', async () => {
+    const pinia = createTestingPinia({ createSpy: vi.fn });
+    const auth = useAuthStore(pinia);
+    auth.areasAccesibles = [{ area_id: 3, area_codigo: 'PRENEC' }, { area_id: 9, area_codigo: 'SVC' }];
+    auth.areaActivaId = 9;
+    auth.usuario = { usr_id: 5 };
+    mount(MisMetricas, { global: { plugins: [pinia], stubs: { teleport: true } } });
+    await flushPromises();
+    expect(presupuestosApi.obtener).toHaveBeenCalledWith({ area_id: 3, anio: 2026, mes: 11 });
+  });
+
   it('sin presupuesto este mes', async () => {
     presupuestosApi.obtener.mockResolvedValue({ success: true, data: { asesores: [{ ...propio, presupuesto: 0 }] } });
     const w = factory();

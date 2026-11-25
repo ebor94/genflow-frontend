@@ -69,7 +69,7 @@ describe('Presupuesto (vista)', () => {
     const t = w.find('[data-testid="tabla-presupuesto"]');
     expect(t.exists()).toBe(true);
     expect(t.text()).toContain('Exequial');
-    expect(w.find('[data-testid="fila-total"]').findAll('td')[2].text()).toBe(fmtCOP(2500));
+    expect(w.find('[data-testid="fila-total"]').findAll('th,td')[2].text()).toBe(fmtCOP(2500));
     expect(w.find('[data-testid="tabla-titulo"]').text()).toContain('Luis Paz');
   });
 

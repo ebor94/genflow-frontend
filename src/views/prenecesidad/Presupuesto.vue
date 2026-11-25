@@ -5,7 +5,7 @@ import { useToastStore } from '@/stores/useToastStore';
 import { useApiError } from '@/composables/useApiError';
 import { presupuestosApi } from '@/api/presupuestosApi';
 import { fmtCOP, fmtFechaHora } from '@/utils/format';
-import { cumplimiento, mesesOpciones } from '@/utils/presupuesto';
+import { areaPrenec, cumplimiento, mesesOpciones } from '@/utils/presupuesto';
 
 import KpiCard from '@/components/dashboard/KpiCard.vue';
 import BaseSelect from '@/components/ui/BaseSelect.vue';
@@ -19,6 +19,7 @@ const auth = useAuthStore();
 const toast = useToastStore();
 const { extract } = useApiError();
 
+const area = computed(() => areaPrenec(auth));
 const opciones = mesesOpciones(14);
 const hoy = new Date();
 const mes = ref(`${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}`);
@@ -32,11 +33,12 @@ const subiendo = ref(false);
 
 const periodo = () => {
   const [anio, m] = mes.value.split('-').map(Number);
-  return { area_id: auth.areaActivaId, anio, mes: m };
+  return { area_id: area.value, anio, mes: m };
 };
 
 // Cada pedido lleva un número: si llega tarde uno viejo, no pisa al nuevo.
 let pedido = 0;
+let mesCargado = null;
 async function cargar() {
   const mio = ++pedido;
   cargando.value = true;
@@ -44,9 +46,16 @@ async function cargar() {
   try {
     const r = await presupuestosApi.obtener(periodo());
     if (mio !== pedido) return;
+    const mismoMes = mesCargado === mes.value;
+    const grupoPrevio = grupoSel.value;
+    const asesorPrevio = asesorSel.value;
     datos.value = r.data;
-    grupoSel.value = tabs.value[0]?.grupo_id ?? null;
-    asesorSel.value = datos.value.asesores.length === 1 ? datos.value.asesores[0].usr_id : null;
+    mesCargado = mes.value;
+    // Al recargar el mismo mes se conservan la pestaña y el asesor, si siguen existiendo.
+    grupoSel.value = mismoMes && tabs.value.some((t) => t.grupo_id === grupoPrevio) ? grupoPrevio : (tabs.value[0]?.grupo_id ?? null);
+    asesorSel.value = datos.value.asesores.length === 1
+      ? datos.value.asesores[0].usr_id
+      : (mismoMes && visibles.value.some((a) => a.usr_id === asesorPrevio) ? asesorPrevio : null);
   } catch (e) {
     if (mio !== pedido) return;
     datos.value = null;
@@ -74,6 +83,8 @@ const tabs = computed(() => {
   if (asesores.value.some((a) => !conocidos.has(a.grupo_id))) grupos.push({ grupo_id: null, nombre: 'Sin grupo' });
   return grupos;
 });
+const PANEL = 'panel-presupuesto';
+const idTab = (t) => `tab-presupuesto-${t.grupo_id ?? 'sin'}`;
 const hayTabs = computed(() => tabs.value.length > 1);
 
 const visibles = computed(() => {
@@ -109,7 +120,7 @@ async function descargarPlantilla() {
   const porDefecto = `presupuesto-prenecesidad-${anio}-${String(m).padStart(2, '0')}.xlsx`;
   bajando.value = true;
   try {
-    const r = await presupuestosApi.plantilla({ area_id: auth.areaActivaId, anio, mes: m });
+    const r = await presupuestosApi.plantilla({ area_id: area.value, anio, mes: m });
     if (r.data?.type?.includes('json')) {
       toast.error((await mensajeDeBlob(r.data)) || 'No se pudo descargar la plantilla');
       return;
@@ -137,7 +148,7 @@ async function descargarPlantilla() {
     <header class="flex items-center justify-between flex-wrap gap-3 mb-5">
       <div class="flex items-center gap-3 flex-wrap">
         <h1 class="font-serif text-3xl text-brown-deep">Presupuesto</h1>
-        <BaseSelect :model-value="mes" :options="opciones" class="min-w-[170px]" @update:model-value="cambiarMes" />
+        <BaseSelect :model-value="mes" aria-label="Mes del presupuesto" :options="opciones" class="min-w-[170px]" @update:model-value="cambiarMes" />
       </div>
       <div v-if="datos?.puede_cargar" class="flex items-center gap-2 flex-wrap">
         <BaseButton variant="secondary" data-testid="btn-plantilla" :loading="bajando" @click="descargarPlantilla">Plantilla del mes</BaseButton>
@@ -160,13 +171,14 @@ async function descargarPlantilla() {
         <div v-if="hayTabs" role="tablist" class="flex gap-1 flex-wrap mb-4 border-b border-text3/20">
           <button
             v-for="t in tabs" :key="t.grupo_id ?? 'sin'" type="button" role="tab"
-            :aria-selected="String(t.grupo_id === grupoSel)"
+            :id="idTab(t)" :aria-controls="PANEL" :aria-selected="String(t.grupo_id === grupoSel)"
             class="px-3 py-2 text-sm -mb-px border-b-2 transition-colors"
             :class="t.grupo_id === grupoSel ? 'border-gold text-text1 font-semibold' : 'border-transparent text-text3 hover:text-text1'"
             @click="elegirGrupo(t.grupo_id)"
           >{{ t.nombre }}</button>
         </div>
 
+        <div :id="PANEL" :role="hayTabs ? 'tabpanel' : null" :aria-labelledby="hayTabs ? idTab({ grupo_id: grupoSel }) : null">
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-5">
           <div data-testid="total-presupuesto"><KpiCard label="Presupuesto" icon="🎯" :value="fmtCOP(totales.presupuesto)" /></div>
           <div data-testid="total-realizado"><KpiCard label="Realizado" icon="💰" :value="fmtCOP(totales.realizado)" /></div>
@@ -188,16 +200,17 @@ async function descargarPlantilla() {
         </div>
 
         <div v-if="elegido" data-testid="tabla-presupuesto" class="sv-card p-5">
-          <h2 data-testid="tabla-titulo" class="font-serif text-lg text-brown-deep mb-3">{{ elegido.nombre }}</h2>
+          <h2 data-testid="tabla-titulo" class="font-serif text-lg text-brown-deep mb-3">{{ elegido.nombre }}<span v-if="elegido.activo === false" class="ml-2 rounded-full border border-text3/40 px-1.5 py-0.5 align-middle text-[10px] font-semibold uppercase text-text2">Retirado</span></h2>
           <TablaPresupuesto :asesor="elegido" :categorias="categorias" />
         </div>
         <p v-else-if="!soloUno" class="text-center text-sm text-text3">Toca un asesor para ver su detalle por categoría.</p>
+        </div>
       </template>
     </template>
 
     <SubirPresupuestoModal
       v-if="datos?.puede_cargar"
-      :open="subiendo" :area-id="auth.areaActivaId" :anio="periodo().anio" :mes="periodo().mes"
+      :open="subiendo" :area-id="area" :anio="periodo().anio" :mes="periodo().mes"
       @close="subiendo = false" @guardado="cargar"
     />
   </div>

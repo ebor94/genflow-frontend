@@ -70,6 +70,7 @@ const nav = computed(() => {
     grupos.push({ tipo: 'link', to: { name: 'prenec-salas' },    label: 'Salas' });
     grupos.push({ tipo: 'link', to: { name: 'prenec-agenda' },   label: 'Agenda' });
     grupos.push({ tipo: 'link', to: { name: 'prenec-metricas' }, label: 'Métricas' });
+    grupos.push({ tipo: 'link', to: { name: 'prenec-presupuesto' }, label: 'Presupuesto' });
     if (esSup) {
       grupos.push({ tipo: 'dropdown', key: 'prenec-sup', label: 'Supervisión', items: [
         { to: { name: 'prenec-supervisor' },      label: 'Panel supervisor',     desc: 'Métricas y equipo' },

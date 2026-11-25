@@ -5,7 +5,7 @@ import { useAuthStore } from '@/stores/useAuthStore';
 import { useApiError } from '@/composables/useApiError';
 import { reportesApi } from '@/api/reportesApi';
 import { presupuestosApi } from '@/api/presupuestosApi';
-import { mesLabel } from '@/utils/presupuesto';
+import { areaPrenec, mesLabel } from '@/utils/presupuesto';
 import { diaLocal, fmtCOP, fmtNumero } from '@/utils/format';
 
 import KpiCard from '@/components/dashboard/KpiCard.vue';
@@ -61,7 +61,7 @@ const presupuestoMes = ref(null);
 const mesActual = new Date();
 async function cargarPresupuesto() {
   try {
-    const r = await presupuestosApi.obtener({ area_id: auth.areaActivaId, anio: mesActual.getFullYear(), mes: mesActual.getMonth() + 1 });
+    const r = await presupuestosApi.obtener({ area_id: areaPrenec(auth), anio: mesActual.getFullYear(), mes: mesActual.getMonth() + 1 });
     const mio = (r.data?.asesores || []).find((a) => a.usr_id === auth.usuario?.usr_id);
     presupuestoMes.value = { presupuesto: Number(mio?.presupuesto) || 0, realizado: Number(mio?.realizado) || 0 };
   } catch { presupuestoMes.value = null; }

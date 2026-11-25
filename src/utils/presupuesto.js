@@ -4,6 +4,12 @@
 const MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto',
   'septiembre', 'octubre', 'noviembre', 'diciembre'];
 
+/** Área de Prenecesidad: la de PRENEC entre las accesibles; si no está, la activa. */
+export function areaPrenec(auth) {
+  const a = (auth.areasAccesibles || []).find((x) => x.area_codigo === 'PRENEC');
+  return a ? a.area_id : (auth.areaActivaId ?? null);
+}
+
 /** Realizado ÷ presupuesto en %, sin redondear. null si no hay presupuesto. */
 export function porcentaje(realizado, presupuesto) {
   const p = Number(presupuesto);
