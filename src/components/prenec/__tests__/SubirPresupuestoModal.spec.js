@@ -68,7 +68,7 @@ describe('SubirPresupuestoModal', () => {
   it('muestra el nombre del archivo elegido y usa el estilo del selector de listas', async () => {
     const w = factory();
     expect(w.find('[data-testid="nombre-archivo"]').exists()).toBe(false);
-    expect(w.find('[data-testid="archivo"]').classes().join(' ')).toContain('file:bg-gold');
+    expect(w.find('[data-testid="archivo"]').classes()).toContain('file:bg-gold');
     await elegir(w, 'ventas-nov.xlsx');
     expect(w.find('[data-testid="nombre-archivo"]').text()).toContain('ventas-nov.xlsx');
   });
