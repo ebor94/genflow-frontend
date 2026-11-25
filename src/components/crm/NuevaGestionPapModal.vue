@@ -128,7 +128,8 @@ async function guardar() {
       gest_comentario:      comentario.value || null,
       gest_ubicacion_lat:   coords.value?.lat || null,
       gest_ubicacion_lng:   coords.value?.lng || null,
-      gest_prox_fecha:      requiereFecha.value ? proxFecha.value : null
+      gest_prox_fecha:      requiereFecha.value ? proxFecha.value : null,
+      quitar_prox:          !requiereFecha.value
     };
     const g = await gestiones.registrar(payload);
     toast.success('Gestión registrada');
