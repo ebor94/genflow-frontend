@@ -29,19 +29,23 @@ function alEscribir(e) {
       texto = texto.slice(0, cursor) + texto.slice(cursor + 1);
     }
   }
-  // En pesos la coma solo separa decimales (es-CO nunca la muestra): lo que sigue se descarta.
-  // Al pegar, un final ".00" o ",5" también son decimales ("8770000.00").
-  // Una coma escrita a mano solo se ignora: no se pierden los dígitos que quedan después.
+  // En pesos la coma nunca es de miles (es-CO no la muestra) y solo separa decimales.
+  // Lo que entra de una sola vez (pegar, soltar, sugerencia del teclado, autocompletar) puede traer
+  // decimales al final ("8770000.00", "8.770.000,00 COP"): se descartan. Lo que se escribe tecla a
+  // tecla o se borra no se toca, porque ahí un ".5" o una coma suelta son a medias, no decimales.
+  const tipo = e.inputType || '';
+  const entroDeUnaVez = tipo === 'insertText'
+    ? (e.data || '').length > 1
+    : !/^(delete|history|insertComposition)/.test(tipo);
+  // Las comas se ignoran sin perder los dígitos de al lado ("8,770,000" son 8.770.000): el cursor
+  // queda después del mismo dígito.
   let digitosAntes = null;
-  if (e.inputType === 'insertText') {
-    if (texto.includes(',')) digitosAntes = texto.slice(0, cursor).replace(/\D/g, '').length;
-    texto = texto.replace(/,/g, '');
+  if (texto.includes(',')) digitosAntes = texto.slice(0, cursor).replace(/\D/g, '').length;
+  if (entroDeUnaVez) texto = texto.replace(/[.,]\d{1,2}\D*$/, '');
+  if (digitosAntes !== null) {
     cursor = Math.max(0, cursor - (campo.value.slice(0, cursor).match(/,/g) || []).length);
-  } else {
-    const coma = texto.indexOf(',');
-    if (coma >= 0) texto = texto.slice(0, coma);
+    texto = texto.replace(/,/g, '');
   }
-  if (e.inputType === 'insertFromPaste') texto = texto.replace(/[.,]\d{1,2}$/, '');
   cursor = Math.min(cursor, texto.length);
   let aLaDerecha = texto.slice(cursor).replace(/\D/g, '').length;
   const digitos = texto.replace(/\D/g, '').slice(0, MAX_DIGITOS);

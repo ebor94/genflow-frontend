@@ -29,6 +29,8 @@ const grupos = computed(() => {
 // Más de 3 veces el precio de la lista: casi siempre es un cero de más. Solo avisa.
 const precioDeLista = (l) => precioDe(props.productos.find((p) => p.prod_id === l.prod_id)?.prod_precio_base);
 const muyAlto = (l) => { const lista = precioDeLista(l); return !!lista && (l.precio_unitario || 0) > lista * 3; };
+// Y menos de la tercera parte: casi siempre falta un cero. Con el precio vacío no se avisa.
+const muyBajo = (l) => { const lista = precioDeLista(l); return !!lista && l.precio_unitario > 0 && l.precio_unitario * 3 < lista; };
 
 function cambiar(prodId, datos) {
   emit('update:modelValue', props.modelValue.map((l) => (l.prod_id === prodId ? { ...l, ...datos } : l)));
@@ -71,6 +73,7 @@ function agregar(e) {
               class="col-span-2 sm:col-span-1 text-right text-sm font-semibold text-text1 whitespace-nowrap">{{ fmtCOP(subtotal(l)) }}</span>
       </div>
       <p v-if="l.vendido && muyAlto(l)" :data-testid="`precio-alto-${l.prod_id}`" class="text-xs text-warning mt-1">Revisa el precio: es más de 3 veces el de la lista ({{ fmtCOP(precioDeLista(l)) }})</p>
+      <p v-if="l.vendido && muyBajo(l)" :data-testid="`precio-bajo-${l.prod_id}`" class="text-xs text-warning mt-1">Revisa el precio: es menos de la tercera parte del de la lista ({{ fmtCOP(precioDeLista(l)) }})</p>
     </div>
 
     <select data-testid="agregar-producto" aria-label="Agregar otro producto" class="sv-input" @change="agregar">

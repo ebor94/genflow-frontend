@@ -87,4 +87,24 @@ describe('ProductosVendidos', () => {
       expect(montar([{ prod_id: 1, nombre: 'Osarios', vendido: true, cantidad: 1, precio_unitario: 99999999 }]).find('[data-testid="precio-alto-1"]').exists()).toBe(false);
     });
   });
+
+  describe('precio muy por debajo de la lista', () => {
+    const bajo = (w) => w.find('[data-testid="precio-bajo-2"]');
+    it('exactamente la tercera parte no avisa; un peso menos, sí', () => {
+      const productos = [p(2, 'Osario A2', 'Mausoleos', 'Osarios', '9000000.00')];
+      expect(bajo(montar([{ ...LINEA, precio_unitario: 3000000 }], { productos })).exists()).toBe(false);
+      expect(bajo(montar([{ ...LINEA, precio_unitario: 2999999 }], { productos })).exists()).toBe(true);
+    });
+    it('menos de la tercera parte avisa y no impide guardar', () => {
+      const w = montar([{ ...LINEA, precio_unitario: 100 }]);
+      expect(plano(bajo(w))).toBe('Revisa el precio: es menos de la tercera parte del de la lista ($ 8.770.000)');
+      expect(bajo(w).classes()).toContain('text-warning');
+    });
+    it('sin precio escrito no avisa', () => {
+      expect(bajo(montar([{ ...LINEA, precio_unitario: null }])).exists()).toBe(false);
+    });
+    it('sin precio en la lista no avisa', () => {
+      expect(montar([{ prod_id: 1, nombre: 'Osarios', vendido: true, cantidad: 1, precio_unitario: 1 }]).find('[data-testid="precio-bajo-1"]').exists()).toBe(false);
+    });
+  });
 });

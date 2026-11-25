@@ -91,6 +91,53 @@ describe('CampoPesos', () => {
       expect(w.emitted('update:modelValue').at(-1)).toEqual([8770]);
     });
   });
+  describe('pegar en cualquier formato', () => {
+    async function meter(input, texto, inputType, data) {
+      input.element.value = texto;
+      input.element.setSelectionRange(texto.length, texto.length);
+      const datos = { bubbles: true };
+      if (inputType !== undefined) datos.inputType = inputType;
+      if (data !== undefined) datos.data = data;
+      input.element.dispatchEvent(new InputEvent('input', datos));
+      await input.trigger('blur');
+    }
+    it.each([
+      ['8,770,000', 8770000, '8.770.000'],
+      ['12,500,000', 12500000, '12.500.000'],
+      ['8,770,000.00', 8770000, '8.770.000'],
+      ['8770000.00 ', 8770000, '8.770.000'],
+      ['8770000.00 COP', 8770000, '8.770.000'],
+      ['8.770.000,00', 8770000, '8.770.000'],
+      ['$ 8.770.000,00', 8770000, '8.770.000'],
+      ['8.770', 8770, '8.770'],
+      ['1.250.000', 1250000, '1.250.000']
+    ])('pegar "%s"', async (texto, valor, mostrado) => {
+      const { w, input } = montar();
+      await meter(input, texto, 'insertFromPaste');
+      expect(w.emitted('update:modelValue').at(-1)).toEqual([valor]);
+      expect(input.element.value).toBe(mostrado);
+    });
+    it.each([
+      ['soltar', 'insertFromDrop', undefined],
+      ['sugerencia del teclado', 'insertReplacementText', undefined],
+      ['insertText de varios caracteres', 'insertText', '8770000.00'],
+      ['autocompletar, sin inputType', undefined, undefined]
+    ])('%s: 8770000.00 da 8770000', async (_n, tipo, data) => {
+      const { w, input } = montar();
+      await meter(input, '8770000.00', tipo, data);
+      expect(w.emitted('update:modelValue').at(-1)).toEqual([8770000]);
+      expect(input.element.value).toBe('8.770.000');
+    });
+    it('una coma bajo composición, en el medio, no borra dígitos', async () => {
+      const { w, input } = montar(8770000);
+      input.element.value = '8.770,.000';
+      input.element.setSelectionRange(6, 6);
+      input.element.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'insertCompositionText', data: ',' }));
+      await input.trigger('blur');
+      expect(input.element.value).toBe('8.770.000');
+      expect(w.emitted('update:modelValue')).toBeUndefined();
+    });
+  });
   describe('borrar', () => {
     async function borrar(input, texto, cursor, inputType) {
       input.element.value = texto;
