@@ -10,7 +10,7 @@ vi.mock('@/api/trackingApi', () => ({
 }));
 
 const tracking = vi.hoisted(() => ({
-  reanudar: vi.fn(), detener: vi.fn(), reanudarLocal: vi.fn(() => false)
+  reanudar: vi.fn(), detener: vi.fn(), olvidar: vi.fn(), reanudarLocal: vi.fn(() => false)
 }));
 vi.mock('@/stores/useTrackingStore', () => ({ useTrackingStore: () => tracking }));
 
@@ -124,13 +124,13 @@ describe('useJornadaObligatoriaStore', () => {
     await s.chequear();
     expect(s.estado).toBe('ok');
     expect(tracking.reanudar).toHaveBeenCalledWith(jornada);
-    expect(tracking.detener).not.toHaveBeenCalled();
+    expect(tracking.olvidar).not.toHaveBeenCalled();
   });
 
   it('ausente → detiene la captura', async () => {
     trackingApi.estadoJornadaHoy.mockResolvedValue({ data: { estado: 'ausente', requiere_popup: false } });
     await useJornadaObligatoriaStore().chequear();
-    expect(tracking.detener).toHaveBeenCalled();
+    expect(tracking.olvidar).toHaveBeenCalled();
     expect(tracking.reanudar).not.toHaveBeenCalled();
   });
 
@@ -139,7 +139,7 @@ describe('useJornadaObligatoriaStore', () => {
     const s = useJornadaObligatoriaStore();
     await s.chequear();
     expect(s.estado).toBe('bloqueado');
-    expect(tracking.detener).toHaveBeenCalled();
+    expect(tracking.olvidar).toHaveBeenCalled();
   });
 
   it('finalizada → ok y detiene', async () => {
@@ -147,7 +147,7 @@ describe('useJornadaObligatoriaStore', () => {
     const s = useJornadaObligatoriaStore();
     await s.chequear();
     expect(s.estado).toBe('ok');
-    expect(tracking.detener).toHaveBeenCalled();
+    expect(tracking.olvidar).toHaveBeenCalled();
     expect(tracking.reanudar).not.toHaveBeenCalled();
   });
 
@@ -156,7 +156,7 @@ describe('useJornadaObligatoriaStore', () => {
     const s = useJornadaObligatoriaStore();
     await s.chequear();
     expect(s.estado).toBe('ok');
-    expect(tracking.detener).toHaveBeenCalled();
+    expect(tracking.olvidar).toHaveBeenCalled();
   });
 
   it('error de red con copia válida de hoy → ok', async () => {
@@ -170,14 +170,14 @@ describe('useJornadaObligatoriaStore', () => {
   it('marcarAusencia detiene la captura', async () => {
     trackingApi.registrarAusenciaHoy.mockResolvedValue({ data: { aus_id: 9 } });
     await useJornadaObligatoriaStore().marcarAusencia({ tipo: 'PERMISO', motivo: 'cita' });
-    expect(tracking.detener).toHaveBeenCalled();
+    expect(tracking.olvidar).toHaveBeenCalled();
   });
 
   it('sin sesión no consulta ni toca la captura', async () => {
     useAuthStore().accessToken = null;
     await useJornadaObligatoriaStore().chequear();
     expect(trackingApi.estadoJornadaHoy).not.toHaveBeenCalled();
-    expect(tracking.detener).not.toHaveBeenCalled();
+    expect(tracking.olvidar).not.toHaveBeenCalled();
   });
 
   it.each(['SUPER_ADMIN', 'GERENTE_GENERAL', 'DIRECTOR_COMERCIAL'])('rol %s → ok y detiene sin consultar', async (rol) => {
@@ -187,7 +187,7 @@ describe('useJornadaObligatoriaStore', () => {
     await s.chequear();
     expect(trackingApi.estadoJornadaHoy).not.toHaveBeenCalled();
     expect(s.estado).toBe('ok');
-    expect(tracking.detener).toHaveBeenCalled();
+    expect(tracking.olvidar).toHaveBeenCalled();
     expect(tracking.reanudarLocal).not.toHaveBeenCalled();
   });
 
@@ -195,7 +195,7 @@ describe('useJornadaObligatoriaStore', () => {
     trackingApi.estadoJornadaHoy.mockResolvedValue({ data: { estado: 'activa', requiere_popup: false, jornada: null } });
     await useJornadaObligatoriaStore().chequear();
     expect(tracking.reanudar).not.toHaveBeenCalled();
-    expect(tracking.detener).toHaveBeenCalled();
+    expect(tracking.olvidar).toHaveBeenCalled();
   });
 
   it('una respuesta sin_iniciar tardía no vuelve a mostrar el popup ni apaga la captura', async () => {
@@ -207,7 +207,7 @@ describe('useJornadaObligatoriaStore', () => {
     d.resolve(SIN_INICIAR);
     await p;
     expect(s.estado).toBe('ok');
-    expect(tracking.detener).not.toHaveBeenCalled();
+    expect(tracking.olvidar).not.toHaveBeenCalled();
   });
 
   it('una activa tardía tras marcar ausencia no enciende la captura', async () => {
@@ -323,5 +323,106 @@ describe('useJornadaObligatoriaStore', () => {
     d2.resolve(ACTIVA);
     await p2;
     expect(s.chequeando).toBe(false);
+  });
+
+  it.each([
+    ['ausente', { estado: 'ausente', requiere_popup: false }, 'ausente'],
+    ['finalizada', { estado: 'finalizada', requiere_popup: false, jornada: { jor_id: 'x' } }, 'ok']
+  ])('tras confirmar %s hoy, sin red conserva ese estado y no muestra el popup', async (_n, data, esperado) => {
+    trackingApi.estadoJornadaHoy.mockResolvedValueOnce({ data });
+    const s = useJornadaObligatoriaStore();
+    await s.chequear();
+    trackingApi.estadoJornadaHoy.mockRejectedValue(new Error('Network Error'));
+    await s.chequear({ force: true });
+    expect(s.estado).toBe(esperado);
+    expect(s.debeBloquear).toBe(false);
+    expect(tracking.reanudarLocal).not.toHaveBeenCalled();
+  });
+
+  it('lo confirmado se olvida con reset, con otra persona y al día siguiente', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 10, 25, 10, 0, 0));
+    try {
+      const ausente = { data: { estado: 'ausente', requiere_popup: false } };
+      const caida = () => trackingApi.estadoJornadaHoy.mockRejectedValue(new Error('Network Error'));
+      const s = useJornadaObligatoriaStore();
+      trackingApi.estadoJornadaHoy.mockResolvedValueOnce(ausente);
+      await s.chequear();
+      s.reset(); caida();
+      await s.chequear({ force: true });
+      expect(tracking.reanudarLocal).toHaveBeenCalledTimes(1);
+
+      trackingApi.estadoJornadaHoy.mockResolvedValueOnce(ausente);
+      await s.chequear({ force: true });
+      iniciarSesion(2); caida();
+      await s.chequear({ force: true });
+      expect(tracking.reanudarLocal).toHaveBeenCalledTimes(2);
+
+      iniciarSesion(1);
+      trackingApi.estadoJornadaHoy.mockResolvedValueOnce(ausente);
+      await s.chequear({ force: true });
+      vi.setSystemTime(new Date(2026, 10, 26, 8, 0, 0)); caida();
+      await s.chequear({ force: true });
+      expect(tracking.reanudarLocal).toHaveBeenCalledTimes(3);
+    } finally { vi.useRealTimers(); }
+  });
+
+  it('una respuesta activa o sin_iniciar posterior deja de tener por cerrada la jornada', async () => {
+    const s = useJornadaObligatoriaStore();
+    trackingApi.estadoJornadaHoy.mockResolvedValueOnce({ data: { estado: 'ausente', requiere_popup: false } });
+    await s.chequear();
+    trackingApi.estadoJornadaHoy.mockResolvedValueOnce(SIN_INICIAR);
+    await s.chequear({ force: true });
+    trackingApi.estadoJornadaHoy.mockRejectedValue(new Error('Network Error'));
+    await s.chequear({ force: true });
+    expect(tracking.reanudarLocal).toHaveBeenCalled();
+  });
+
+  it('marcarAusencia recuerda la ausencia aunque luego falle la red', async () => {
+    trackingApi.registrarAusenciaHoy.mockResolvedValue({});
+    const s = useJornadaObligatoriaStore();
+    await s.marcarAusencia({ tipo: 'PERMISO', motivo: 'cita' });
+    trackingApi.estadoJornadaHoy.mockRejectedValue(new Error('Network Error'));
+    await s.chequear({ force: true });
+    expect(s.estado).toBe('ausente');
+  });
+
+  it('marcarAusencia no olvida la captura hasta que el POST responde, y no si falla', async () => {
+    const da = diferida();
+    trackingApi.registrarAusenciaHoy.mockReturnValue(da.promesa);
+    const s = useJornadaObligatoriaStore();
+    const pa = s.marcarAusencia({ tipo: 'PERMISO', motivo: 'cita' });
+    expect(tracking.olvidar).not.toHaveBeenCalled();
+    da.reject(new Error('x'));
+    await expect(pa).rejects.toThrow();
+    expect(tracking.olvidar).not.toHaveBeenCalled();
+    expect(s.estado).toBe('sin_chequear');
+  });
+
+  it('un chequeo iniciado durante el POST de ausencia tampoco se aplica al terminar', async () => {
+    const da = diferida(); const d = diferida();
+    trackingApi.registrarAusenciaHoy.mockReturnValue(da.promesa);
+    trackingApi.estadoJornadaHoy.mockReturnValue(d.promesa);
+    const s = useJornadaObligatoriaStore();
+    const pa = s.marcarAusencia({ tipo: 'PERMISO', motivo: 'cita' });
+    const p = s.chequear({ force: true });
+    da.resolve({});
+    await pa;
+    d.resolve(ACTIVA);
+    await p;
+    expect(tracking.reanudar).not.toHaveBeenCalled();
+    expect(s.estado).toBe('ausente');
+  });
+
+  it('invalidar libera chequeando', async () => {
+    const d = diferida();
+    trackingApi.estadoJornadaHoy.mockReturnValue(d.promesa);
+    const s = useJornadaObligatoriaStore();
+    const p = s.chequear();
+    expect(s.chequeando).toBe(true);
+    s.marcarJornadaIniciada();
+    expect(s.chequeando).toBe(false);
+    d.resolve(ACTIVA);
+    await p;
   });
 });

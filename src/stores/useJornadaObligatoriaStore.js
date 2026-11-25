@@ -9,6 +9,7 @@ import { ref, computed } from 'vue';
 import { trackingApi } from '@/api/trackingApi';
 import { useTrackingStore } from '@/stores/useTrackingStore';
 import { useAuthStore } from '@/stores/useAuthStore';
+import { diaLocal } from '@/utils/format';
 
 const CACHE_MS = 60_000;
 
@@ -24,6 +25,8 @@ export const useJornadaObligatoriaStore = defineStore('svJornadaObligatoria', ()
 
   // Cada cambio de estado invalida las respuestas que estén en camino.
   let turno = 0;
+  // Lo último que el backend confirmó hoy (ausente o finalizada) para esta persona: vale aunque luego falle la red.
+  let cierreHoy = null;
   function invalidar() { turno++; chequeando.value = false; }
 
   /** usr_id de la sesión actual, o null si no hay sesión. */
@@ -45,7 +48,7 @@ export const useJornadaObligatoriaStore = defineStore('svJornadaObligatoria', ()
       chequeando.value = false;
       estado.value = 'ok';
       ultimoChequeoAt.value = Date.now();
-      tracking.detener();
+      tracking.olvidar();
       return;
     }
 
@@ -54,22 +57,29 @@ export const useJornadaObligatoriaStore = defineStore('svJornadaObligatoria', ()
       const r = await trackingApi.estadoJornadaHoy();
       if (!vigente()) return;
       const data = r?.data || r; // tolera envolturas {ok:true,data:{}} o crudas
+      cierreHoy = (data.estado === 'ausente' || data.estado === 'finalizada')
+        ? { usr, dia: diaLocal(), estado: data.estado === 'ausente' ? 'ausente' : 'ok' } : null;
       if (data.estado === 'activa' && data.jornada) {
         estado.value = 'ok';
         tracking.reanudar(data.jornada);
       } else if (data.estado === 'ausente') {
         estado.value = 'ausente';
-        tracking.detener();
+        tracking.olvidar();
       } else if (data.requiere_popup) {
         estado.value = 'bloqueado';
-        tracking.detener();
+        tracking.olvidar();
       } else {
         estado.value = 'ok';
-        tracking.detener();
+        tracking.olvidar();
       }
       ultimoChequeoAt.value = Date.now();
     } catch (e) {
       if (!vigente()) return;
+      if (cierreHoy && cierreHoy.usr === usr && cierreHoy.dia === diaLocal()) {
+        estado.value = cierreHoy.estado;
+        ultimoChequeoAt.value = Date.now();
+        return;
+      }
       // Sin red: sigue la copia del navegador si es de este usuario y de hoy;
       // si no, fail CLOSED (el popup se muestra).
       estado.value = tracking.reanudarLocal() ? 'ok' : 'bloqueado';
@@ -84,9 +94,10 @@ export const useJornadaObligatoriaStore = defineStore('svJornadaObligatoria', ()
     invalidar();
     await trackingApi.registrarAusenciaHoy({ tipo, motivo });
     invalidar();
+    cierreHoy = { usr: usuarioActual(), dia: diaLocal(), estado: 'ausente' };
     estado.value = 'ausente';
     ultimoChequeoAt.value = Date.now();
-    useTrackingStore().detener();
+    useTrackingStore().olvidar();
   }
 
   function marcarJornadaIniciada() {
@@ -97,6 +108,7 @@ export const useJornadaObligatoriaStore = defineStore('svJornadaObligatoria', ()
 
   function reset() {
     invalidar();
+    cierreHoy = null;
     estado.value = 'sin_chequear';
     ultimoChequeoAt.value = 0;
   }

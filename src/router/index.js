@@ -227,6 +227,7 @@ router.beforeEach(async (to) => {
 
   // ── SSO callback desde el Portal Serfunorte ──
   if (to.query.sso_token && to.query.sso_refresh) {
+    auth.usuario      = null;   // nada se pide ni se enciende con la persona anterior
     auth.accessToken  = String(to.query.sso_token);
     auth.refreshToken = String(to.query.sso_refresh);
     localStorage.setItem('sv_access_token',  auth.accessToken);

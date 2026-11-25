@@ -479,21 +479,43 @@ describe('useTrackingStore', () => {
       expect(chequear).toHaveBeenCalledTimes(1);
     });
 
-    it('la vuelta a preguntar no se repite antes de un minuto y sí después', async () => {
-      trackingApi.batchPuntos.mockRejectedValue(errHttp(409, 'JORNADA_CERRADA'));
-      const t = useTrackingStore();
-      for (let i = 0; i < 2; i++) {
-        guardar(copia(), { jor_id: 'J1', puntos: [pt(1)] });
-        t.reanudarLocal();
-        await t.flush();
-        await vi.advanceTimersByTimeAsync(0);
-      }
-      expect(chequear).toHaveBeenCalledTimes(1);
-      await vi.advanceTimersByTimeAsync(61_000);
-      guardar(copia({ dia: HOY }), { jor_id: 'J1', puntos: [pt(1)] });
+    async function cerrada(t) {
+      guardar(copia(), { jor_id: 'J1', puntos: [pt(1)] });
       t.reanudarLocal();
       await t.flush();
       await vi.advanceTimersByTimeAsync(0);
+    }
+
+    it('la vuelta a preguntar aplaza, no descarta: se cumple al pasar el minuto, una sola vez', async () => {
+      trackingApi.batchPuntos.mockRejectedValue(errHttp(409, 'JORNADA_CERRADA'));
+      const t = useTrackingStore();
+      await cerrada(t);
+      expect(chequear).toHaveBeenCalledTimes(1);
+      await cerrada(t);
+      await cerrada(t);
+      expect(chequear).toHaveBeenCalledTimes(1);
+      await vi.advanceTimersByTimeAsync(60_000);
+      expect(chequear).toHaveBeenCalledTimes(2);
+      await vi.advanceTimersByTimeAsync(120_000);
+      expect(chequear).toHaveBeenCalledTimes(2);
+    });
+
+    it('cerrar sesión o cambiar de usuario cancela la pregunta aplazada', async () => {
+      trackingApi.batchPuntos.mockRejectedValue(errHttp(409, 'JORNADA_CERRADA'));
+      const t = useTrackingStore();
+      await cerrada(t);
+      await cerrada(t);
+      t.detener({ borrarPendientes: false });
+      await vi.advanceTimersByTimeAsync(120_000);
+      expect(chequear).toHaveBeenCalledTimes(1);
+    });
+
+    it('si el reloj retrocede, no queda bloqueado', async () => {
+      trackingApi.batchPuntos.mockRejectedValue(errHttp(409, 'JORNADA_CERRADA'));
+      const t = useTrackingStore();
+      await cerrada(t);
+      vi.setSystemTime(new Date(2026, 10, 25, 9, 0, 0));
+      await cerrada(t);
       expect(chequear).toHaveBeenCalledTimes(2);
     });
 
@@ -580,6 +602,195 @@ describe('useTrackingStore', () => {
       useAuthStore().usuario = { usr_id: 8 };
       expect(t.reanudarLocal()).toBe(false);
       expect(t.estaActiva).toBe(false);
+    });
+  });
+
+  describe('un no del backend', () => {
+    it('olvidar con la memoria vacía y copia de hoy de esta persona: la borra', () => {
+      guardar(copia(), { jor_id: 'J1', puntos: [pt(1)] });
+      const t = useTrackingStore();
+      t.olvidar();
+      expect(localStorage.getItem('sv_tracking_jornada')).toBeNull();
+      expect(localStorage.getItem('sv_tracking_buffer')).toBeNull();
+      expect(t.reanudarLocal()).toBe(false);
+      expect(t.estaActiva).toBe(false);
+    });
+
+    it('olvidar no toca la copia de otra persona', () => {
+      guardar(copia({ usr_id: 8 }), { jor_id: 'J1', puntos: [pt(1)] });
+      useTrackingStore().olvidar();
+      expect(localStorage.getItem('sv_tracking_jornada')).not.toBeNull();
+      expect(localStorage.getItem('sv_tracking_buffer')).not.toBeNull();
+    });
+
+    it('olvidar con la jornada en memoria la apaga y borra copia y puntos', () => {
+      const t = useTrackingStore();
+      t.reanudar({ jor_id: 'J1', jor_inicio_at: 'a' });
+      geo.watchPosition.mock.calls[0][0](lectura(1));
+      t.olvidar();
+      expect(t.estaActiva).toBe(false);
+      expect(geo.clearWatch).toHaveBeenCalled();
+      expect(localStorage.getItem('sv_tracking_jornada')).toBeNull();
+      expect(localStorage.getItem('sv_tracking_buffer')).toBeNull();
+    });
+
+    it('detener (cierre de sesión) sí conserva los pendientes', () => {
+      const t = useTrackingStore();
+      t.reanudar({ jor_id: 'J1', jor_inicio_at: 'a' });
+      geo.watchPosition.mock.calls[0][0](lectura(1));
+      t.detener({ borrarPendientes: false });
+      expect(localStorage.getItem('sv_tracking_buffer')).not.toBeNull();
+    });
+
+    it.each([[404, undefined], [403, undefined], [404, 'otra'], [403, 'otra']])('%s sin su código (proxy o HTML) se trata como falta de red', async (st, cod) => {
+      trackingApi.batchPuntos.mockRejectedValue(errHttp(st, cod));
+      guardar(copia(), { jor_id: 'J1', puntos: [pt(1)] });
+      const t = useTrackingStore();
+      t.reanudarLocal();
+      await t.flush();
+      await vi.advanceTimersByTimeAsync(0);
+      expect(t.estaActiva).toBe(true);
+      expect(t.bufferLocal).toHaveLength(1);
+      expect(chequear).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('cambio de día y envíos lentos', () => {
+    const manana = () => vi.setSystemTime(new Date(2026, 10, 26, 0, 5, 0));
+
+    it('la jornada nueva no se apaga por el fallo de la vieja', async () => {
+      const d = diferida();
+      trackingApi.batchPuntos.mockReturnValue(d.promesa);
+      guardar(copia(), { jor_id: 'J1', puntos: [pt(1)] });
+      const t = useTrackingStore();
+      t.reanudarLocal();
+      manana();
+      geo.watchPosition.mock.calls[0][0](lectura(2));   // dispara cambioDeDia con envío lento
+      t.reanudar({ jor_id: 'J2', jor_inicio_at: 'b' });
+      d.reject(errHttp(409, 'JORNADA_CERRADA'));
+      await vi.advanceTimersByTimeAsync(0);
+      expect(t.jornadaActiva.jor_id).toBe('J2');
+      expect(JSON.parse(localStorage.getItem('sv_tracking_jornada')).jor_id).toBe('J2');
+      expect(geo.clearWatch).not.toHaveBeenCalled();
+    });
+
+    it('la jornada nueva no se apaga cuando el envío viejo sale bien', async () => {
+      const d = diferida();
+      trackingApi.batchPuntos.mockReturnValue(d.promesa);
+      guardar(copia(), { jor_id: 'J1', puntos: [pt(1)] });
+      const t = useTrackingStore();
+      t.reanudarLocal();
+      manana();
+      geo.watchPosition.mock.calls[0][0](lectura(2));
+      t.reanudar({ jor_id: 'J2', jor_inicio_at: 'b' });
+      d.resolve({ data: { aceptados: 1 } });
+      await vi.advanceTimersByTimeAsync(0);
+      expect(t.jornadaActiva.jor_id).toBe('J2');
+    });
+
+    it('el cambio de día sin red conserva los pendientes', async () => {
+      trackingApi.batchPuntos.mockRejectedValue(new Error('Network Error'));
+      guardar(copia(), { jor_id: 'J1', puntos: [pt(1)] });
+      const t = useTrackingStore();
+      t.reanudarLocal();
+      manana();
+      geo.watchPosition.mock.calls[0][0](lectura(2));
+      await vi.advanceTimersByTimeAsync(0);
+      expect(t.estaActiva).toBe(false);
+      expect(JSON.parse(localStorage.getItem('sv_tracking_buffer')).puntos).toEqual([pt(1)]);
+    });
+
+    it('el punto del día nuevo se descarta', async () => {
+      trackingApi.batchPuntos.mockResolvedValue({ data: { aceptados: 1 } });
+      guardar(copia(), { jor_id: 'J1', puntos: [pt(1)] });
+      const t = useTrackingStore();
+      t.reanudarLocal();
+      manana();
+      expect(geo.watchPosition.mock.calls[0][0](lectura(2))).toBe(false);
+      await vi.advanceTimersByTimeAsync(0);
+      expect(trackingApi.batchPuntos.mock.calls.flatMap((c) => c[1]).map((p) => p.ts)).toEqual([1]);
+    });
+
+    it('el candado de cambioDeDia se libera: un segundo cruce también apaga', async () => {
+      trackingApi.batchPuntos.mockResolvedValue({ data: { aceptados: 1 } });
+      const t = useTrackingStore();
+      t.reanudar({ jor_id: 'J1', jor_inicio_at: 'a' });
+      manana();
+      geo.watchPosition.mock.calls[0][0](lectura(1));
+      await vi.advanceTimersByTimeAsync(0);
+      expect(t.estaActiva).toBe(false);
+      t.reanudar({ jor_id: 'J2', jor_inicio_at: 'b' });
+      vi.setSystemTime(new Date(2026, 10, 27, 0, 5, 0));
+      geo.watchPosition.mock.calls[1][0](lectura(1));
+      await vi.advanceTimersByTimeAsync(0);
+      expect(t.estaActiva).toBe(false);
+    });
+
+    it('persistir usa el usuario fijado al activar, no el actual', () => {
+      const t = useTrackingStore();
+      t.reanudar({ jor_id: 'J1', jor_inicio_at: 'a' });
+      useAuthStore().usuario = { usr_id: 8 };
+      geo.watchPosition.mock.calls[0][0](lectura(1));
+      expect(JSON.parse(localStorage.getItem('sv_tracking_jornada')).usr_id).toBe(7);
+    });
+
+    it('vaciar sin red envía una sola vez', async () => {
+      trackingApi.batchPuntos.mockRejectedValue(new Error('Network Error'));
+      guardar(copia(), { jor_id: 'J1', puntos: [pt(1), pt(2), pt(3)] });
+      const t = useTrackingStore();
+      t.reanudarLocal();
+      await t.pausar();
+      expect(trackingApi.batchPuntos).toHaveBeenCalledTimes(1);
+    });
+
+    it('un punto que entra durante el envío no detiene el vaciado', async () => {
+      const d = diferida();
+      trackingApi.batchPuntos.mockReturnValueOnce(d.promesa).mockResolvedValue({ data: { aceptados: 1 } });
+      guardar(copia(), { jor_id: 'J1', puntos: [pt(1)] });
+      const t = useTrackingStore();
+      t.reanudarLocal();
+      const p = t.pausar();
+      geo.watchPosition.mock.calls[0][0](lectura(9));
+      d.resolve({ data: { aceptados: 1 } });
+      await p;
+      expect(trackingApi.batchPuntos).toHaveBeenCalledTimes(2);
+      expect(localStorage.getItem('sv_tracking_buffer')).toBeNull();
+    });
+
+    it('un 422 cuenta como avance y el vaciado sigue con el resto', async () => {
+      trackingApi.batchPuntos.mockRejectedValueOnce(errHttp(422, 'VALIDATION_ERROR')).mockResolvedValue({ data: { aceptados: 1 } });
+      guardar(copia(), { jor_id: 'J1', puntos: Array.from({ length: 130 }, (_, i) => pt(i + 1)) });
+      const t = useTrackingStore();
+      t.reanudarLocal();
+      await t.pausar();
+      expect(trackingApi.batchPuntos).toHaveBeenCalledTimes(2);
+    });
+
+    it('al volver tras detenerse por cambio de día no avisa "reanudado"', async () => {
+      const info = vi.spyOn(useToastStore(), 'info');
+      const t = useTrackingStore();
+      t.reanudar({ jor_id: 'J1', jor_inicio_at: 'a' });
+      Object.defineProperty(document, 'visibilityState', { value: 'hidden', configurable: true });
+      document.dispatchEvent(new Event('visibilitychange'));
+      vi.setSystemTime(new Date(2026, 10, 26, 0, 30, 0));
+      Object.defineProperty(document, 'visibilityState', { value: 'visible', configurable: true });
+      document.dispatchEvent(new Event('visibilitychange'));
+      await vi.advanceTimersByTimeAsync(0);
+      expect(t.estaActiva).toBe(false);
+      expect(info).not.toHaveBeenCalled();
+    });
+
+    it('al volver tras una pausa larga el mismo día sí avisa', async () => {
+      const info = vi.spyOn(useToastStore(), 'info');
+      const t = useTrackingStore();
+      t.reanudar({ jor_id: 'J1', jor_inicio_at: 'a' });
+      Object.defineProperty(document, 'visibilityState', { value: 'hidden', configurable: true });
+      document.dispatchEvent(new Event('visibilitychange'));
+      vi.setSystemTime(new Date(2026, 10, 25, 10, 30, 0));
+      Object.defineProperty(document, 'visibilityState', { value: 'visible', configurable: true });
+      document.dispatchEvent(new Event('visibilitychange'));
+      await vi.advanceTimersByTimeAsync(0);
+      expect(info).toHaveBeenCalled();
     });
   });
 

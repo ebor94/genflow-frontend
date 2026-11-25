@@ -46,8 +46,9 @@ describe('useAuthStore.logout', () => {
     const auth = sesion();
     let fin;
     vi.spyOn(useTrackingStore(), 'pausar').mockReturnValue(new Promise((r) => { fin = r; }));
+    const pausar = useTrackingStore().pausar;
     const p = auth.logout();
-    await Promise.resolve(); await Promise.resolve();
+    await vi.waitFor(() => expect(pausar).toHaveBeenCalled());
     expect(auth.accessToken).toBe('a');
     expect(authApi.logout).not.toHaveBeenCalled();
     fin();

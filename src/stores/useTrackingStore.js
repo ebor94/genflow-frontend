@@ -48,6 +48,7 @@ export const useTrackingStore = defineStore('svTracking', () => {
   let enviando = null;      // un solo envío a la vez
   let cambiandoDia = null;
   let ultimoRechequeo = 0;  // la vuelta a preguntar no se repite más de una vez por minuto
+  let rechequeoTimer = null;
 
   function leerJson(clave) {
     try {
@@ -59,10 +60,6 @@ export const useTrackingStore = defineStore('svTracking', () => {
   function leerBuffer() {
     const b = leerJson(LS_BUF);
     return (b && typeof b === 'object' && !Array.isArray(b) && b.jor_id && Array.isArray(b.puntos)) ? b : null;
-  }
-
-  function borrarClaves() {
-    try { localStorage.removeItem(LS_KEY); localStorage.removeItem(LS_BUF); } catch { /* ignore */ }
   }
 
   /** Borra la clave solo si es de esa jornada (otra pestaña puede tener otra). */
@@ -206,8 +203,7 @@ export const useTrackingStore = defineStore('svTracking', () => {
     return !!jornadaActiva.value && jornadaActiva.value.dia !== diaLocal();
   }
 
-  async function rechequear() {
-    if (Date.now() - ultimoRechequeo < 60_000) return;
+  async function preguntarDeNuevo() {
     ultimoRechequeo = Date.now();
     try {
       const { useJornadaObligatoriaStore } = await import('@/stores/useJornadaObligatoriaStore');
@@ -215,11 +211,24 @@ export const useTrackingStore = defineStore('svTracking', () => {
     } catch { /* ignore */ }
   }
 
+  /** Vuelve a preguntar al backend; si toca antes de un minuto, lo aplaza a que se cumpla. */
+  function rechequear() {
+    const espera = 60_000 - (Date.now() - ultimoRechequeo);
+    if (espera > 0 && espera <= 60_000) {   // si el reloj retrocedió, espera > 60 s y se pregunta ya
+      rechequeoTimer ??= setTimeout(() => { rechequeoTimer = null; preguntarDeNuevo(); }, espera);
+      return Promise.resolve();
+    }
+    return preguntarDeNuevo();
+  }
+
   /** La jornada en memoria ya no es de hoy: envía lo pendiente, la suelta y pregunta al backend. */
   function cambioDeDia() {
     cambiandoDia ??= (async () => {
+      const jorId = jornadaActiva.value?.jor_id;
       await vaciar();
-      detener();
+      // Si mientras tanto se activó otra jornada, esa no se toca.
+      if (jornadaActiva.value && jornadaActiva.value.jor_id !== jorId) return;
+      detener({ borrarPendientes: false });
       await rechequear();
     })().finally(() => { cambiandoDia = null; });
     return cambiandoDia;
@@ -228,24 +237,25 @@ export const useTrackingStore = defineStore('svTracking', () => {
   /** Envía un lote. No revienta si falla; deja los puntos en buffer. */
   async function enviar() {
     const j = jornadaActiva.value;
-    if (!j || !bufferLocal.value.length) return;
+    if (!j || !bufferLocal.value.length) return false;
     const jorId = j.jor_id;
     const lote = bufferLocal.value.slice(0, 100);
     try {
       const r = await trackingApi.batchPuntos(jorId, lote);
-      if (jornadaActiva.value?.jor_id !== jorId) return;
+      if (jornadaActiva.value?.jor_id !== jorId) return false;
       bufferLocal.value = bufferLocal.value.slice(lote.length);
       enviadoCount.value += r.data?.aceptados || 0;
       persistir();
+      return true;
     } catch (e) {
-      if (jornadaActiva.value?.jor_id !== jorId) return;
+      if (jornadaActiva.value?.jor_id !== jorId) return false;
       const status = e.response?.status;
       const codigo = e.response?.data?.error;
-      if (codigo === 'JORNADA_CERRADA' || status === 404) {
+      if (codigo === 'JORNADA_CERRADA' || (status === 404 && codigo === 'NOT_FOUND')) {
         detener();
         toast.warning('Tu jornada fue cerrada automáticamente.');
         rechequear();
-      } else if (status === 403) {
+      } else if (status === 403 && codigo === 'FORBIDDEN') {
         detener();
         toast.warning('Esta jornada es de otra persona.');
         rechequear();
@@ -253,9 +263,11 @@ export const useTrackingStore = defineStore('svTracking', () => {
         // Lote inválido: se descarta para que no bloquee los siguientes.
         bufferLocal.value = bufferLocal.value.slice(lote.length);
         persistir();
+        return true;
       }
-      // Sin red: dejar buffer; los listeners de online lo intentarán de nuevo.
+      // Sin red (o respuesta que no es del backend): dejar buffer; los listeners de online lo intentarán de nuevo.
     }
+    return false;
   }
 
   function flush() {
@@ -264,14 +276,12 @@ export const useTrackingStore = defineStore('svTracking', () => {
     return enviando;
   }
 
-  /** Envía mientras el buffer avance (sin red se detiene en el primer intento). */
+  /** Envía lotes mientras el envío tenga éxito (sin red se detiene en el primer intento). */
   async function vaciar() {
     for (let i = 0; i < 50; i++) {
-      const antes = bufferLocal.value.length;
-      if (!antes || !jornadaActiva.value) return;
+      if (!bufferLocal.value.length || !jornadaActiva.value) return;
       enviando ??= enviar().finally(() => { enviando = null; });
-      await enviando;
-      if (!jornadaActiva.value || bufferLocal.value.length >= antes) return;
+      if (!(await enviando)) return;
     }
   }
 
@@ -304,7 +314,7 @@ export const useTrackingStore = defineStore('svTracking', () => {
       });
     }
     await flush();
-    if (gapMin >= GAP_ALERT_MIN) {
+    if (gapMin >= GAP_ALERT_MIN && estaActiva.value) {
       toast.info(`📍 Tracking reanudado tras ${gapMin} min sin reporte`);
     }
   }
@@ -428,6 +438,7 @@ export const useTrackingStore = defineStore('svTracking', () => {
 
   /** Detiene la captura. Borra la copia de esta jornada, y sus puntos pendientes salvo que se pida conservarlos. */
   function detener({ borrarPendientes = true } = {}) {
+    if (rechequeoTimer) { clearTimeout(rechequeoTimer); rechequeoTimer = null; }
     const jorId = jornadaActiva.value?.jor_id;
     const hayPendientes = bufferLocal.value.length > 0;
     detenerWatch();
@@ -442,6 +453,15 @@ export const useTrackingStore = defineStore('svTracking', () => {
     if (borrarPendientes || !hayPendientes) quitarSiEs(LS_BUF, jorId);
   }
 
+  /** El backend dijo que hoy no hay jornada que seguir: detiene y borra la copia de esta persona con sus puntos. */
+  function olvidar() {
+    const usrId = useAuthStore().usuario?.usr_id;
+    const c = leerJson(LS_KEY);
+    const jorId = jornadaActiva.value?.jor_id ?? (c && c.usr_id === usrId ? c.jor_id : null);
+    detener();
+    if (jorId) { quitarSiEs(LS_KEY, jorId); quitarSiEs(LS_BUF, jorId); }
+  }
+
   /** Cerrar sesión: envía lo pendiente y detiene, sin terminar la jornada. Lo que no salga queda guardado. */
   async function pausar() {
     try { await vaciar(); } catch { /* ignore */ }
@@ -452,7 +472,7 @@ export const useTrackingStore = defineStore('svTracking', () => {
     jornadaActiva, ultimaPos, enviadoCount, bufferLocal, errorPermiso,
     estaActiva, duracionMin, minSinPunto,
     wakeLockActivo, wakeLockPref, lastResumedAt,
-    iniciar, reanudar, reanudarLocal, pausar, detener, flush,
+    iniciar, reanudar, reanudarLocal, pausar, detener, olvidar, flush,
     toggleWakeLock, maybeReadquireWakeLock
   };
 });

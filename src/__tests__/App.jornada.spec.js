@@ -77,4 +77,14 @@ describe('App: jornada al cambiar de persona', () => {
     expect(tracking.detener).toHaveBeenCalledWith({ borrarPendientes: false });
     expect(jorn.chequear).not.toHaveBeenCalled();
   });
+
+  it('al volver a la pestaña con sesión pregunta con force', async () => {
+    const { auth, jorn } = montar();
+    entrar(auth, 1);
+    await nextTick();
+    vi.clearAllMocks();
+    Object.defineProperty(document, 'visibilityState', { value: 'visible', configurable: true });
+    document.dispatchEvent(new Event('visibilitychange'));
+    expect(jorn.chequear).toHaveBeenCalledWith({ force: true });
+  });
 });
