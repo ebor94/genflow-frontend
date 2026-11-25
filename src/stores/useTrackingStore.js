@@ -45,6 +45,9 @@ export const useTrackingStore = defineStore('svTracking', () => {
   let watchId    = null;
   let flushTimer = null;
 
+  let enviando = null;      // un solo envío a la vez
+  let cambiandoDia = null;
+
   function leerJson(clave) {
     try {
       const raw = localStorage.getItem(clave);
@@ -52,38 +55,54 @@ export const useTrackingStore = defineStore('svTracking', () => {
     } catch { return null; }
   }
 
+  function leerBuffer() {
+    const b = leerJson(LS_BUF);
+    return (b && typeof b === 'object' && !Array.isArray(b) && b.jor_id && Array.isArray(b.puntos)) ? b : null;
+  }
+
   function borrarClaves() {
     try { localStorage.removeItem(LS_KEY); localStorage.removeItem(LS_BUF); } catch { /* ignore */ }
   }
 
-  function persistir() {
+  /** Borra la clave solo si es de esa jornada (otra pestaña puede tener otra). */
+  function quitarSiEs(clave, jorId) {
     try {
-      if (!jornadaActiva.value) { borrarClaves(); return; }
-      const usrId = useAuthStore().usuario?.usr_id;
-      localStorage.setItem(LS_KEY, JSON.stringify({
-        usr_id: usrId, fecha: diaLocal(),
-        jor_id: jornadaActiva.value.jor_id, jor_inicio_at: jornadaActiva.value.jor_inicio_at
-      }));
-      localStorage.setItem(LS_BUF, JSON.stringify({
-        jor_id: jornadaActiva.value.jor_id, puntos: bufferLocal.value
-      }));
+      const v = leerJson(clave);
+      if (v && v.jor_id !== jorId) return;
+      localStorage.removeItem(clave);
     } catch { /* ignore */ }
   }
 
-  /** Arranca la captura de esta jornada. Los puntos guardados solo se usan si son de la misma jornada. */
+  function persistir() {
+    const j = jornadaActiva.value;
+    if (!j) return;
+    try {
+      localStorage.setItem(LS_KEY, JSON.stringify({
+        usr_id: j.usr_id, fecha: j.fecha, jor_id: j.jor_id, jor_inicio_at: j.jor_inicio_at
+      }));
+      localStorage.setItem(LS_BUF, JSON.stringify({ jor_id: j.jor_id, puntos: bufferLocal.value }));
+    } catch { /* ignore */ }
+  }
+
+  /** Arranca la captura de esta jornada. Usuario y día quedan fijados aquí. */
   function activar(jornada, pos = null) {
     const cambia = jornadaActiva.value?.jor_id !== jornada.jor_id;
     if (cambia) {
-      const buf = leerJson(LS_BUF);
-      bufferLocal.value = (buf && buf.jor_id === jornada.jor_id && Array.isArray(buf.puntos)) ? buf.puntos : [];
+      const buf = leerBuffer();
+      bufferLocal.value = (buf && buf.jor_id === jornada.jor_id) ? buf.puntos : [];
       ultimaPos.value = pos ? { lat: pos.lat, lng: pos.lng, ts: pos.ts || Date.now() } : null;
       enviadoCount.value = 0;
     }
-    jornadaActiva.value = { jor_id: jornada.jor_id, jor_inicio_at: jornada.jor_inicio_at };
+    const fecha = jornada.fecha
+      || (jornada.jor_fecha ? String(jornada.jor_fecha).slice(0, 10) : diaLocal());
+    jornadaActiva.value = {
+      jor_id: jornada.jor_id, jor_inicio_at: jornada.jor_inicio_at,
+      usr_id: jornada.usr_id ?? useAuthStore().usuario?.usr_id, fecha
+    };
     persistir();
     iniciarWatch();
     registrarListeners();
-    if (wakeLockPref.value && !wakeLockActivo.value) requestWakeLock().catch(() => {});
+    if (wakeLockPref.value && !wakeLockActivo.value) requestWakeLock({ aviso: false }).catch(() => {});
   }
 
   /** Sigue con una jornada que el backend dice que está activa hoy. */
@@ -92,15 +111,29 @@ export const useTrackingStore = defineStore('svTracking', () => {
     activar(jornada);
   }
 
-  /** Sin red: sigue con la copia del navegador solo si es de este usuario y de hoy. */
+  /** Sin red: sigue con la jornada de este usuario y de hoy (en memoria o copia del navegador). */
   function reanudarLocal() {
-    const c = leerJson(LS_KEY);
     const usrId = useAuthStore().usuario?.usr_id;
-    if (c && c.jor_id && c.usr_id != null && c.usr_id === usrId && c.fecha === diaLocal()) {
-      activar({ jor_id: c.jor_id, jor_inicio_at: c.jor_inicio_at });
+    const hoy = diaLocal();
+    const m = jornadaActiva.value;
+    if (m && m.usr_id != null && m.usr_id === usrId && m.fecha === hoy) {
+      activar(m);
       return true;
     }
-    borrarClaves();
+    const c = leerJson(LS_KEY);
+    if (c && c.jor_id && c.usr_id != null && c.usr_id === usrId && c.fecha === hoy) {
+      activar({ jor_id: c.jor_id, jor_inicio_at: c.jor_inicio_at, usr_id: c.usr_id, fecha: c.fecha });
+      return true;
+    }
+    detener();
+    let hayCopia = false;
+    try { hayCopia = localStorage.getItem(LS_KEY) !== null; } catch { /* ignore */ }
+    if (hayCopia) {
+      // Copia vieja, de otro usuario o ilegible: se borra con sus puntos.
+      const b = leerBuffer();
+      try { localStorage.removeItem(LS_KEY); } catch { /* ignore */ }
+      if (!b || b.jor_id === c?.jor_id) { try { localStorage.removeItem(LS_BUF); } catch { /* ignore */ } }
+    }
     return false;
   }
 
@@ -155,6 +188,7 @@ export const useTrackingStore = defineStore('svTracking', () => {
 
   /** Filtra y enqueue un punto (validaciones de accuracy y delta). */
   function handlePoint(p) {
+    if (diaCambio()) { cambioDeDia(); return false; }
     if (p.accuracy != null && p.accuracy > ACCURACY_MAX) return false;
     if (ultimaPos.value) {
       const d = distM(ultimaPos.value, p);
@@ -167,26 +201,74 @@ export const useTrackingStore = defineStore('svTracking', () => {
     return true;
   }
 
-  /** Envía el buffer al backend. No revienta si falla; deja los puntos en buffer. */
-  async function flush() {
-    if (!jornadaActiva.value || !bufferLocal.value.length) return;
+  function diaCambio() {
+    return !!jornadaActiva.value && jornadaActiva.value.fecha !== diaLocal();
+  }
+
+  async function rechequear() {
+    try {
+      const { useJornadaObligatoriaStore } = await import('@/stores/useJornadaObligatoriaStore');
+      await useJornadaObligatoriaStore().chequear({ force: true });
+    } catch { /* ignore */ }
+  }
+
+  /** La jornada en memoria ya no es de hoy: envía lo pendiente, la suelta y pregunta al backend. */
+  function cambioDeDia() {
+    cambiandoDia ??= (async () => {
+      await vaciar();
+      detener();
+      await rechequear();
+    })().finally(() => { cambiandoDia = null; });
+    return cambiandoDia;
+  }
+
+  /** Envía un lote. No revienta si falla; deja los puntos en buffer. */
+  async function enviar() {
+    const j = jornadaActiva.value;
+    if (!j || !bufferLocal.value.length) return;
+    const jorId = j.jor_id;
     const lote = bufferLocal.value.slice(0, 100);
     try {
-      const r = await trackingApi.batchPuntos(jornadaActiva.value.jor_id, lote);
+      const r = await trackingApi.batchPuntos(jorId, lote);
+      if (jornadaActiva.value?.jor_id !== jorId) return;
       bufferLocal.value = bufferLocal.value.slice(lote.length);
       enviadoCount.value += r.data?.aceptados || 0;
       persistir();
     } catch (e) {
+      if (jornadaActiva.value?.jor_id !== jorId) return;
       const status = e.response?.status;
-      if (e.response?.data?.error === 'JORNADA_CERRADA' || status === 403) {
+      const codigo = e.response?.data?.error;
+      if (codigo === 'JORNADA_CERRADA' || status === 404) {
         detener();
         toast.warning('Tu jornada fue cerrada automáticamente.');
+        rechequear();
+      } else if (status === 403) {
+        detener();
+        toast.warning('Esta jornada es de otra persona.');
+        rechequear();
       } else if (status === 422) {
         // Lote inválido: se descarta para que no bloquee los siguientes.
         bufferLocal.value = bufferLocal.value.slice(lote.length);
         persistir();
       }
       // Sin red: dejar buffer; los listeners de online lo intentarán de nuevo.
+    }
+  }
+
+  function flush() {
+    if (diaCambio()) return cambioDeDia();
+    enviando ??= enviar().finally(() => { enviando = null; });
+    return enviando;
+  }
+
+  /** Envía mientras el buffer avance (sin red se detiene en el primer intento). */
+  async function vaciar() {
+    for (let i = 0; i < 50; i++) {
+      const antes = bufferLocal.value.length;
+      if (!antes || !jornadaActiva.value) return;
+      enviando ??= enviar().finally(() => { enviando = null; });
+      await enviando;
+      if (!jornadaActiva.value || bufferLocal.value.length >= antes) return;
     }
   }
 
@@ -206,6 +288,7 @@ export const useTrackingStore = defineStore('svTracking', () => {
 
     // Captura inmediata para cerrar el gap
     const pos = await getActual(0);
+    if (!estaActiva.value) return;
     if (pos) {
       handlePoint({
         ts: pos.ts || Date.now(),
@@ -279,9 +362,9 @@ export const useTrackingStore = defineStore('svTracking', () => {
   }
 
   /** Solicita Wake Lock para mantener pantalla activa mientras la jornada está abierta. */
-  async function requestWakeLock() {
+  async function requestWakeLock({ aviso = true } = {}) {
     if (!('wakeLock' in navigator)) {
-      toast.warning('Tu navegador no soporta mantener pantalla activa.');
+      if (aviso) toast.warning('Tu navegador no soporta mantener pantalla activa.');
       return false;
     }
     try {
@@ -292,7 +375,7 @@ export const useTrackingStore = defineStore('svTracking', () => {
       });
       return true;
     } catch (e) {
-      toast.warning('No se pudo activar pantalla activa.');
+      if (aviso) toast.warning('No se pudo activar pantalla activa.');
       return false;
     }
   }
@@ -322,7 +405,7 @@ export const useTrackingStore = defineStore('svTracking', () => {
   // Si el wake lock se libera por el SO (p.ej. cambio de app), reintentarlo al volver
   async function maybeReadquireWakeLock() {
     if (wakeLockPref.value && estaActiva.value && !wakeLockActivo.value) {
-      await requestWakeLock();
+      await requestWakeLock({ aviso: false });
     }
   }
 
@@ -340,8 +423,10 @@ export const useTrackingStore = defineStore('svTracking', () => {
     return jornadaActiva.value;
   }
 
-  /** Detiene la captura y limpia memoria y copia del navegador. */
-  function detener() {
+  /** Detiene la captura. Borra la copia de esta jornada, y sus puntos pendientes salvo que se pida conservarlos. */
+  function detener({ borrarPendientes = true } = {}) {
+    const jorId = jornadaActiva.value?.jor_id;
+    const hayPendientes = bufferLocal.value.length > 0;
     detenerWatch();
     soltarListeners();
     releaseWakeLock();
@@ -349,13 +434,15 @@ export const useTrackingStore = defineStore('svTracking', () => {
     ultimaPos.value = null;
     enviadoCount.value = 0;
     bufferLocal.value = [];
-    borrarClaves();
+    if (jorId == null) return;
+    quitarSiEs(LS_KEY, jorId);
+    if (borrarPendientes || !hayPendientes) quitarSiEs(LS_BUF, jorId);
   }
 
-  /** Cerrar sesión: envía lo pendiente y detiene, sin terminar la jornada. */
+  /** Cerrar sesión: envía lo pendiente y detiene, sin terminar la jornada. Lo que no salga queda guardado. */
   async function pausar() {
-    try { await flush(); } catch { /* ignore */ }
-    detener();
+    try { await vaciar(); } catch { /* ignore */ }
+    detener({ borrarPendientes: false });
   }
 
   return {

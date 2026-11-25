@@ -6,7 +6,6 @@ import api from './axios';
 export const trackingApi = {
   // Jornadas propias
   iniciarJornada:   (payload = {}) => api.post('/tracking/jornadas', payload).then(r => r.data),
-  finalizarJornada: (jornadaId, payload = {}) => api.patch(`/tracking/jornadas/${jornadaId}/finalizar`, payload).then(r => r.data),
   batchPuntos:      (jornadaId, puntos) => api.post(`/tracking/jornadas/${jornadaId}/puntos`, { puntos }).then(r => r.data),
   listarJornadas:   (params = {}) => api.get('/tracking/jornadas', { params }).then(r => r.data),
 
