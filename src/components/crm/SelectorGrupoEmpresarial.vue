@@ -81,7 +81,6 @@ watch(texto, (v) => {
     emit('update:modelValue', null);
   }
   if (v && v.length >= 1) {
-    dropdownOpen.value = true;
     buscar(v);
   } else {
     opciones.value = [];
@@ -108,11 +107,15 @@ const noMatchPerfecto = () =>
   texto.value.trim().length >= 2 &&
   !opciones.value.some(o => o.grupemp_nombre.toLowerCase() === texto.value.trim().toLowerCase());
 
-// Dentro de una ventana que se desplaza, la lista puede abrirse por debajo de lo visible.
+// Dentro de una ventana que se desplaza, la lista puede abrirse por debajo de lo visible. El
+// campo va de último: si no caben los dos, debe verse donde se escribe.
+const campo = ref(null);
 const lista = ref(null);
 watch([dropdownOpen, opciones, cargando], async () => {
   await nextTick();
-  lista.value?.scrollIntoView({ block: 'nearest' });
+  if (!lista.value) return;
+  lista.value.scrollIntoView({ block: 'nearest' });
+  campo.value?.scrollIntoView({ block: 'nearest' });
 });
 
 // El retraso deja que el clic en una opción llegue antes de que la lista desaparezca.
@@ -126,10 +129,12 @@ function cerrarLuego() {
     <label class="sv-label">{{ label }}</label>
     <div class="relative">
       <input
+        ref="campo"
         v-model="texto"
         type="text"
         :placeholder="placeholder"
         @focus="dropdownOpen = true"
+        @input="dropdownOpen = true"
         @blur="cerrarLuego"
         class="w-full px-3 py-2 text-sm border border-text3/40 rounded-sv focus:outline-none focus:ring-2 focus:ring-gold focus:border-transparent"
       />
