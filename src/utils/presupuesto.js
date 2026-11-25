@@ -11,13 +11,20 @@ export function porcentaje(realizado, presupuesto) {
   return (Number(realizado) || 0) / p * 100;
 }
 
-/** Cumplimiento para mostrar: entero, o null sin presupuesto. */
+/**
+ * Cumplimiento para mostrar: entero, o null sin presupuesto. Se redondea, pero el texto no
+ * cruza un umbral que el valor no alcanza: 99,6 se lee 99 (no 100) y 79,6 se lee 79 (no 80).
+ */
 export function cumplimiento(realizado, presupuesto) {
   const pct = porcentaje(realizado, presupuesto);
-  return pct === null ? null : Math.round(pct);
+  if (pct === null) return null;
+  const r = Math.round(pct);
+  if (r === 100 && pct < 100) return 99;
+  if (r === 80 && pct < 80) return 79;
+  return r;
 }
 
-/** Estado del semáforo. Recibe el % SIN redondear: 99,6 % es 'alerta' aunque se lea 100 %. */
+/** Estado del semáforo. Recibe el % SIN redondear (de `porcentaje`); coincide con el texto de `cumplimiento`. */
 export function estadoCumplimiento(pct) {
   if (pct === null || pct === undefined) return 'sin';
   if (pct >= 100) return 'ok';

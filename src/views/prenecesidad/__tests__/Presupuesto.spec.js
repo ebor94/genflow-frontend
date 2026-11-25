@@ -268,3 +268,15 @@ describe('Presupuesto (plantilla)', () => {
     expect(useToastStore(pinia).error).toHaveBeenCalledWith('Mes inválido');
   });
 });
+
+describe('Presupuesto (cumplimiento mostrado)', () => {
+  it('la tarjeta y el chip muestran el mismo 99 % cuando el valor es 99,6', async () => {
+    vi.clearAllMocks();
+    presupuestosApi.obtener.mockResolvedValue(respuesta({ asesores: [A(10, 'Ana Ruiz', 1, 1000, 996)] }));
+    const w = factory();
+    await flushPromises();
+    expect(w.find('[data-testid="total-cumplimiento"]').text()).toContain('99 %');
+    expect(w.find('[data-testid="total-cumplimiento"]').text()).not.toContain('100');
+    expect(w.find('[data-testid="tabla-presupuesto"] [data-estado]').text()).toContain('99 %');
+  });
+});

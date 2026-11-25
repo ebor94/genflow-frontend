@@ -14,10 +14,11 @@ describe('ChipCumplimiento', () => {
     expect(w.classes().join(' ')).toContain('border-sage');
     expect(w.classes().join(' ')).not.toMatch(/(^| )text-(sage|danger|warning)/);
   });
-  it('amarillo: 99,6 muestra 100 % pero es alerta', () => {
+  it('amarillo: 99,6 muestra 99 % y es alerta', () => {
     const w = chip(996, 1000);
     expect(w.attributes('data-estado')).toBe('alerta');
-    expect(w.text()).toContain('100 %');
+    expect(w.text()).toContain('99 %');
+    expect(w.text()).not.toContain('100');
     expect(w.find('[data-testid="chip-icono"]').text()).toBe('!');
     expect(w.classes().join(' ')).toContain('border-warning');
   });

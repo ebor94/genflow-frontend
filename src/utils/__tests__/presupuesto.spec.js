@@ -4,7 +4,7 @@ import { porcentaje, cumplimiento, estadoCumplimiento, mesesOpciones, mesLabel }
 describe('cumplimiento', () => {
   it('redondea al entero', () => {
     expect(cumplimiento(50, 100)).toBe(50);
-    expect(cumplimiento(996, 1000)).toBe(100);
+    expect(cumplimiento(887.6, 1000)).toBe(89);
     expect(cumplimiento(994, 1000)).toBe(99);
     expect(cumplimiento(250, 100)).toBe(250);
   });
@@ -29,9 +29,15 @@ describe('estadoCumplimiento', () => {
   });
   it('el color sale del valor sin redondear', () => {
     const pct = porcentaje(996, 1000); // 99,6
-    expect(cumplimiento(996, 1000)).toBe(100);
+    expect(cumplimiento(996, 1000)).toBe(99);
     expect(estadoCumplimiento(pct)).toBe('alerta');
-    expect(estadoCumplimiento(porcentaje(799, 1000))).toBe('mal'); // 79,9 redondea a 80
+    expect(estadoCumplimiento(porcentaje(796, 1000))).toBe('mal');
+  });
+  it('el texto nunca cruza un umbral que el valor no alcanza', () => {
+    const c = (x) => cumplimiento(x * 10, 1000); // x en %
+    expect([c(79.4), c(79.6), c(80), c(99.4), c(99.6), c(100)]).toEqual([79, 79, 80, 99, 99, 100]);
+    expect(c(100.4)).toBe(100);
+    expect(c(80.4)).toBe(80);
   });
   it('sin presupuesto es sin', () => {
     expect(estadoCumplimiento(null)).toBe('sin');
