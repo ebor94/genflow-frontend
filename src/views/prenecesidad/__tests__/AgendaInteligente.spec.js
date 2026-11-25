@@ -5,6 +5,8 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 vi.mock('vue-router', () => ({ useRouter: () => ({ push: vi.fn() }), RouterLink: { template: '<a><slot /></a>' } }));
 
 import AgendaInteligente from '@/views/prenecesidad/AgendaInteligente.vue';
+import MiniCalendar from '@/components/common/MiniCalendar.vue';
+import { useProspectosStore } from '@/stores/useProspectosStore';
 
 async function montar(agendaMes) {
   const pinia = createTestingPinia({ createSpy: vi.fn, initialState: { svProspectos: { agendaMes, items: [] } } });
@@ -37,5 +39,32 @@ describe('AgendaInteligente: marcas del calendario', () => {
   it.each(['2026-11-28', '2026-11-28T05:00:00.000Z'])('con vencidas la marca es la de vencida (%s)', async (f) => {
     const w = await montar([{ prosp_prox_gestion_fecha: f, total: 2, vencidas: 1 }]);
     expect(marcas(w)).toEqual([{ pos: 33, dia: '28', vencida: true }]);
+  });
+});
+
+describe('AgendaInteligente: marcas del mes por área', () => {
+  async function montarConArea() {
+    const pinia = createTestingPinia({ createSpy: vi.fn, initialState: { svAuth: { areaActivaId: 4 }, svProspectos: { agendaMes: [], items: [] } } });
+    const w = mount(AgendaInteligente, { global: { plugins: [pinia] } });
+    await flushPromises();
+    return { w, store: useProspectosStore() };
+  }
+
+  beforeEach(() => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date('2026-11-25T09:00:00'));
+  });
+  afterEach(() => vi.useRealTimers());
+
+  it('al abrir pide el mes con el área activa', async () => {
+    const { store } = await montarConArea();
+    expect(store.fetchAgendaMes).toHaveBeenCalledWith(2026, 11, { area_id: 4 });
+  });
+
+  it('al cambiar de mes lo vuelve a pedir con el área activa', async () => {
+    const { w, store } = await montarConArea();
+    w.findComponent(MiniCalendar).vm.$emit('month-change', 2026, 12);
+    await flushPromises();
+    expect(store.fetchAgendaMes).toHaveBeenLastCalledWith(2026, 12, { area_id: 4 });
   });
 });

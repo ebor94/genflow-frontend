@@ -3,7 +3,7 @@ import api from './axios';
 export const prospectosApi = {
   list:       (params = {}) => api.get('/prospectos', { params }).then(r => r.data),
   panelDia:   (params = {}) => api.get('/prospectos/panel-dia', { params }).then(r => r.data),
-  agendaMes:  (anio, mes)   => api.get('/prospectos/agenda-mes', { params: { anio, mes } }).then(r => r.data),
+  agendaMes:  (anio, mes, params = {}) => api.get('/prospectos/agenda-mes', { params: { anio, mes, ...params } }).then(r => r.data),
   get:        (id) => api.get(`/prospectos/${id}`).then(r => r.data),
   create:     (data) => api.post('/prospectos', data).then(r => r.data),
   update:     (id, data) => api.put(`/prospectos/${id}`, data).then(r => r.data),

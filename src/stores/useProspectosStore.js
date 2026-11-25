@@ -34,8 +34,8 @@ export const useProspectosStore = defineStore('svProspectos', () => {
     } finally { loading.value = false; }
   }
 
-  async function fetchAgendaMes(anio, mes) {
-    const r = await prospectosApi.agendaMes(anio, mes);
+  async function fetchAgendaMes(anio, mes, params = {}) {
+    const r = await prospectosApi.agendaMes(anio, mes, params);
     agendaMes.value = r.data;
     return r.data;
   }

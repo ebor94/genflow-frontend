@@ -32,7 +32,7 @@ const eventosMes = computed(() =>
 );
 
 async function cargarMes(anio, mes) {
-  try { await store.fetchAgendaMes(anio, mes); } catch (e) { notify(e); }
+  try { await store.fetchAgendaMes(anio, mes, { area_id: areaIdActiva.value }); } catch (e) { notify(e); }
 }
 
 async function cargarDia(fecha) {
