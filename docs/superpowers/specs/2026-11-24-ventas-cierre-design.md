@@ -49,13 +49,15 @@ Hoy "Valor vendido" siempre es $0: `snapshot.service` lo escribe fijo en cero.
 - `POST /gestiones` y `POST /salas/homenajes/:id/visitas` aceptan `venta: { clave, items: [{ prod_id, cantidad, precio_unitario }] }`.
 - `GET /prospectos/:id/ventas`: quien puede ver al cliente.
 - `PUT /ventas/:id` (`items`, `motivo`, `cambios_vistos`) y `POST /ventas/:id/anular` (`motivo`, `cambios_vistos`).
+- El snapshot usa el día de Colombia: con la fecha UTC, el de las 11:55 p. m. escribía el día siguiente. En `reporteAsesor`, gestiones e interesados también se calculan al momento.
+- Cada reporte respeta el alcance del rol (antes, el valor vendido se podía leer desde otra área).
 - `reportes`: contratos y valor se calculan al momento con `ventas.metricasPorAsesor`; `reporteEquipo` agrega `snap_valor_vendido_cop` y `registra_ventas`. `snapshot` usa la misma regla.
 - Una gestión ya guardada no se responde como error aunque falle leerla después.
 - Cerrar sin venta responde 422 con un mensaje que pide recargar GenFlow (pantallas viejas).
 
 ## 6. GenFlow
 
-- `CampoPesos` (separador de miles, cursor estable, no cambia con la rueda), `ProductosVendidos` (líneas, total, agregar) y `utils/ventas` (lógica pura).
+- `CampoPesos` (descarta los decimales al pegar, como los de Excel; separador de miles, cursor estable, no cambia con la rueda), `ProductosVendidos` (líneas, total, agregar) y `utils/ventas` (lógica pura).
 - `RegistrarGestion`: al cerrar, la venta reemplaza a los intereses. Cambiar de estado y volver conserva lo escrito.
 - `VentasCliente` y `CambiarVentaModal` en la ficha; los botones solo los ve quien puede corregir.
 - Panel del supervisor: tarjeta y columna de valor vendido si el área registra ventas. `TablaAsesores` muestra "Meta %" solo con metas, y ya no compara contra 10 contratos fijos.
@@ -71,6 +73,8 @@ Hoy "Valor vendido" siempre es $0: `snapshot.service` lo escribe fijo en cero.
 | Se pierde la respuesta y la persona reenvía | 409: "La venta ya había quedado registrada" y se cierra |
 | Falla el historial después de guardar | La gestión cuenta como guardada |
 | Interés que se quitó antes de cerrar | No queda vendido |
+| Precio de más de 3 veces el de la lista | Aviso; no impide guardar |
+| Reintento en sala con el homenaje ya terminado | 409, sin registrar otra |
 | Corrección sin cambios | 422 "No hay cambios para guardar" |
 | Venta ya anulada | 409 |
 | Error al corregir | La ventana sigue abierta con lo escrito |
@@ -81,7 +85,7 @@ Backend con jest y solo simulaciones; las sumas y la migración, en MySQL 8.0 y 
 
 ## 9. Despliegue
 
-Rama → migración 027 → `main` → `deploy-mantix` → GenFlow. La 027 **debe** ir antes del backend: los reportes y el snapshot de las 11:55 p. m. consultan las tablas nuevas. El backend va antes de GenFlow: el actual descarta la venta en silencio.
+Rama → migración 027 → `main` → `deploy-mantix` → GenFlow. La 027 **debe** ir antes del backend: `server.js` corre `sequelize.sync({ alter: false })` al arrancar y, si las tablas no existen, las crearía sin tres llaves foráneas, sin una clave única y con borrado en cascada; la 027 ya no haría nada y el conteo de columnas no lo delataría. El backend va antes de GenFlow: el actual descarta la venta en silencio.
 
 ## 10. Fuera de alcance
 

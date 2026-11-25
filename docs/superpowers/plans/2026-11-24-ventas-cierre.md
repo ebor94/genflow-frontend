@@ -2873,20 +2873,38 @@ Las revisiones de tarea encontraron tres caminos que registraban una venta equiv
 
 ### Task 9: Integración y despliegue (con el usuario)
 
-**Orden obligatorio:** 027 antes de que el backend llegue a `main` (los reportes y el snapshot de las 11:55 p. m. consultan las tablas nuevas), y backend antes que GenFlow (el actual descarta la venta en silencio). Entre el backend y GenFlow, cerrar un contrato de Prenecesidad responde 422 pidiendo recargar.
+**Orden obligatorio:** 027 antes de que el backend llegue a `main` (al arrancar, `sequelize.sync` crearía las tablas de otra forma), y backend antes que GenFlow (el actual descarta la venta en silencio). Entre el backend y GenFlow, cerrar un contrato de Prenecesidad responde 422 pidiendo recargar.
 
 - [ ] **Step 1:** `git fetch` y `git merge origin/main` en ambos; suites completas; verificar que 027 siga libre.
 - [ ] **Step 2 (con confirmación):** push **solo de la rama** del backend.
-- [ ] **Step 3 (usuario):** en Workbench, `USE serfuweb;` y el contenido de `027_ventas.sql`. Verificar:
+- [ ] **Step 3 (usuario):** en Workbench, a una hora de poco uso (crear tablas con llaves foráneas espera a las consultas largas y frena las nuevas sobre usuarios y clientes; por eso el límite de espera).
+
+Antes, debe salir vacío. Si aparece alguna, detenerse:
+
+```sql
+USE serfuweb;
+SHOW TABLES LIKE 'sv_crm_ventas%';
+```
+
+Después, en una pestaña, `USE serfuweb; SET SESSION lock_wait_timeout = 5;` y el contenido de `027_ventas.sql`. Con el error 1205, esperar y repetir: es seguro. Verificar:
 
 ```sql
 SELECT TABLE_NAME, COUNT(*) AS columnas FROM information_schema.COLUMNS
  WHERE TABLE_SCHEMA = 'serfuweb' AND TABLE_NAME LIKE 'sv_crm_ventas%' GROUP BY TABLE_NAME;
 ```
 
-Debe dar `sv_crm_ventas` 12, `sv_crm_ventas_cambios` 9 y `sv_crm_ventas_items` 6.
+Debe dar `sv_crm_ventas` 12, `sv_crm_ventas_cambios` 9 y `sv_crm_ventas_items` 6. Y que las creó la 027, no el arranque del backend:
 
-- [ ] **Step 4 (con confirmación):** push del backend a `main`. **(usuario)** `deploy-mantix`; sin `doesn't exist` ni `Cannot find module` en los logs.
+```sql
+SELECT TABLE_NAME, COUNT(*) AS llaves_foraneas FROM information_schema.REFERENTIAL_CONSTRAINTS
+ WHERE CONSTRAINT_SCHEMA = 'serfuweb' AND TABLE_NAME LIKE 'sv_crm_ventas%' GROUP BY TABLE_NAME;
+SELECT CONSTRAINT_NAME FROM information_schema.TABLE_CONSTRAINTS
+ WHERE TABLE_SCHEMA = 'serfuweb' AND TABLE_NAME LIKE 'sv_crm_ventas%' AND CONSTRAINT_TYPE = 'UNIQUE';
+```
+
+Debe dar 5 llaves en `sv_crm_ventas`, 2 en `sv_crm_ventas_cambios` y 2 en `sv_crm_ventas_items`, y las únicas `uq_venta_gestion`, `uq_venta_clave` y `uq_vi_venta_producto`.
+
+- [ ] **Step 4 (con confirmación):** push del backend a `main` desde su worktree (`HEAD:main`; el checkout compartido tiene cambios de otra sesión). **(usuario)** `deploy-mantix`; sin `doesn't exist` ni `Cannot find module` en los logs, y la ficha de un cliente abre sin error (pide `GET /prospectos/<id>/ventas`).
 - [ ] **Step 5 (con confirmación):** GenFlow: merge a `main`, push, build, respaldo, `rsync --delete --exclude '.htaccess'` y paridad.
-- [ ] **Step 6 (usuario), smoke:** con un cliente de prueba de Prenecesidad, elegir "Contrato firmado" y ver que el estado pasa solo; editar cantidad y precio; registrar; ver la venta en la ficha y el valor en Mis métricas (Hoy) y en el panel del supervisor. Como supervisor, corregir y después anular con motivo: el valor baja y la venta queda como anulada. En otra área, cerrar como siempre. Anular al final las ventas de prueba.
-- [ ] **Reversión:** restaurar GenFlow y revertir el backend. Las tablas 027 pueden quedarse: el código anterior no las usa.
+- [ ] **Step 6 (usuario), smoke:** con un cliente de prueba de Prenecesidad, elegir "Contrato firmado" y ver que el estado pasa solo; editar cantidad y precio; registrar; ver la venta en la ficha y el valor en Mis métricas (Hoy) y en el panel del supervisor. Como supervisor, corregir y después anular con motivo: el valor baja y la venta queda como anulada. Pegar un precio con `,00` y ver que no se multiplica. En una visita de sala de un cliente propio, cerrar con su venta. En otra área, cerrar como siempre con un asesor de prueba (queda un contrato real). Anular al final las ventas de prueba.
+- [ ] **Reversión:** primero GenFlow y después el backend (una pantalla nueva con el backend anterior diría "Gestión registrada" y perdería la venta). Las tablas 027 pueden quedarse: el código anterior no las usa. Los cierres hechos mientras tanto quedan como contratos sin valor.
