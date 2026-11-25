@@ -17,8 +17,10 @@ import { useToastStore } from '@/stores/useToastStore';
 import { useApiError } from '@/composables/useApiError';
 import { prospectosApi } from '@/api/prospectosApi';
 import { salasApi } from '@/api/salasApi';
+import { ventasApi } from '@/api/ventasApi';
 import { tieneTipos } from '@/utils/catalogoProductos';
-import { fmtFecha, fmtFechaHora } from '@/utils/format';
+import { lineasIniciales, porDefinir, errorVenta, itemsVenta } from '@/utils/ventas';
+import { fmtCOP, fmtFecha, fmtFechaHora } from '@/utils/format';
 
 import BaseModal from '@/components/ui/BaseModal.vue';
 import BaseSelect from '@/components/ui/BaseSelect.vue';
@@ -26,6 +28,7 @@ import BaseInput from '@/components/ui/BaseInput.vue';
 import BaseTextarea from '@/components/ui/BaseTextarea.vue';
 import BaseButton from '@/components/ui/BaseButton.vue';
 import SelectorProductos from '@/components/crm/SelectorProductos.vue';
+import ProductosVendidos from '@/components/crm/ProductosVendidos.vue';
 
 const props = defineProps({
   open: { type: Boolean, required: true },
@@ -113,9 +116,39 @@ const opcResultados = computed(() => resultadosDelGrupo.value
 const opcEstados = computed(() => [
   { value: '', label: '— sin cambio —' },
   ...estadosDelGrupo.value
+    // Quien visita en sala al cliente de otro asesor no puede cerrarle el contrato.
+    .filter(e => !(props.resumenCliente && e.estado_es_ganado))
     .sort((a, b) => a.estado_orden - b.estado_orden)
     .map(e => ({ value: e.estado_id, label: e.estado_nombre }))
 ]);
+
+// ─── Venta al cerrar el contrato (áreas con catálogo por tipos) ───
+const estadoGanado = computed(() => estadosDelGrupo.value.find(e => e.estado_es_ganado));
+const cierra = computed(() => conProductos.value && conTipos.value
+  && !!estadosDelGrupo.value.find(e => e.estado_id === parseInt(form.value.gest_estado_nuevo_id))?.estado_es_ganado);
+const lineasVenta = ref([]);
+const ventaPrevia = ref(null);
+
+// "Contrato firmado" sin cambio de estado no contaba como contrato: el estado pasa solo.
+watch(() => form.value.gest_resultado_id, () => {
+  if (conProductos.value && conTipos.value && resultadoSeleccionado.value?.resultado_codigo === 'CONTRATO'
+      && !form.value.gest_estado_nuevo_id && estadoGanado.value) {
+    form.value.gest_estado_nuevo_id = estadoGanado.value.estado_id;
+  }
+});
+
+watch(cierra, async (v) => {
+  if (!v) return;
+  // Si cambia de estado y vuelve, conserva lo que ya había escrito.
+  const puestas = new Set(lineasVenta.value.map(l => l.prod_id));
+  lineasVenta.value = [...lineasVenta.value,
+    ...lineasIniciales(productosSel.value, productosDisponibles.value, props.prospecto?.productos).filter(l => !puestas.has(l.prod_id))];
+  const prospId = props.prospecto?.prosp_id;
+  try {
+    const ventas = (await ventasApi.deProspecto(prospId)).data || [];
+    if (prospId === props.prospecto?.prosp_id) ventaPrevia.value = ventas.find(x => !x.venta_anulada) || null;
+  } catch { /* es solo un aviso: sin él se puede cerrar igual */ }
+});
 
 const opcCanales = [
   { value: 'llamada',    label: '📞 Llamada' },
@@ -135,6 +168,8 @@ watch(() => props.open, (v) => {
     productosSel.value = JSON.parse(JSON.stringify(actuales));
     productosOriginales.value = JSON.parse(JSON.stringify(actuales));
     editandoProductos.value = false;
+    lineasVenta.value = [];
+    ventaPrevia.value = null;
   }
 });
 
@@ -187,6 +222,10 @@ async function submit() {
   if (principales > 1) {
     toast.warning('Solo puede haber un producto principal'); return;
   }
+  if (cierra.value) {
+    const falta = errorVenta(lineasVenta.value);
+    if (falta) { toast.warning(falta); return; }
+  }
   saving.value = true;
   try {
     // 1) Si los productos cambiaron, guardarlos primero
@@ -203,6 +242,7 @@ async function submit() {
       gest_prox_fecha: form.value.gest_prox_fecha || null,
       gest_prox_hora:  form.value.gest_prox_hora || null
     };
+    if (cierra.value) base.venta = { items: itemsVenta(lineasVenta.value) };
     let g;
     if (modoSala.value) {
       g = (await salasApi.registrarVisita(props.homenajeSalaId, base)).data;
@@ -282,8 +322,18 @@ async function submit() {
         </div>
       </div>
 
+      <!-- Venta: reemplaza a los intereses mientras se cierra el contrato -->
+      <div v-if="cierra" data-testid="venta" class="border-t border-text3/10 pt-3 space-y-2">
+        <div class="text-sm font-semibold text-text1">🧾 Productos vendidos</div>
+        <p v-if="ventaPrevia" data-testid="venta-previa" class="text-xs text-warning">
+          Este cliente ya tiene una venta de {{ fmtCOP(Number(ventaPrevia.venta_total)) }} del {{ fmtFecha(ventaPrevia.venta_fecha) }}. Si registras otra, se suman.
+        </p>
+        <ProductosVendidos v-model="lineasVenta" :productos="productosDisponibles"
+                           :por-definir="porDefinir(productosSel, productosDisponibles)" />
+      </div>
+
       <!-- Editor de productos de interés -->
-      <div v-if="conProductos" class="border-t border-text3/10 pt-3">
+      <div v-else-if="conProductos" class="border-t border-text3/10 pt-3">
         <div class="flex items-center justify-between mb-2">
           <div>
             <div class="text-sm font-semibold text-text1">🛒 Productos de interés</div>
