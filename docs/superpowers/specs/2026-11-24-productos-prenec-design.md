@@ -1,7 +1,7 @@
 # Productos de Prenecesidad 2026 — diseño
 
 **Fecha:** 2026-11-24 · **Repositorios:** `mantix-backend` (módulo `sv`) y `crm-frontend` (GenFlow)
-**Estado:** opción A y pantalla aprobadas por el usuario. La carga de los 78 productos espera las respuestas de la líder de Prenecesidad (§8).
+**Estado:** opción A y pantalla aprobadas por el usuario. Las preguntas de §8 están respondidas (2026-11-24).
 
 ## 1. Objetivo
 
@@ -30,13 +30,14 @@ Sin la 026, ningún producto tiene tipo y GenFlow muestra la selección de hoy. 
 
 ## 4. Backend
 
-- `pp_precio_ofrecido` lo pone el servidor con el `prod_precio_base` vigente al elegir el producto. Nunca viene del cliente. En una fila "por definir", y en un producto sin precio, queda NULL.
+- `pp_precio_ofrecido` lo pone el servidor con el `prod_precio_base` vigente al elegir el producto. Nunca viene del cliente. En una fila "por definir" (aunque tenga precio escrito), y en un producto sin precio o en 0, queda NULL.
 - `actualizarProductos` deja de borrar y recrear todo: conserva las filas que siguen (con su precio y su fecha), cambia en ellas el principal y la nota, borra las que se quitaron e inserta las nuevas. Un producto que se quita y se vuelve a elegir toma el precio de ese día.
 - Los intereses anteriores a este cambio quedan con precio NULL.
 - Los repetidos y los sin `prod_id` se ignoran.
+- `PUT /prospectos/:id/productos` valida el cuerpo: uno mal formado responde 422 y no borra nada.
 - Los catálogos aceptan `prod_tipo` y `prod_es_generico`.
 
-Aplica a todas las áreas, porque el servicio es común; solo Prenecesidad lo muestra.
+Aplica a todas las áreas, porque el servicio es común; solo se muestra en productos con tipo, es decir, en Prenecesidad. Así la ficha no enseña los precios viejos de los productos sin tipo ni cambia la de las otras áreas, que usan la misma pantalla.
 
 ## 5. GenFlow
 
@@ -48,7 +49,7 @@ Aplica a todas las áreas, porque el servicio es común; solo Prenecesidad lo mu
 
 **Dónde:** al crear el prospecto (`NuevoProspecto`) y al registrar la gestión (`RegistrarGestion`, también en salas para el dueño), solo si el área tiene productos con tipo. Si no, la selección actual. En `RegistrarGestion` se corrige además que un producto inactivo se mostraba como "#3".
 
-**Ficha:** cada interés muestra "por definir" o el precio ofrecido. Si el vigente cambió, "ofrecido (vigente otro)". Los intereses sin precio guardado muestran solo el nombre.
+**Ficha:** cada interés con tipo muestra "por definir" o el precio ofrecido. Si el vigente cambió, "ofrecido (vigente otro)". Los intereses sin tipo o sin precio guardado muestran solo el nombre.
 
 **Administración → Productos:** campos Tipo y "Es por definir". `CrudCatalogo` admite `default` por campo: hoy todo interruptor nace encendido, y un producto nuevo nacería "por definir".
 
@@ -58,27 +59,31 @@ Aplica a todas las áreas, porque el servicio es común; solo Prenecesidad lo mu
 |---|---|
 | El catálogo no tiene tipos | Selección actual |
 | La búsqueda no encuentra nada | "Ningún producto coincide. Prueba con otra palabra." |
-| Producto sin precio (nivel 1A) | Se elige; no muestra valor |
+| Producto sin precio o en 0 (nivel 1A) | Se elige; no muestra valor |
+| Dos filas "por definir" en un mismo tipo | La primera es la del tipo; las demás se listan como productos |
+| Cuerpo mal formado al guardar intereses | 422, sin borrar nada |
 | Dos principales | 422, como hoy |
 | El cliente envía un precio | Se ignora |
 
 ## 7. Pruebas
 
-Backend (jest, solo mocks): modelos y validaciones; precio al crear; conservar, cambiar, quitar y agregar intereses; precio enviado por el cliente ignorado; repetidos. GenFlow (vitest): agrupar, buscar y alternar; selector; integración en los dos formularios con y sin tipos; ficha; administración. Migraciones: 025 y 026 corridas dos veces en MySQL 8.0 y 8.4 desechables, con intereses previos (hecho el 2026-11-24: sin cambios en otras áreas ni en los intereses). Los 77 precios se compararon uno a uno con el PDF por script, sin diferencias.
+Backend (jest, solo mocks): modelos y validaciones; precio al crear; conservar, cambiar, quitar y agregar intereses; precio enviado por el cliente ignorado; repetidos. GenFlow (vitest): agrupar, buscar y alternar; selector; integración en los dos formularios con y sin tipos; ficha; administración. Migraciones: 025 y 026 corridas dos veces en MySQL 8.0 y 8.4 desechables, con intereses previos (hecho el 2026-11-24: sin cambios en otras áreas; los intereses conservan su fila, y solo pierden el precio los que quedan "por definir" o retirados). Los 77 precios se compararon uno a uno con el PDF por script, sin diferencias.
 
-## 8. Preguntas para la líder (antes de la 026)
+## 8. Preguntas para la líder (respondidas el 2026-11-24)
 
-1. En su tabla, las columnas Inhumaciones y Exhumaciones están cruzadas. Se siguió el PDF. ¿Correcto?
-2. ¿Qué precio tiene "Inhumación nivel 1A para lote triple"?
-3. "Exhumación osario mural / cenizario" ($650.000): ¿Osarios o Cenizarios? Quedó en Osarios, y Exhumación de cenizarios sin productos.
-4. ¿Boveditas y osario del Cementerio Central en Osarios, y fosa en Lotes?
-5. ¿Cremaciones de niños en Tradicional y Plus?
-6. ¿Está bien agregar los tipos "Cuerpo momificado" y "Servicio + cremación"?
-7. En "Conversión de lote sencillo a triple" se puso la misma restricción de sectores que en "doble a triple", porque el PDF dice que no aplican conversión a triple. ¿Correcto?
+| Pregunta | Respuesta | Cómo queda |
+|---|---|---|
+| 1. Inhumaciones y Exhumaciones cruzadas en su tabla | Lo que diga el PDF | Como estaba |
+| 2. Precio de "Inhumación nivel 1A para lote triple" | En cero | `PRE-INL-03` con precio 0; no muestra valor |
+| 3. "Exhumación osario mural / cenizario" | Lo que diga el PDF | El PDF trae una sola fila: queda en Osarios con ese nombre, y se encuentra buscando "cenizario" |
+| 4. Cementerio Central | Mausoleos | Osario y boveditas en Mausoleos → Osarios, como estaba. "Exhumación fosa" sigue en Exhumaciones, como en el PDF |
+| 5. Cremaciones de niños en Tradicional y Plus | Sí, cambia el cofre | Como estaba |
+| 6. Tipos "Cuerpo momificado" y "Servicio + cremación" | Sí | Como estaba |
+| 7. Restricción de sectores en "sencillo a triple" | Sí | Como estaba |
 
 ## 9. Despliegue
 
-1. Migración 025. 2. `deploy-mantix`. 3. GenFlow. 4. Migración 026, cuando la líder responda. La 025 **debe** ir antes del backend: los modelos piden las columnas nuevas en cada consulta.
+1. Push de la **rama** (no de `main`). 2. Migración 025 desde esa rama, y verificar las columnas. 3. Push a `main` y `deploy-mantix`. 4. GenFlow. 5. Migración 026. La 025 **debe** estar corrida antes de que el backend llegue a `main`: los modelos piden las columnas nuevas en cada consulta, y cualquier sesión que corra `deploy-mantix` publicaría ese código.
 
 ## 10. Fuera de alcance
 
@@ -86,7 +91,7 @@ Backend (jest, solo mocks): modelos y validaciones; precio al crear; conservar, 
 - Historial de listas de precios por año.
 - Cotización o propuesta en PDF para Prenecesidad.
 
-## Anexo: catálogo 2026 propuesto
+## Anexo: catálogo 2026
 
 ### Usos temporales
 
@@ -184,7 +189,7 @@ Backend (jest, solo mocks): modelos y validaciones; precio al crear; conservar, 
 | Lotes | `PRE-INL` | *Inhumación de lotes, por definir* | |
 | Lotes | `PRE-INL-01` | Inhumación 1 parte, lote | $4.650.000 |
 | Lotes | `PRE-INL-02` | Inhumación 2 parte, lote | $3.950.000 |
-| Lotes | `PRE-INL-03` | Inhumación nivel 1A para lote triple | — |
+| Lotes | `PRE-INL-03` | Inhumación nivel 1A para lote triple | $0 (sin precio en la lista) |
 | Osarios | `PRE-INO` | *Inhumación de osarios, por definir* | |
 | Osarios | `PRE-INO-01` | Inhumación osario tierra, 1 parte | $1.550.000 |
 | Osarios | `PRE-INO-02` | Inhumación osario tierra, 2 parte | $1.200.000 |

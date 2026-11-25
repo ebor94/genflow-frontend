@@ -1282,12 +1282,11 @@ por
 
 ---
 
-### Task 7: Migración 026 con el catálogo 2026 (cuando la líder responda)
+### Task 7: Migración 026 con el catálogo 2026
 
-Directorio: **BACK**. **No crear el archivo hasta tener las respuestas de §8 del spec**: en `src/sv/migrations` alguien podría correrlo. El contenido de abajo es el propuesto, ya probado; las respuestas pueden cambiar el tipo de unas filas, sus nombres o el precio de `PRE-INL-03`.
+Directorio: **BACK**. El contenido de abajo ya incluye las respuestas de §8 del spec y está probado.
 
-- [ ] **Step 1:** ajustar las filas con las respuestas y volver a comparar los precios con el PDF.
-- [ ] **Step 2: Create** `src/sv/migrations/026_prenec_productos_2026.sql`
+- [ ] **Step 1: Create** `src/sv/migrations/026_prenec_productos_2026.sql`, exactamente con este contenido:
 
 ```sql
 -- =====================================================================
@@ -1297,6 +1296,8 @@ Directorio: **BACK**. **No crear el archivo hasta tener las respuestas de §8 de
 -- cada tipo con más de un producto, y Exhumación de cenizarios, que no tiene).
 -- PRE-OSR, PRE-CNZ, PRE-CLM y PRE-PRR ya existen: pasan a ser la fila de su tipo, así los
 -- clientes que las tienen no pierden el interés. Los demás productos de PRENEC se desactivan.
+-- Los intereses ya elegidos sobre unos y otros quedan sin precio ofrecido.
+-- "Inhumación nivel 1A para lote triple" queda en 0: la lista 2026 no trae su precio.
 -- Solo datos. Requiere la 025. Idempotente, pero correrla de nuevo devuelve los precios a
 -- los de 2026: es de una sola vez.
 -- =====================================================================
@@ -1383,7 +1384,7 @@ SELECT a.area_id, p.codigo, p.nombre, p.descripcion, p.categoria, p.tipo, p.gene
     UNION ALL SELECT 'PRE-INL', 'Inhumación de lotes', NULL, 'Inhumaciones', 'Lotes', 1, NULL, 5100
     UNION ALL SELECT 'PRE-INL-01', 'Inhumación 1 parte, lote', NULL, 'Inhumaciones', 'Lotes', 0, 4650000, 5101
     UNION ALL SELECT 'PRE-INL-02', 'Inhumación 2 parte, lote', NULL, 'Inhumaciones', 'Lotes', 0, 3950000, 5102
-    UNION ALL SELECT 'PRE-INL-03', 'Inhumación nivel 1A para lote triple', 'Sin precio en la lista 2026.', 'Inhumaciones', 'Lotes', 0, NULL, 5103
+    UNION ALL SELECT 'PRE-INL-03', 'Inhumación nivel 1A para lote triple', 'Sin precio en la lista 2026.', 'Inhumaciones', 'Lotes', 0, 0, 5103
     UNION ALL SELECT 'PRE-INO', 'Inhumación de osarios', NULL, 'Inhumaciones', 'Osarios', 1, NULL, 5200
     UNION ALL SELECT 'PRE-INO-01', 'Inhumación osario tierra, 1 parte', NULL, 'Inhumaciones', 'Osarios', 0, 1550000, 5201
     UNION ALL SELECT 'PRE-INO-02', 'Inhumación osario tierra, 2 parte', NULL, 'Inhumaciones', 'Osarios', 0, 1200000, 5202
@@ -1439,25 +1440,34 @@ UPDATE sv_cfg_productos pr
      'PRE-EXO-03', 'PRE-EXC', 'PRE-EXB-01'
    );
 
+-- Lo elegido antes sobre un producto que ahora es "por definir", o que se retira, guardó el
+-- precio de la lista vieja: no es un precio ofrecido vigente.
+UPDATE sv_crm_prospectos_productos pp
+  JOIN sv_cfg_productos pr     ON pr.prod_id = pp.pp_prod_id
+  JOIN sv_cfg_areas_negocio a  ON a.area_id = pr.prod_area_id
+   SET pp.pp_precio_ofrecido = NULL
+ WHERE a.area_codigo = 'PRENEC'
+   AND (pr.prod_es_generico = 1 OR pr.prod_tipo IS NULL OR pr.prod_tipo = '');
+
 COMMIT;
 ```
 
-- [ ] **Step 3:** correr 025 y 026 dos veces en MySQL 8 desechable (seed + intereses previos): segunda corrida sin cambios; otras áreas e intereses intactos; 78 productos y 17 por definir.
-- [ ] **Step 4: Commit** `feat(prenec): migración 026 con el catálogo 2026`
+- [ ] **Step 2:** correr 025 y 026 dos veces en MySQL 8 desechable y sin red (seed + intereses previos): segunda corrida sin cambios; otras áreas intactas; cada interés conserva su fila; los de genéricos y retirados quedan sin precio ofrecido; un precio ofrecido después de la 026 no cambia en la segunda corrida; 78 productos y 17 por definir.
+- [ ] **Step 3: Commit** `feat(prenec): migración 026 con el catálogo 2026`
 
 ---
 
 ### Task 8: Integración y despliegue (con el usuario)
 
-**Orden obligatorio:** la migración 025 va **antes** del backend nuevo, porque los modelos piden las columnas nuevas en cada consulta de productos.
+**Orden obligatorio:** la migración 025 va **antes** de que el backend llegue a `main`, porque los modelos piden las columnas nuevas en cada consulta de productos y otra sesión puede correr `deploy-mantix` en cualquier momento. Sin las columnas fallan la ficha y los catálogos de las cuatro áreas, y GenFlow mostraría los catálogos vacíos sin avisar.
 
 - [ ] **Step 1:** suites completas: BACK solo con las cinco fallas conocidas; FRONT en verde y build limpio.
 - [ ] **Step 2:** `git fetch origin && git merge origin/main` en BACK y FRONT; repetir las pruebas de las tareas. Verificar que el número 025 siga libre.
-- [ ] **Step 3 (con confirmación):** push del backend a `main`.
-- [ ] **Step 4 (usuario):** en el servidor, antes del deploy:
+- [ ] **Step 3 (con confirmación):** push **solo de la rama** `feat/productos-prenec` del backend.
+- [ ] **Step 4 (usuario):** en el servidor, dentro de `mantix-backend`, migración 025 desde la rama y verificación de las tres columnas:
 
 ```bash
-git fetch origin && git show origin/main:src/sv/migrations/025_productos_tipo_precio.sql | mysql -u root -p serfuweb
+git fetch origin && git show origin/feat/productos-prenec:src/sv/migrations/025_productos_tipo_precio.sql | mysql -u root -p --default-character-set=utf8mb4 serfuweb
 ```
 
 ```sql
@@ -1465,9 +1475,18 @@ SHOW COLUMNS FROM sv_cfg_productos LIKE 'prod_%';
 SHOW COLUMNS FROM sv_crm_prospectos_productos LIKE 'pp_precio_ofrecido';
 ```
 
-- [ ] **Step 5 (usuario):** `deploy-mantix`; en los logs no debe aparecer `Unknown column`.
+- [ ] **Step 5 (con confirmación, y solo si la verificación salió bien):** push del backend a `main`. **(usuario)** `deploy-mantix`; en los logs no debe aparecer `Unknown column`.
 - [ ] **Step 6 (con confirmación):** GenFlow: merge a `main`, build, respaldo, `rsync --delete --exclude '.htaccess'` y paridad de `dist/assets`.
 - [ ] **Step 7 (usuario), smoke sin 026:** crear un prospecto y registrar una gestión en Prenecesidad y en otra área; todo como hoy.
-- [ ] **Step 8 (usuario):** respaldo de `sv_cfg_productos` con `mysqldump --no-create-info --replace --complete-insert`, migración 026 y recarga de GenFlow.
+- [ ] **Step 8 (usuario):** respaldo, migración 026 y recarga de GenFlow. Durante la 026 no editar productos en Administración: un formulario abierto antes desharía el tipo de esa fila.
+
+```bash
+mysqldump -u root -p --no-create-info --replace --complete-insert serfuweb sv_cfg_productos > ~/respaldo-productos-20261124.sql && mysqldump -u root -p --no-create-info --complete-insert serfuweb sv_crm_prospectos_productos > ~/respaldo-intereses-20261124.sql
+```
+
+```bash
+cd ~/apps/mantix/mantix-backend && mysql -u root -p --default-character-set=utf8mb4 serfuweb < src/sv/migrations/026_prenec_productos_2026.sql
+```
+
 - [ ] **Step 9 (usuario), smoke con 026:** elegir "Osarios, por definir" y después un osario exacto; ver el precio en la ficha; cambiar ese precio en Administración y comprobar que la ficha muestra el ofrecido y el vigente; editar los intereses y comprobar que el ofrecido no cambió.
-- [ ] **Reversión:** restaurar GenFlow y revertir el backend. La 025 puede quedarse. La 026 se revierte con el respaldo.
+- [ ] **Reversión:** restaurar GenFlow y revertir el backend. La 025 puede quedarse; no borrar sus columnas mientras corra el backend nuevo. La 026 se revierte cargando `respaldo-productos-20261124.sql` (las filas nuevas quedan y se desactivan a mano); `respaldo-intereses` es solo de consulta. Con el backend anterior, editar los intereses de un cliente borra sus precios ofrecidos, porque ese código borra y recrea las filas.
