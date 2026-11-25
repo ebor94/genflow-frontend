@@ -21,13 +21,10 @@ function montar(rol) {
 }
 
 describe('AppHeader: Presupuesto', () => {
-  it('asesor: enlace suelto después de Métricas, visible solo desde lg', () => {
-    const w = montar('ASESOR');
-    const e = w.findAll('a').map((a) => a.text().trim());
-    expect(e[e.indexOf('Métricas') + 1]).toBe('Presupuesto');
-    const a = w.findAll('a').find((x) => x.text().trim() === 'Presupuesto');
-    expect(a.classes()).toContain('hidden');
-    expect(a.classes()).toContain('lg:inline-block');
+  it('asesor: no está en esta barra; llega por Mis métricas o el menú lateral', () => {
+    const e = montar('ASESOR').findAll('a').map((a) => a.text().trim());
+    expect(e).toContain('Métricas');
+    expect(e).not.toContain('Presupuesto');
   });
 
   it('supervisor: está en el menú Supervisión, primero, y no suelto', async () => {
