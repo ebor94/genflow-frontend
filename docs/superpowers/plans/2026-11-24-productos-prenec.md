@@ -1464,7 +1464,7 @@ COMMIT;
 - [ ] **Step 1:** suites completas: BACK solo con las cinco fallas conocidas; FRONT en verde y build limpio.
 - [ ] **Step 2:** `git fetch origin && git merge origin/main` en BACK y FRONT; repetir las pruebas de las tareas. Verificar que el número 025 siga libre.
 - [ ] **Step 3 (con confirmación):** push **solo de la rama** `feat/productos-prenec` del backend.
-- [ ] **Step 4 (usuario):** en el servidor, dentro de `mantix-backend`, migración 025 desde la rama y verificación de las tres columnas:
+- [ ] **Step 4 (usuario):** migración 025, en Workbench (pegar el archivo con `USE serfuweb;` al inicio) o en el servidor desde la rama, y verificación **obligatoria** de las tres columnas (si `git show` falla, `mysql` termina sin error y no hace nada):
 
 ```bash
 git fetch origin && git show origin/feat/productos-prenec:src/sv/migrations/025_productos_tipo_precio.sql | mysql -u root -p --default-character-set=utf8mb4 serfuweb
@@ -1478,15 +1478,48 @@ SHOW COLUMNS FROM sv_crm_prospectos_productos LIKE 'pp_precio_ofrecido';
 - [ ] **Step 5 (con confirmación, y solo si la verificación salió bien):** push del backend a `main`. **(usuario)** `deploy-mantix`; en los logs no debe aparecer `Unknown column`.
 - [ ] **Step 6 (con confirmación):** GenFlow: merge a `main`, build, respaldo, `rsync --delete --exclude '.htaccess'` y paridad de `dist/assets`.
 - [ ] **Step 7 (usuario), smoke sin 026:** crear un prospecto y registrar una gestión en Prenecesidad y en otra área; todo como hoy.
-- [ ] **Step 8 (usuario):** respaldo, migración 026 y recarga de GenFlow. Durante la 026 no editar productos en Administración: un formulario abierto antes desharía el tipo de esa fila.
+- [ ] **Step 8 (usuario):** respaldo, migración 026 y recarga de GenFlow. Desde Workbench (el `mysql -u root` del servidor le dio error al usuario). Si las copias ya existen, `CREATE TABLE` falla y no las pisa: no borrarlas para repetir el paso. Durante la 026 no editar productos en Administración: un formulario abierto antes desharía el tipo de esa fila.
 
-```bash
-mysqldump -u root -p --no-create-info --replace --complete-insert serfuweb sv_cfg_productos > ~/respaldo-productos-20261124.sql && mysqldump -u root -p --no-create-info --complete-insert serfuweb sv_crm_prospectos_productos > ~/respaldo-intereses-20261124.sql
+```sql
+USE serfuweb;
+CREATE TABLE sv_cfg_productos_resp20261124 AS SELECT * FROM sv_cfg_productos;
+CREATE TABLE sv_crm_prospectos_productos_resp20261124 AS SELECT * FROM sv_crm_prospectos_productos;
+SELECT (SELECT COUNT(*) FROM sv_cfg_productos) AS productos,
+       (SELECT COUNT(*) FROM sv_cfg_productos_resp20261124) AS copia_productos,
+       (SELECT COUNT(*) FROM sv_crm_prospectos_productos) AS intereses,
+       (SELECT COUNT(*) FROM sv_crm_prospectos_productos_resp20261124) AS copia_intereses;
 ```
 
-```bash
-cd ~/apps/mantix/mantix-backend && mysql -u root -p --default-character-set=utf8mb4 serfuweb < src/sv/migrations/026_prenec_productos_2026.sql
+Los cuatro números deben coincidir de a pares. Después, con `USE serfuweb; SET SQL_SAFE_UPDATES = 0;` al inicio, el contenido completo de `026_prenec_productos_2026.sql` (Workbench rechaza en modo seguro los UPDATE con JOIN), y al final:
+
+```sql
+-- Verificación: 78 productos (0) y 17 "por definir" (1)
+SELECT pr.prod_es_generico, COUNT(*) AS filas
+  FROM sv_cfg_productos pr JOIN sv_cfg_areas_negocio a ON a.area_id = pr.prod_area_id
+ WHERE a.area_codigo = 'PRENEC' AND pr.prod_activo = 1
+ GROUP BY pr.prod_es_generico;
 ```
 
-- [ ] **Step 9 (usuario), smoke con 026:** elegir "Osarios, por definir" y después un osario exacto; ver el precio en la ficha; cambiar ese precio en Administración y comprobar que la ficha muestra el ofrecido y el vigente; editar los intereses y comprobar que el ofrecido no cambió.
-- [ ] **Reversión:** restaurar GenFlow y revertir el backend. La 025 puede quedarse; no borrar sus columnas mientras corra el backend nuevo. La 026 se revierte cargando `respaldo-productos-20261124.sql` (las filas nuevas quedan y se desactivan a mano); `respaldo-intereses` es solo de consulta. Con el backend anterior, editar los intereses de un cliente borra sus precios ofrecidos, porque ese código borra y recrea las filas.
+Debe dar 78 y 17. Si sale vacío, `PRENEC` no coincidió y no se cargó nada.
+
+- [ ] **Step 9 (usuario), smoke con 026:** elegir "Osarios, por definir" y después un osario exacto; ver el precio en la ficha. Para probar que el ofrecido no cambia: editar en Administración el precio de **ese** osario, comprobar que la ficha muestra el ofrecido y el vigente, editar los intereses y comprobar que el ofrecido sigue igual, y **devolver el precio** enseguida (la ficha vuelve a mostrar solo el ofrecido). Hacerlo con un cliente de prueba y sin demora: quien elija ese producto mientras tanto guarda el precio de prueba, y ese no se corrige solo.
+- [ ] **Reversión:** restaurar GenFlow y revertir el backend. La 025 puede quedarse; no borrar sus columnas mientras corra el backend nuevo. La 026 se revierte con las copias del Step 8 (probado en 8.0 y 8.4: los productos activos quedan exactamente como antes, y la 026 se puede volver a aplicar):
+
+```sql
+USE serfuweb;
+SET SQL_SAFE_UPDATES = 0;
+START TRANSACTION;
+UPDATE sv_cfg_productos pr JOIN sv_cfg_areas_negocio a ON a.area_id = pr.prod_area_id
+   SET pr.prod_activo = 0
+ WHERE a.area_codigo = 'PRENEC' AND pr.prod_tipo IS NOT NULL AND pr.prod_tipo <> '';
+UPDATE sv_cfg_productos p
+  JOIN sv_cfg_productos_resp20261124 r ON r.prod_id = p.prod_id
+  JOIN sv_cfg_areas_negocio a ON a.area_id = p.prod_area_id
+   SET p.prod_nombre = r.prod_nombre, p.prod_descripcion = r.prod_descripcion, p.prod_categoria = r.prod_categoria,
+       p.prod_tipo = r.prod_tipo, p.prod_es_generico = r.prod_es_generico, p.prod_precio_base = r.prod_precio_base,
+       p.prod_activo = r.prod_activo, p.prod_orden_display = r.prod_orden_display
+ WHERE a.area_codigo = 'PRENEC';
+COMMIT;
+```
+
+La copia de intereses es solo de consulta. Con el backend anterior, editar los intereses de un cliente borra sus precios ofrecidos, porque ese código borra y recrea las filas. Cuando el catálogo quede estable, borrar las dos tablas `_resp20261124`.

@@ -24,7 +24,7 @@ Cuando el asesor de Prenecesidad registra un prospecto o una gestión, elige el 
 - `sv_cfg_productos.prod_es_generico TINYINT(1) NOT NULL DEFAULT 0`
 - `sv_crm_prospectos_productos.pp_precio_ofrecido DECIMAL(12,2) NULL`
 
-**Migración 026** (datos, cuando la líder responda): los 78 productos y 17 filas "por definir". Hay una fila "por definir" por cada tipo con más de un producto, más Exhumación de cenizarios, que no tiene ninguno. Un tipo con un solo producto no la necesita: se elige el producto. `PRE-OSR`, `PRE-CNZ`, `PRE-CLM` y `PRE-PRR` pasan a ser la fila de su tipo, así los clientes que las tienen no pierden el interés. Los demás productos de PRENEC se desactivan; ninguno se borra. Correrla otra vez devuelve los precios a los de 2026: es de una sola vez.
+**Migración 026** (datos, con las respuestas de la líder): los 78 productos y 17 filas "por definir". Hay una fila "por definir" por cada tipo con más de un producto, más Exhumación de cenizarios, que no tiene ninguno. Un tipo con un solo producto no la necesita: se elige el producto. `PRE-OSR`, `PRE-CNZ`, `PRE-CLM` y `PRE-PRR` pasan a ser la fila de su tipo, así los clientes que las tienen no pierden el interés. Los demás productos de PRENEC se desactivan; ninguno se borra. Correrla otra vez devuelve los precios a los de 2026: es de una sola vez.
 
 Sin la 026, ningún producto tiene tipo y GenFlow muestra la selección de hoy. El código se puede desplegar antes que los datos.
 
