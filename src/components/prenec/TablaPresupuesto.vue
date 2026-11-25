@@ -12,7 +12,7 @@ const celda = (cat) => props.asesor.categorias?.[cat] || { presupuesto: 0, reali
 </script>
 
 <template>
-  <div class="overflow-x-auto">
+  <div class="overflow-x-auto tabular-nums lining-nums">
     <table class="w-full text-sm">
       <thead>
         <tr class="text-left text-xs uppercase tracking-wider text-text3 border-b border-text3/20">

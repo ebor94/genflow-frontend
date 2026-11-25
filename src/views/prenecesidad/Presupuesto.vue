@@ -133,7 +133,7 @@ async function descargarPlantilla() {
 </script>
 
 <template>
-  <div class="max-w-5xl mx-auto px-4 sm:px-6 py-6 pb-24">
+  <div class="max-w-5xl mx-auto px-4 sm:px-6 py-6 pb-24 tabular-nums lining-nums">
     <header class="flex items-center justify-between flex-wrap gap-3 mb-5">
       <div class="flex items-center gap-3 flex-wrap">
         <h1 class="font-serif text-3xl text-brown-deep">Presupuesto</h1>
@@ -177,7 +177,7 @@ async function descargarPlantilla() {
             </div>
             <div class="flex items-center gap-3">
               <span class="font-serif text-3xl text-text1">{{ pctTotal === null ? '—' : `${pctTotal} %` }}</span>
-              <ChipCumplimiento :realizado="totales.realizado" :presupuesto="totales.presupuesto" />
+              <ChipCumplimiento v-if="pctTotal !== null" solo-icono :realizado="totales.realizado" :presupuesto="totales.presupuesto" />
             </div>
           </div>
         </div>

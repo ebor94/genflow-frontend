@@ -53,6 +53,32 @@ describe('SubirPresupuestoModal', () => {
     expect(fd.get('mes')).toBe('10');
   });
 
+  it('el título es Subir hasta que hay cambios revisados, y luego Confirmar', async () => {
+    presupuestosApi.revisar.mockResolvedValueOnce(ok({ errores: [{ fila: 4, columna: 'C', mensaje: 'Malo' }] }));
+    const w = factory();
+    expect(w.text()).toContain('Subir presupuesto de octubre 2026');
+    await elegir(w);
+    expect(w.text()).toContain('Subir presupuesto de octubre 2026');
+    presupuestosApi.revisar.mockResolvedValueOnce(ok());
+    await elegir(w, 'b.xlsx');
+    expect(w.text()).toContain('Confirmar presupuesto de octubre 2026');
+    expect(w.text()).not.toContain('Subir presupuesto de');
+  });
+
+  it('muestra el nombre del archivo elegido y usa el estilo del selector de listas', async () => {
+    const w = factory();
+    expect(w.find('[data-testid="nombre-archivo"]').exists()).toBe(false);
+    expect(w.find('[data-testid="archivo"]').classes().join(' ')).toContain('file:bg-gold');
+    await elegir(w, 'ventas-nov.xlsx');
+    expect(w.find('[data-testid="nombre-archivo"]').text()).toContain('ventas-nov.xlsx');
+  });
+
+  it('las cifras usan números alineados y de línea', async () => {
+    const w = factory();
+    await elegir(w);
+    expect(w.find('[data-testid="resumen"]').element.closest('.tabular-nums.lining-nums')).not.toBeNull();
+  });
+
   it('muestra cuántos asesores y valores cambian y la lista antes → después', async () => {
     const w = factory();
     await elegir(w);

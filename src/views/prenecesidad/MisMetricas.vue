@@ -96,7 +96,7 @@ const distribucion = computed(() => data.value?.distribucion || []);
         v-if="presupuestoMes"
         :to="{ name: 'prenec-presupuesto' }"
         data-testid="tarjeta-presupuesto"
-        class="sv-card p-5 mb-5 flex items-center justify-between gap-3 flex-wrap hover:shadow-sv-pop transition-shadow"
+        class="sv-card p-5 mb-5 tabular-nums lining-nums flex items-center justify-between gap-3 flex-wrap hover:shadow-sv-pop transition-shadow"
       >
         <div>
           <h3 class="font-serif text-lg text-brown-deep">Presupuesto del mes</h3>

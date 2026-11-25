@@ -24,6 +24,7 @@ const toast = useToastStore();
 const { extract } = useApiError();
 
 const input = ref(null);
+const archivo = ref(null);
 const revisando = ref(false);
 const guardando = ref(false);
 const resultado = ref(null);
@@ -34,20 +35,22 @@ function limpiar() {
   revision++;
   resultado.value = null;
   errorArchivo.value = '';
+  archivo.value = null;
   revisando.value = false;
   if (input.value) input.value.value = '';
 }
 watch(() => props.open, (abierta) => { if (abierta) limpiar(); });
 
 async function elegirArchivo(e) {
-  const archivo = e.target.files?.[0];
+  const elegido = e.target.files?.[0];
   limpiar();
-  if (!archivo) return;
+  archivo.value = elegido || null;
+  if (!elegido) return;
   const mio = revision;
   revisando.value = true;
   try {
     const fd = new FormData();
-    fd.append('archivo', archivo);
+    fd.append('archivo', elegido);
     fd.append('area_id', props.areaId);
     fd.append('anio', props.anio);
     fd.append('mes', props.mes);
@@ -67,7 +70,7 @@ const cambios = computed(() => resultado.value?.cambios || []);
 const puedeGuardar = computed(() => !!resultado.value && !errores.value.length && cambios.value.length > 0);
 const asesoresQueCambian = computed(() => new Set(cambios.value.map((c) => c.usr_id)).size);
 const plural = (n, uno, varios) => `${n} ${n === 1 ? uno : varios}`;
-const titulo = computed(() => puedeGuardar.value ? `Confirmar presupuesto de ${mesLabel(props.anio, props.mes)}` : 'Subir presupuesto');
+const titulo = computed(() => `${puedeGuardar.value ? 'Confirmar' : 'Subir'} presupuesto de ${mesLabel(props.anio, props.mes)}`);
 
 async function confirmar() {
   guardando.value = true;
@@ -86,12 +89,15 @@ async function confirmar() {
 
 <template>
   <BaseModal :open="open" :title="titulo" max-width="max-w-2xl" @close="emit('close')">
+    <div class="tabular-nums lining-nums">
     <label class="sv-label" for="presupuesto-archivo">Archivo de Excel (.xlsx)</label>
     <input
       id="presupuesto-archivo" ref="input" data-testid="archivo" type="file"
       accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-      class="block w-full text-sm text-text1" @change="elegirArchivo"
+      class="block w-full text-sm text-text2 file:mr-3 file:py-2 file:px-4 file:rounded-sv file:border-0 file:bg-gold file:text-white file:font-semibold file:cursor-pointer hover:file:bg-gold-bright"
+      @change="elegirArchivo"
     />
+    <p v-if="archivo" data-testid="nombre-archivo" class="text-xs text-text3 mt-1">{{ archivo.name }} ({{ (archivo.size / 1024).toFixed(1) }} KB)</p>
     <p class="mt-1 text-xs text-text3">Usa la plantilla del mes. Hasta 2 MB.</p>
 
     <p v-if="revisando" class="mt-4 text-sm text-text3">Revisando el archivo...</p>
@@ -119,6 +125,8 @@ async function confirmar() {
         </ul>
       </div>
     </template>
+
+    </div>
 
     <template #footer>
       <BaseButton variant="secondary" @click="emit('close')">Cancelar</BaseButton>

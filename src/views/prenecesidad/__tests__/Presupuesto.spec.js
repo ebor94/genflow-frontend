@@ -269,6 +269,29 @@ describe('Presupuesto (plantilla)', () => {
   });
 });
 
+describe('Presupuesto (tarjeta Cumplimiento)', () => {
+  it('muestra el porcentaje una sola vez, con el ícono de estado', async () => {
+    vi.clearAllMocks();
+    presupuestosApi.obtener.mockResolvedValue(respuesta({ asesores: [A(10, 'Ana Ruiz', 1, 1000, 540)] }));
+    const w = factory();
+    await flushPromises();
+    const t = w.find('[data-testid="total-cumplimiento"]');
+    expect(t.find('.font-serif').text()).toBe('54 %');
+    expect(t.find('[data-estado]').text().replace(t.find('.sr-only').text(), '').trim()).toBe('✕');
+    expect(t.find('[data-testid="chip-icono"]').text()).toBe('✕');
+    expect(t.find('.sr-only').text()).toContain('54 %');
+  });
+  it('sin presupuesto muestra — y ningún ícono', async () => {
+    vi.clearAllMocks();
+    presupuestosApi.obtener.mockResolvedValue(respuesta({ asesores: [A(10, 'Ana Ruiz', 1, 0, 540)] }));
+    const w = factory();
+    await flushPromises();
+    const t = w.find('[data-testid="total-cumplimiento"]');
+    expect(t.text()).toContain('—');
+    expect(t.find('[data-testid="chip-icono"]').exists()).toBe(false);
+  });
+});
+
 describe('Presupuesto (cumplimiento mostrado)', () => {
   it('la tarjeta y el chip muestran el mismo 99 % cuando el valor es 99,6', async () => {
     vi.clearAllMocks();

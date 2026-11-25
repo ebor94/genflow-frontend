@@ -21,7 +21,7 @@ const detalle = (a) => `${fmtCOP(a.realizado)} de ${fmtCOP(a.presupuesto)}`;
 </script>
 
 <template>
-  <ul class="space-y-2">
+  <ul class="space-y-2 tabular-nums lining-nums">
     <li v-for="a in asesores" :key="a.usr_id">
       <button
         type="button"

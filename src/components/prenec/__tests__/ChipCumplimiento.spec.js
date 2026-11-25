@@ -28,6 +28,15 @@ describe('ChipCumplimiento', () => {
     expect(w.find('[data-testid="chip-icono"]').text()).toBe('✕');
     expect(w.classes().join(' ')).toContain('border-danger');
   });
+  it('solo-icono muestra el ícono sin repetir el porcentaje, con texto accesible', () => {
+    const w = mount(ChipCumplimiento, { props: { realizado: 54, presupuesto: 100, soloIcono: true } });
+    expect(w.find('[data-testid="chip-icono"]').text()).toBe('✕');
+    expect(w.find('[aria-hidden="true"]:not([data-testid])').exists()).toBe(false);
+    expect(w.find('.sr-only').text()).toContain('54 %');
+    expect(w.classes().join(' ')).toContain('border-danger');
+    expect(w.classes()).toContain('tabular-nums');
+    expect(w.classes()).toContain('lining-nums');
+  });
   it('sin presupuesto muestra —', () => {
     const w = chip(5000, 0);
     expect(w.attributes('data-estado')).toBe('sin');
