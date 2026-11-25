@@ -5,6 +5,7 @@
 import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
 import { papApi } from '@/api/papApi';
+import { diaLocal } from '@/utils/format';
 
 export const usePapStore = defineStore('svPap', () => {
   const visitasHoy = ref([]);           // últimas N gestiones del día
@@ -45,7 +46,7 @@ export const usePapStore = defineStore('svPap', () => {
   }
 
   async function refrescarMetricas(fecha = null) {
-    const hoy = fecha || new Date().toISOString().slice(0, 10);
+    const hoy = fecha || diaLocal();
     const r = await papApi.metricas({ desde: hoy, hasta: hoy });
     metricasDia.value = r.data;
     return r.data;

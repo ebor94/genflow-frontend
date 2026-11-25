@@ -8,7 +8,7 @@ import { useAuthStore } from '@/stores/useAuthStore';
 import { useApiError } from '@/composables/useApiError';
 import { reportesApi } from '@/api/reportesApi';
 import { propuestasApi } from '@/api/propuestasApi';
-import { fmtCOP, fmtNumero } from '@/utils/format';
+import { diaLocal, fmtCOP, fmtNumero } from '@/utils/format';
 
 import KpiCard from '@/components/dashboard/KpiCard.vue';
 import MetaBar from '@/components/common/MetaBar.vue';
@@ -31,7 +31,7 @@ const opcPeriodo = [
 
 function rangoPeriodo() {
   const hoy = new Date();
-  const fin = hoy.toISOString().slice(0, 10);
+  const fin = diaLocal(hoy);
   let inicio;
   switch (periodo.value) {
     case 'mes':       inicio = `${hoy.getFullYear()}-${String(hoy.getMonth()+1).padStart(2,'0')}-01`; break;

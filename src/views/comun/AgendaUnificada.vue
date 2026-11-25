@@ -19,13 +19,14 @@ import MiniCalendar from '@/components/common/MiniCalendar.vue';
 import BaseButton from '@/components/ui/BaseButton.vue';
 import BaseSelect from '@/components/ui/BaseSelect.vue';
 import NuevoEventoAgendaModal from '@/components/crm/NuevoEventoAgendaModal.vue';
+import { diaLocal } from '@/utils/format';
 
 const router = useRouter();
 const auth   = useAuthStore();
 const toast  = useToastStore();
 const { notify } = useApiError();
 
-const hoy = new Date().toISOString().slice(0, 10);
+const hoy = diaLocal();
 const fechaSel  = ref(hoy);
 const mesActual = ref({ anio: new Date().getFullYear(), mes: new Date().getMonth() + 1 });
 
@@ -34,7 +35,7 @@ const fechaSelDate = computed({
   get: () => new Date(fechaSel.value + 'T12:00:00'),
   set: (d) => {
     if (!d) return;
-    fechaSel.value = (d instanceof Date ? d : new Date(d)).toISOString().slice(0, 10);
+    fechaSel.value = diaLocal(d);
   }
 });
 

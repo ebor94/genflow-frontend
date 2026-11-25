@@ -8,6 +8,7 @@ import { useAuthStore } from '@/stores/useAuthStore';
 import { useApiError } from '@/composables/useApiError';
 import { papApi } from '@/api/papApi';
 import { usuariosApi } from '@/api/usuariosApi';
+import { diaLocal } from '@/utils/format';
 
 import BaseInput from '@/components/ui/BaseInput.vue';
 import BaseSelect from '@/components/ui/BaseSelect.vue';
@@ -17,7 +18,7 @@ const auth = useAuthStore();
 const { notify } = useApiError();
 
 // Rango de fechas: default hoy → hoy
-const hoyISO = new Date().toISOString().slice(0, 10);
+const hoyISO = diaLocal();
 const desde = ref(hoyISO);
 const hasta = ref(hoyISO);
 const visitas = ref([]);
@@ -38,8 +39,8 @@ const PRESETS = [
 function aplicarPreset(dias) {
   const hoy = new Date();
   const desdeDate = new Date(hoy.getTime() - dias * 86400000);
-  desde.value = desdeDate.toISOString().slice(0, 10);
-  hasta.value = hoy.toISOString().slice(0, 10);
+  desde.value = diaLocal(desdeDate);
+  hasta.value = diaLocal(hoy);
 }
 
 const rangoLabel = computed(() => {

@@ -3,6 +3,7 @@ import { ref, computed, onMounted, watch } from 'vue';
 import { useApiError } from '@/composables/useApiError';
 import { papApi } from '@/api/papApi';
 import { sumaDistancias } from '@/utils/haversine';
+import { diaLocal } from '@/utils/format';
 
 import KpiCard from '@/components/dashboard/KpiCard.vue';
 import BarraProgreso from '@/components/dashboard/BarraProgreso.vue';
@@ -11,8 +12,8 @@ import BaseButton from '@/components/ui/BaseButton.vue';
 
 const { notify } = useApiError();
 
-const desde = ref(new Date().toISOString().slice(0, 10));
-const hasta = ref(new Date().toISOString().slice(0, 10));
+const desde = ref(diaLocal());
+const hasta = ref(diaLocal());
 const data = ref(null);
 const loading = ref(false);
 
