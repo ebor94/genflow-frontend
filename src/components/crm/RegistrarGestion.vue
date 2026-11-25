@@ -17,6 +17,7 @@ import { useToastStore } from '@/stores/useToastStore';
 import { useApiError } from '@/composables/useApiError';
 import { prospectosApi } from '@/api/prospectosApi';
 import { salasApi } from '@/api/salasApi';
+import { tieneTipos } from '@/utils/catalogoProductos';
 import { fmtFecha, fmtFechaHora } from '@/utils/format';
 
 import BaseModal from '@/components/ui/BaseModal.vue';
@@ -24,6 +25,7 @@ import BaseSelect from '@/components/ui/BaseSelect.vue';
 import BaseInput from '@/components/ui/BaseInput.vue';
 import BaseTextarea from '@/components/ui/BaseTextarea.vue';
 import BaseButton from '@/components/ui/BaseButton.vue';
+import SelectorProductos from '@/components/crm/SelectorProductos.vue';
 
 const props = defineProps({
   open: { type: Boolean, required: true },
@@ -74,6 +76,15 @@ const productosDisponibles = computed(() => {
     .filter(p => p.prod_area_id === areaId.value && p.prod_activo)
     .sort((a, b) => (a.prod_orden_display || 0) - (b.prod_orden_display || 0));
 });
+
+const conTipos = computed(() => tieneTipos(productosDisponibles.value));
+
+// Un producto inactivo ya no está en el catálogo, pero el interés guardado trae su nombre.
+function nombreProducto(prodId) {
+  return productosDisponibles.value.find((p) => p.prod_id === prodId)?.prod_nombre
+    || (props.prospecto?.productos || []).find((p) => p.pp_prod_id === prodId)?.producto?.prod_nombre
+    || 'Producto no disponible';
+}
 
 const resultadosDelGrupo = computed(() => {
   const all = config.actual?.resultados || [];
@@ -294,7 +305,7 @@ async function submit() {
                 class="px-2 py-1 rounded-full text-xs font-medium"
                 :class="p.es_principal ? 'bg-gold text-white' : 'bg-cream border border-text3/30 text-text2'">
             <span v-if="p.es_principal">⭐ </span>
-            {{ productosDisponibles.find(pr => pr.prod_id === p.prod_id)?.prod_nombre || `#${p.prod_id}` }}
+            {{ nombreProducto(p.prod_id) }}
           </span>
         </div>
         <div v-if="!editandoProductos && !productosSel.length" class="text-xs text-text3 italic">
@@ -302,7 +313,9 @@ async function submit() {
         </div>
 
         <!-- Editor expandido -->
-        <div v-if="editandoProductos" class="space-y-2 max-h-56 overflow-y-auto pr-1">
+        <SelectorProductos v-if="editandoProductos && conTipos" v-model="productosSel"
+                           :productos="productosDisponibles" :actuales="prospecto?.productos || []" />
+        <div v-else-if="editandoProductos" class="space-y-2 max-h-56 overflow-y-auto pr-1">
           <p class="text-xs text-text3 mb-2">
             Marca los productos de interés del cliente. Marca la estrella ⭐ del producto principal.
           </p>

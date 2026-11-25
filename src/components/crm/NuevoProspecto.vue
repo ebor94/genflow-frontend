@@ -15,6 +15,7 @@ import { useToastStore } from '@/stores/useToastStore';
 import { useApiError } from '@/composables/useApiError';
 import { useTelefono } from '@/composables/useTelefono';
 import { personasApi } from '@/api/personasApi';
+import { tieneTipos } from '@/utils/catalogoProductos';
 
 import BaseModal from '@/components/ui/BaseModal.vue';
 import BaseInput from '@/components/ui/BaseInput.vue';
@@ -22,6 +23,7 @@ import BaseSelect from '@/components/ui/BaseSelect.vue';
 import BaseTextarea from '@/components/ui/BaseTextarea.vue';
 import BaseButton from '@/components/ui/BaseButton.vue';
 import ProspectosCrossArea from '@/components/crm/ProspectosCrossArea.vue';
+import SelectorProductos from '@/components/crm/SelectorProductos.vue';
 
 const props = defineProps({
   open: { type: Boolean, required: true },
@@ -85,6 +87,9 @@ const opcEstadosIniciales = computed(() => (config.actual?.estados || [])
 const opcProductos = computed(() => (config.actual?.productos || [])
   .filter(p => p.prod_area_id === areaIdEffective.value && p.prod_activo)
   .sort((a, b) => a.prod_orden_display - b.prod_orden_display));
+
+// Con catálogo por tipos (Prenecesidad) se usa el selector; las demás áreas, los botones.
+const conTipos = computed(() => tieneTipos(opcProductos.value));
 
 watch(() => props.open, (v) => {
   if (v) {
@@ -255,7 +260,8 @@ function descartarExistente() {
 
         <div>
           <label class="sv-label">Productos de interés</label>
-          <div class="flex flex-wrap gap-2">
+          <SelectorProductos v-if="conTipos" v-model="prospecto.productos" :productos="opcProductos" />
+          <div v-else class="flex flex-wrap gap-2">
             <button v-for="prod in opcProductos" :key="prod.prod_id"
                     type="button"
                     @click="toggleProducto(prod.prod_id)"
