@@ -11,7 +11,7 @@ it('administra el tipo y la marca por definir, apagada en un producto nuevo', as
   const w = mount(GestionProductos, { global: { plugins: [createTestingPinia({ createSpy: vi.fn })], stubs: { CrudCatalogo: true } } });
   await flushPromises();
   const { campos, columnas } = w.findComponent(CrudCatalogo).props();
-  expect(campos.find((c) => c.key === 'prod_tipo')).toEqual({ key: 'prod_tipo', label: 'Tipo', type: 'text' });
+  expect(campos.find((c) => c.key === 'prod_tipo')).toEqual({ key: 'prod_tipo', label: 'Tipo', type: 'text', hint: 'Si un área tiene productos con tipo, sus asesores eligen el interés por categoría, tipo y producto.' });
   expect(campos.find((c) => c.key === 'prod_es_generico')).toEqual({ key: 'prod_es_generico', label: 'Es "por definir" (representa al tipo, sin precio)', type: 'switch', default: 0 });
   expect(columnas.some((c) => c.key === 'prod_tipo')).toBe(true);
 });

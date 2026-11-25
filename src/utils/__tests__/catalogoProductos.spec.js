@@ -35,6 +35,16 @@ describe('agruparProductos', () => {
     expect(g[0].tipos[1].generico).toBeNull();
   });
 
+  it('dos filas por definir en un tipo: la primera es generico y la otra queda en productos', () => {
+    const g = agruparProductos([
+      p(1, 'Osarios', 'M', 'Osarios', { prod_es_generico: 1 }),
+      p(2, 'Osarios (otro)', 'M', 'Osarios', { prod_es_generico: 1 }),
+      p(3, 'Osario A', 'M', 'Osarios')
+    ]);
+    expect(g[0].tipos[0].generico.prod_id).toBe(1);
+    expect(g[0].tipos[0].productos.map((x) => x.prod_id)).toEqual([2, 3]);
+  });
+
   it('respeta prod_orden_display sin cambiar el arreglo original', () => {
     const al = [...CATALOGO].reverse();
     expect(agruparProductos(al).map((x) => x.categoria)).toEqual(['Mausoleos', 'Inhumaciones']);
@@ -108,7 +118,10 @@ describe('detalleInteres', () => {
     expect(plano(detalleInteres({ producto: CATALOGO[1], pp_precio_ofrecido: '8000000.00' }))).toBe('$ 8.000.000 (vigente $ 8.770.000)');
   });
   it('precio ofrecido sin precio vigente muestra solo el ofrecido', () => {
-    expect(plano(detalleInteres({ producto: { prod_nombre: 'X', prod_precio_base: null }, pp_precio_ofrecido: '100000.00' }))).toBe('$ 100.000');
+    expect(plano(detalleInteres({ producto: { prod_nombre: 'X', prod_tipo: 'T', prod_precio_base: null }, pp_precio_ofrecido: '100000.00' }))).toBe('$ 100.000');
+  });
+  it('un producto sin tipo no muestra precio', () => {
+    expect(detalleInteres({ producto: { prod_nombre: 'X', prod_tipo: null, prod_precio_base: '100000.00' }, pp_precio_ofrecido: '100000.00' })).toBe('');
   });
   it('sin precio guardado no muestra nada', () => {
     expect(detalleInteres({ producto: CATALOGO[1], pp_precio_ofrecido: null })).toBe('');

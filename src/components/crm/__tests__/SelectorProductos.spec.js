@@ -85,6 +85,28 @@ describe('SelectorProductos', () => {
     expect(ultimo(w)).toEqual([]);
   });
 
+  it('un interés guardado, inactivo y sin tipo no muestra precio', () => {
+    const w = montar({
+      modelValue: [sel(98, true)],
+      actuales: [{ pp_prod_id: 98, pp_precio_ofrecido: '4200000.00', producto: p(98, 'Producto viejo', 'Servicio', null, { prod_precio_base: '4200000.00' }) }]
+    });
+    const t = plano(w.find('[data-testid="elegidos"]').text());
+    expect(t).toContain('Producto viejo');
+    expect(t).not.toContain('4.200.000');
+  });
+
+  it('las categorías muestran un chevron que gira al abrir y desaparece al buscar', async () => {
+    const w = montar();
+    const cat = () => w.findAll('[data-testid="categoria"]')[0];
+    expect(cat().find('svg').exists()).toBe(true);
+    expect(cat().find('svg').classes()).not.toContain('rotate-90');
+    await cat().trigger('click');
+    expect(cat().find('svg').classes()).toContain('rotate-90');
+    await w.find('input').setValue('osario');
+    expect(cat().find('svg').exists()).toBe(false);
+    expect(cat().attributes('disabled')).toBeDefined();
+  });
+
   it('un interés que no se encuentra dice Producto no disponible', () => {
     expect(montar({ modelValue: [sel(123, true)] }).find('[data-testid="elegidos"]').text()).toContain('Producto no disponible');
   });

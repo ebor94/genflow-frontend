@@ -32,7 +32,7 @@ const elegidosIds = computed(() => new Set(props.modelValue.map((s) => s.prod_id
 const elegidos = computed(() => props.modelValue.map((s) => {
   const guardado = guardados.value.get(s.prod_id);
   const p = porId.value.get(s.prod_id) || guardado?.producto || null;
-  const precio = guardado ? precioDe(guardado.pp_precio_ofrecido) : precioDe(p?.prod_precio_base);
+  const precio = guardado ? (p?.prod_tipo ? precioDe(guardado.pp_precio_ofrecido) : null) : precioDe(p?.prod_precio_base);
   return {
     ...s,
     nombre: p?.prod_nombre || 'Producto no disponible',
@@ -77,8 +77,9 @@ function precioTexto(p) { const n = precioDe(p.prod_precio_base); return n ? fmt
     <div v-else class="max-h-72 overflow-y-auto pr-1">
       <section v-for="g in visibles" :key="g.categoria" class="border-t border-text3/10 first:border-t-0">
         <button type="button" data-testid="categoria" :aria-expanded="estaAbierta(g.categoria) ? 'true' : 'false'"
+                :disabled="buscando"
                 class="w-full flex items-center justify-between py-2 text-sm font-semibold text-text1 text-left"
-                @click="alternarCategoria(g.categoria)">{{ g.categoria }}</button>
+                @click="alternarCategoria(g.categoria)">{{ g.categoria }}<svg v-if="!buscando" aria-hidden="true" class="shrink-0 transition-transform" :class="estaAbierta(g.categoria) ? 'rotate-90' : ''" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6" /></svg></button>
         <div v-if="estaAbierta(g.categoria)" class="pb-2">
           <div v-for="t in g.tipos" :key="t.tipo" class="mb-1">
             <button v-if="t.generico" type="button" :data-testid="`producto-${t.generico.prod_id}`"

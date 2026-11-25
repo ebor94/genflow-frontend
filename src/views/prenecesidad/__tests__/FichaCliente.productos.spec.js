@@ -20,10 +20,11 @@ it('cada interés muestra por definir, el precio ofrecido o solo el nombre', asy
     persona: { persona_nombre: 'Marta', persona_telefono_principal: '3001234567' },
     estado: { estado_nombre: 'Nuevo', estado_color_hex: '#8A6A52' }, asesor: { usr_nombre: 'D', usr_apellido: 'M' },
     productos: [
-      pp(1, { prod_nombre: 'Osarios', prod_es_generico: 1 }, null, 1),
-      pp(2, { prod_nombre: 'Osario A2', prod_precio_base: '8770000.00' }, '8770000.00'),
-      pp(3, { prod_nombre: 'Lote doble', prod_precio_base: '18950000.00' }, '18000000.00'),
-      pp(4, { prod_nombre: 'Velación', prod_precio_base: '1200000.00' }, null)
+      pp(1, { prod_nombre: 'Osarios', prod_tipo: 'Osarios', prod_es_generico: 1 }, null, 1),
+      pp(2, { prod_nombre: 'Osario A2', prod_tipo: 'Osarios', prod_precio_base: '8770000.00' }, '8770000.00'),
+      pp(3, { prod_nombre: 'Lote doble', prod_tipo: 'Lotes', prod_precio_base: '18950000.00' }, '18000000.00'),
+      pp(4, { prod_nombre: 'Velación', prod_tipo: 'Servicios', prod_precio_base: '1200000.00' }, null),
+      pp(5, { prod_nombre: 'Producto viejo', prod_tipo: null, prod_precio_base: '4200000.00' }, '4200000.00')
     ]
   };
   const w = mount(FichaCliente, {
@@ -38,6 +39,7 @@ it('cada interés muestra por definir, el precio ofrecido o solo el nombre', asy
     '⭐ Osarios · por definir',
     'Osario A2 · $ 8.770.000',
     'Lote doble · $ 18.000.000 (vigente $ 18.950.000)',
-    'Velación'
+    'Velación',
+    'Producto viejo'
   ]);
 });

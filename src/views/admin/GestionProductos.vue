@@ -25,7 +25,7 @@ const campos = computed(() => [
   { key: 'prod_nombre',      label: 'Nombre', type: 'text', required: true },
   { key: 'prod_descripcion', label: 'Descripción', type: 'textarea' },
   { key: 'prod_categoria',   label: 'Categoría', type: 'text' },
-  { key: 'prod_tipo',        label: 'Tipo', type: 'text' },
+  { key: 'prod_tipo',        label: 'Tipo', type: 'text', hint: 'Si un área tiene productos con tipo, sus asesores eligen el interés por categoría, tipo y producto.' },
   { key: 'prod_es_generico', label: 'Es "por definir" (representa al tipo, sin precio)', type: 'switch', default: 0 },
   { key: 'prod_precio_base', label: 'Precio base (COP)', type: 'number' },
   { key: 'prod_requiere_empresa', label: 'Requiere empresa (B2B)', type: 'switch' },

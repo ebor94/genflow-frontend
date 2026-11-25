@@ -25,8 +25,9 @@ export function agruparProductos(productos) {
     if (!categorias.has(categoria)) categorias.set(categoria, new Map());
     const tipos = categorias.get(categoria);
     if (!tipos.has(tipo)) tipos.set(tipo, { tipo, generico: null, productos: [] });
-    if (p.prod_es_generico) tipos.get(tipo).generico = p;
-    else tipos.get(tipo).productos.push(p);
+    const t = tipos.get(tipo);
+    if (p.prod_es_generico && !t.generico) t.generico = p; // una segunda fila "por definir" va con los productos, para que no desaparezca
+    else t.productos.push(p);
   }
   return [...categorias].map(([categoria, tipos]) => ({ categoria, tipos: [...tipos.values()] }));
 }
@@ -85,8 +86,12 @@ export function marcarPrincipalEn(seleccion, prodId) {
   return seleccion.map((s) => ({ ...s, es_principal: s.prod_id === prodId }));
 }
 
-/** Texto junto al nombre de un interés guardado (fila pp con su producto). */
+/**
+ * Texto junto al nombre de un interés guardado (fila pp con su producto).
+ * Solo los productos con tipo (catálogo con tipos) muestran precio; el resto, nada.
+ */
 export function detalleInteres(pp) {
+  if (!pp?.producto?.prod_tipo) return '';
   if (pp?.producto?.prod_es_generico) return 'por definir';
   const ofrecido = precioDe(pp?.pp_precio_ofrecido);
   if (!ofrecido) return '';
