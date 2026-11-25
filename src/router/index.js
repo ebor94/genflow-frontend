@@ -75,6 +75,8 @@ const routes = [
     meta: { requiereAuth: true, areaCodigo: 'PRENEC' } },
   { path: '/prenec/metricas',    name: 'prenec-metricas',  component: () => import('@/views/prenecesidad/MisMetricas.vue'),
     meta: { requiereAuth: true, areaCodigo: 'PRENEC' } },
+  { path: '/prenec/presupuesto', name: 'prenec-presupuesto', component: () => import('@/views/prenecesidad/Presupuesto.vue'),
+    meta: { requiereAuth: true, areaCodigo: 'PRENEC' } },
   { path: '/prenec/supervisor',  name: 'prenec-supervisor',component: () => import('@/views/prenecesidad/PanelSupervisor.vue'),
     meta: { requiereAuth: true, areaCodigo: 'PRENEC', nivelMaximo: 3 } },
   { path: '/prenec/llamada/:id', name: 'prenec-llamada',   component: () => import('@/views/prenecesidad/EnLlamada.vue'),

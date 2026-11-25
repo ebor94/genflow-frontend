@@ -76,6 +76,7 @@ function itemsDeArea(codigo) {
       { to: { name: 'prenec-salas' },    label: 'Salas de velación', icon: '🏛️' },
       { to: { name: 'prenec-agenda' },   label: 'Agenda área',      icon: '📅' },
       { to: { name: 'prenec-metricas' }, label: 'Mis métricas',     icon: '📊' },
+      { to: { name: 'prenec-presupuesto' }, label: 'Presupuesto',   icon: '🎯' },
       ...(sup ? [{ to: { name: 'prenec-supervisor' }, label: 'Panel supervisor', icon: '👁️' }] : []),
       ...reasignarItem,
       ...trackingItems

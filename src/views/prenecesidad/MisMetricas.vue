@@ -1,14 +1,18 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
+import { RouterLink } from 'vue-router';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { useApiError } from '@/composables/useApiError';
 import { reportesApi } from '@/api/reportesApi';
+import { presupuestosApi } from '@/api/presupuestosApi';
+import { mesLabel } from '@/utils/presupuesto';
 import { diaLocal, fmtCOP, fmtNumero } from '@/utils/format';
 
 import KpiCard from '@/components/dashboard/KpiCard.vue';
 import MetaBar from '@/components/common/MetaBar.vue';
 import BarraProgreso from '@/components/dashboard/BarraProgreso.vue';
 import BaseSelect from '@/components/ui/BaseSelect.vue';
+import ChipCumplimiento from '@/components/prenec/ChipCumplimiento.vue';
 
 const auth = useAuthStore();
 const { notify } = useApiError();
@@ -52,7 +56,18 @@ async function cargar() {
   finally { loading.value = false; }
 }
 
-onMounted(cargar);
+// Tarjeta del presupuesto del mes actual (lo propio). Si falla, Mis métricas sigue igual.
+const presupuestoMes = ref(null);
+const mesActual = new Date();
+async function cargarPresupuesto() {
+  try {
+    const r = await presupuestosApi.obtener({ area_id: auth.areaActivaId, anio: mesActual.getFullYear(), mes: mesActual.getMonth() + 1 });
+    const mio = (r.data?.asesores || []).find((a) => a.usr_id === auth.usuario?.usr_id);
+    presupuestoMes.value = { presupuesto: Number(mio?.presupuesto) || 0, realizado: Number(mio?.realizado) || 0 };
+  } catch { presupuestoMes.value = null; }
+}
+
+onMounted(() => { cargar(); cargarPresupuesto(); });
 
 const totales = computed(() => data.value?.totales || { gestiones: 0, interesados: 0, contratos: 0, valor: 0 });
 const tasaCierre = computed(() => totales.value.gestiones > 0
@@ -76,6 +91,23 @@ const distribucion = computed(() => data.value?.distribucion || []);
         <KpiCard label="Interesados" icon="🎯" :value="totales.interesados" color-hex="#1A5C8A" />
         <KpiCard label="Valor vendido" icon="💰" :value="fmtCOP(totales.valor)" color-hex="#9B4F20" />
       </div>
+
+      <RouterLink
+        v-if="presupuestoMes"
+        :to="{ name: 'prenec-presupuesto' }"
+        data-testid="tarjeta-presupuesto"
+        class="sv-card p-5 mb-5 flex items-center justify-between gap-3 flex-wrap hover:shadow-sv-pop transition-shadow"
+      >
+        <div>
+          <h3 class="font-serif text-lg text-brown-deep">Presupuesto del mes</h3>
+          <p class="text-xs text-text3">{{ mesLabel(mesActual.getFullYear(), mesActual.getMonth() + 1) }}</p>
+        </div>
+        <p v-if="!presupuestoMes.presupuesto" class="text-sm text-text2">Sin presupuesto este mes</p>
+        <div v-else class="flex items-center gap-3">
+          <span class="text-sm text-text1">{{ fmtCOP(presupuestoMes.realizado) }} de {{ fmtCOP(presupuestoMes.presupuesto) }}</span>
+          <ChipCumplimiento :realizado="presupuestoMes.realizado" :presupuesto="presupuestoMes.presupuesto" />
+        </div>
+      </RouterLink>
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
         <div class="sv-card p-5">
