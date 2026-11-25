@@ -473,7 +473,7 @@ describe('RegistrarGestion: la venta no se registra dos veces', () => {
     gestiones.registrar.mockRejectedValue(REPETIDA);
     await cerrarContrato(w);
     await registrar(w);
-    expect(toast.info).toHaveBeenCalledWith('La venta ya había quedado registrada');
+    expect(toast.info).toHaveBeenCalledWith('La venta ya había quedado registrada con lo que se envió primero. Revísala en la ficha.');
     expect(w.emitted('registrada')).toEqual([[null]]);
     expect(w.emitted('close')).toHaveLength(1);
     expect(toast.error).not.toHaveBeenCalled();
@@ -486,7 +486,7 @@ describe('RegistrarGestion: la venta no se registra dos veces', () => {
     const { w, toast } = await abrir({ homenajeSalaId: 55 });
     await cerrarContrato(w);
     await registrar(w);
-    expect(toast.info).toHaveBeenCalledWith('La venta ya había quedado registrada');
+    expect(toast.info).toHaveBeenCalledWith('La venta ya había quedado registrada con lo que se envió primero. Revísala en la ficha.');
     expect(w.emitted('registrada')).toEqual([[null]]);
     expect(w.emitted('close')).toHaveLength(1);
     expect(w.emitted('sala-cerrada')).toBeUndefined();
@@ -585,6 +585,13 @@ describe('RegistrarGestion: avisos al cerrar', () => {
     const { w } = await abrir();
     await cerrarContrato(w);
     expect(aviso(w)).toBe('Este cliente ya tiene una venta de $ 42.550.000 del 10 nov 2026. Si registras otra, se suman.');
+  });
+
+  it('la fecha de la última es el día, aunque el servidor mande la hora', async () => {
+    ventasApi.deProspecto.mockResolvedValue({ data: [venta(1, '42550000.00', '2026-11-24T05:00:00.000Z')] });
+    const { w } = await abrir();
+    await cerrarContrato(w);
+    expect(aviso(w)).toBe('Este cliente ya tiene una venta de $ 42.550.000 del 24 nov 2026. Si registras otra, se suman.');
   });
 
   it('solo con anuladas no avisa', async () => {

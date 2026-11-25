@@ -6,6 +6,7 @@
 import { ref, watch } from 'vue';
 import { ventasApi } from '@/api/ventasApi';
 import { useApiError } from '@/composables/useApiError';
+import { diaVenta } from '@/utils/ventas';
 import { fmtCOP, fmtFecha } from '@/utils/format';
 import BaseButton from '@/components/ui/BaseButton.vue';
 import CambiarVentaModal from '@/components/crm/CambiarVentaModal.vue';
@@ -47,7 +48,7 @@ const correcciones = (v) => (v.cambios || []).filter((c) => c.vc_accion === 'cor
     <article v-for="v in ventas" :key="v.venta_id" :data-testid="`venta-${v.venta_id}`"
              class="py-3 border-t border-text3/10 first:border-t-0 first:pt-0" :class="{ 'opacity-60': v.venta_anulada }">
       <div class="flex items-baseline justify-between gap-3">
-        <div class="text-sm text-text2">{{ fmtFecha(v.venta_fecha) }} · {{ persona(v.asesor) }}</div>
+        <div class="text-sm text-text2">{{ fmtFecha(diaVenta(v)) }} · {{ persona(v.asesor) }}</div>
         <div class="font-semibold whitespace-nowrap" :class="v.venta_anulada ? 'line-through text-text3' : 'text-sage'">{{ fmtCOP(Number(v.venta_total)) }}</div>
       </div>
       <ul class="text-xs text-text3 mt-1 space-y-0.5">

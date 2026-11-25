@@ -14,6 +14,7 @@ vi.mock('@/api/salasApi', () => ({ salasApi: { obtener: vi.fn() } }));
 vi.mock('@/api/personasApi', () => ({ personasApi: { prospectosActivos: vi.fn(async () => ({ data: [] })) } }));
 
 import { salasApi } from '@/api/salasApi';
+import { useProspectosStore } from '@/stores/useProspectosStore';
 import FichaCliente from '@/views/prenecesidad/FichaCliente.vue';
 import RegistrarGestion from '@/components/crm/RegistrarGestion.vue';
 
@@ -97,6 +98,24 @@ describe('FichaCliente con ?homenaje', () => {
     salasApi.obtener.mockRejectedValue({ response: { status: 404 } });
     w = factory();
     await flushPromises();
+    expect(w.find('[data-testid="aviso-visita-sala"]').exists()).toBe(false);
+  });
+
+  it('al cambiar de cliente, la visita del anterior no se aplica al nuevo', async () => {
+    ruta.query = { homenaje: '56' };
+    salasApi.obtener.mockResolvedValue({ success: true, data: HOMENAJE });
+    const pinia = createTestingPinia({ createSpy: vi.fn, initialState: { svProspectos: { activo: PROSPECTO } } });
+    const w = mount(FichaCliente, {
+      global: { plugins: [pinia], stubs: {
+        teleport: true, RegistrarGestion: true, AgendarProximaModal: true, ReasignarProspectoModal: true,
+        ProspectosCrossArea: true, QuickActionRow: true, HistorialItem: true, VentasCliente: true } }
+    });
+    await flushPromises();
+    expect(w.findComponent(RegistrarGestion).props('homenajeSalaId')).toBe(56);
+    const store = useProspectosStore(pinia);
+    store.activo = { ...PROSPECTO, prosp_id: 901 };
+    await w.vm.$nextTick();
+    expect(w.findComponent(RegistrarGestion).props('homenajeSalaId')).toBeNull();
     expect(w.find('[data-testid="aviso-visita-sala"]').exists()).toBe(false);
   });
 

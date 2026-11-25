@@ -57,6 +57,8 @@ async function cargarVisitaSala() {
 }
 
 const p = computed(() => store.activo);
+// Al cambiar de cliente, la visita del anterior sigue un momento: solo vale si es de este.
+const visitaDeEste = computed(() => (visitaSala.value?.cliente?.prosp_id === p.value?.prosp_id ? visitaSala.value : null));
 const persona = computed(() => p.value?.persona);
 const historial = computed(() => gestiones.historial.get(parseInt(route.params.id)) || { items: [], hasMore: false, loading: false });
 
@@ -131,7 +133,7 @@ function llamar() {
       </header>
 
       <!-- Visita en sala de velación -->
-      <section v-if="visitaSala" data-testid="aviso-visita-sala"
+      <section v-if="visitaDeEste" data-testid="aviso-visita-sala"
                class="sv-card p-4 mb-4 border-l-4 border-gold bg-gold/5 text-sm">
         🏛️ Visita en sala — {{ visitaSala.sala_nombre }}, {{ visitaSala.sede_nombre }} · homenaje de {{ visitaSala.nombre_ser_querido }}
       </section>
@@ -228,7 +230,7 @@ function llamar() {
       </section>
 
       <RegistrarGestion :open="showRegistrar" :prospecto="p"
-                        :homenaje-sala-id="visitaSala ? visitaSala.id : null"
+                        :homenaje-sala-id="visitaDeEste ? visitaDeEste.id : null"
                         @close="showRegistrar = false" @registrada="cargar"
                         @sala-cerrada="visitaSala = null" />
       <AgendarProximaModal :open="showAgendar" :prospecto="p" @close="showAgendar = false" @actualizado="cargar" />

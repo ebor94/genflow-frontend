@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { lineasIniciales, porDefinir, lineasDeVenta, lineaDe, subtotal, totalVenta, errorVenta, itemsVenta, nuevaClave } from '@/utils/ventas';
+import { lineasIniciales, porDefinir, lineasDeVenta, lineaDe, diaVenta, subtotal, totalVenta, errorVenta, itemsVenta, nuevaClave } from '@/utils/ventas';
 
 const p = (prod_id, prod_nombre, prod_precio_base, prod_es_generico = 0) => ({ prod_id, prod_nombre, prod_precio_base, prod_es_generico });
 const CATALOGO = [p(1, 'Osarios', null, 1), p(2, 'Osario A2', '8770000.00'), p(3, 'Lote doble', '18950000.00'), p(4, 'Nivel 1A', '0.00')];
@@ -52,10 +52,28 @@ describe('total, validación y envío', () => {
     ['cantidad 0', [L({ cantidad: 0 })], 'Revisa la cantidad de "Osario A2"'],
     ['sin precio', [L({ precio_unitario: null })], 'Escribe el precio de "Osario A2"'],
     ['precio 0', [L({ precio_unitario: 0 })], 'Escribe el precio de "Osario A2"'],
+    ['precio con decimales', [L({ precio_unitario: 8770000.5 })], 'Escribe el precio de "Osario A2"'],
     ['completa', [L(), L({ prod_id: 3, vendido: false, precio_unitario: null })], '']
   ])('%s', (_n, lineas, mensaje) => expect(errorVenta(lineas)).toBe(mensaje));
   it('envía solo lo vendido y solo los datos que el servidor espera', () => {
     expect(itemsVenta([L(), L({ prod_id: 3, vendido: false })])).toEqual([{ prod_id: 2, cantidad: 2, precio_unitario: 100 }]);
+  });
+});
+
+it('el precio de la lista con decimales se redondea a entero', () => {
+  expect(lineaDe({ prod_id: 5, prod_nombre: 'X', prod_precio_base: '8770000.60' }).precio_unitario).toBe(8770001);
+  expect(lineaDe({ prod_id: 5, prod_nombre: 'X', prod_precio_base: '100.00' }, '2500000.40').precio_unitario).toBe(2500000);
+});
+
+describe('día de la venta', () => {
+  it('son los primeros 10 caracteres, sea día u hora', () => {
+    expect(diaVenta({ venta_fecha: '2026-11-24' })).toBe('2026-11-24');
+    expect(diaVenta({ venta_fecha: '2026-11-24T05:00:00.000Z' })).toBe('2026-11-24');
+    expect(diaVenta({ venta_fecha: '2026-11-24T23:30:00.000Z' })).toBe('2026-11-24');
+  });
+  it('sin fecha da texto vacío', () => {
+    expect(diaVenta(null)).toBe('');
+    expect(diaVenta({})).toBe('');
   });
 });
 

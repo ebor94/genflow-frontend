@@ -72,4 +72,19 @@ describe('ProductosVendidos', () => {
       expect(ev.defaultPrevented).toBe(true);
     }
   });
+
+  describe('precio muy por encima de la lista', () => {
+    const aviso = (w) => w.find('[data-testid="precio-alto-2"]');
+    it('3 veces exactas no avisa', () => {
+      expect(aviso(montar([{ ...LINEA, precio_unitario: 8770000 * 3 }])).exists()).toBe(false);
+    });
+    it('más de 3 veces avisa con el precio de la lista y no impide guardar', () => {
+      const w = montar([{ ...LINEA, precio_unitario: 8770000 * 3 + 1 }]);
+      expect(plano(aviso(w))).toBe('Revisa el precio: es más de 3 veces el de la lista ($ 8.770.000)');
+      expect(aviso(w).classes()).toContain('text-warning');
+    });
+    it('sin precio en la lista no avisa', () => {
+      expect(montar([{ prod_id: 1, nombre: 'Osarios', vendido: true, cantidad: 1, precio_unitario: 99999999 }]).find('[data-testid="precio-alto-1"]').exists()).toBe(false);
+    });
+  });
 });

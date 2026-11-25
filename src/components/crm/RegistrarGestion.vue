@@ -19,7 +19,7 @@ import { prospectosApi } from '@/api/prospectosApi';
 import { salasApi } from '@/api/salasApi';
 import { ventasApi } from '@/api/ventasApi';
 import { tieneTipos } from '@/utils/catalogoProductos';
-import { lineasIniciales, porDefinir, errorVenta, itemsVenta, nuevaClave } from '@/utils/ventas';
+import { lineasIniciales, porDefinir, errorVenta, itemsVenta, nuevaClave, diaVenta } from '@/utils/ventas';
 import { fmtCOP, fmtFecha, fmtFechaHora } from '@/utils/format';
 
 import BaseModal from '@/components/ui/BaseModal.vue';
@@ -173,7 +173,7 @@ const avisoVentasPrevias = computed(() => {
   const n = ventasPrevias.value.length;
   if (!n) return '';
   const total = fmtCOP(ventasPrevias.value.reduce((suma, v) => suma + Number(v.venta_total), 0));
-  const fecha = fmtFecha(ventasPrevias.value[0].venta_fecha);
+  const fecha = fmtFecha(diaVenta(ventasPrevias.value[0]));
   const cuales = n === 1 ? `una venta de ${total} del ${fecha}` : `${n} ventas por ${total}; la última, del ${fecha}`;
   return `Este cliente ya tiene ${cuales}. Si registras otra, se suman.`;
 });
@@ -304,7 +304,7 @@ async function submit() {
       emit('close');
     } else if (base.venta && codigo === 'CONFLICT') {
       // Un intento anterior sí se guardó, aunque su respuesta no llegó.
-      toast.info('La venta ya había quedado registrada');
+      toast.info('La venta ya había quedado registrada con lo que se envió primero. Revísala en la ficha.');
       emit('registrada', null);
       emit('close');
     } else {

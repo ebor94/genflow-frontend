@@ -5,13 +5,21 @@
  */
 import { precioDe } from '@/utils/catalogoProductos';
 
+// La lista de Administración admite decimales y el servidor solo acepta pesos enteros.
+const enPesos = (valor) => (valor === null ? null : Math.round(valor));
+
+/** El día de la venta como texto: el servidor manda "2026-11-24" o "2026-11-24T05:00:00.000Z". */
+export function diaVenta(venta) {
+  return typeof venta?.venta_fecha === 'string' ? venta.venta_fecha.slice(0, 10) : '';
+}
+
 export function lineaDe(producto, precioOfrecido = null) {
   return {
     prod_id: producto.prod_id,
     nombre: producto.prod_nombre,
     vendido: true,
     cantidad: 1,
-    precio_unitario: precioDe(precioOfrecido) ?? precioDe(producto.prod_precio_base)
+    precio_unitario: enPesos(precioDe(precioOfrecido) ?? precioDe(producto.prod_precio_base))
   };
 }
 
@@ -59,7 +67,7 @@ export function errorVenta(lineas) {
   if (!v.length) return 'Marca al menos un producto vendido';
   const sinCantidad = v.find((l) => !Number.isInteger(l.cantidad) || l.cantidad < 1 || l.cantidad > 999);
   if (sinCantidad) return `Revisa la cantidad de "${sinCantidad.nombre}"`;
-  const sinPrecio = v.find((l) => !(l.precio_unitario > 0));
+  const sinPrecio = v.find((l) => !(l.precio_unitario > 0) || !Number.isInteger(l.precio_unitario));
   if (sinPrecio) return `Escribe el precio de "${sinPrecio.nombre}"`;
   return '';
 }

@@ -29,6 +29,12 @@ function alEscribir(e) {
       texto = texto.slice(0, cursor) + texto.slice(cursor + 1);
     }
   }
+  // En pesos la coma solo separa decimales (es-CO nunca la muestra): lo que sigue se descarta.
+  // Al pegar, un final ".00" o ",5" también son decimales ("8770000.00").
+  const coma = texto.indexOf(',');
+  if (coma >= 0) texto = texto.slice(0, coma);
+  if (e.inputType === 'insertFromPaste') texto = texto.replace(/[.,]\d{1,2}$/, '');
+  cursor = Math.min(cursor, texto.length);
   let aLaDerecha = texto.slice(cursor).replace(/\D/g, '').length;
   const digitos = texto.replace(/\D/g, '').slice(0, MAX_DIGITOS);
   const valor = digitos ? Number(digitos) : null;

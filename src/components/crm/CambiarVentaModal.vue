@@ -8,7 +8,7 @@ import { ref, computed, watch } from 'vue';
 import { ventasApi } from '@/api/ventasApi';
 import { useToastStore } from '@/stores/useToastStore';
 import { useApiError } from '@/composables/useApiError';
-import { errorVenta, itemsVenta, lineasDeVenta } from '@/utils/ventas';
+import { errorVenta, itemsVenta, lineasDeVenta, diaVenta } from '@/utils/ventas';
 import { fmtCOP, fmtFecha } from '@/utils/format';
 import BaseModal from '@/components/ui/BaseModal.vue';
 import BaseButton from '@/components/ui/BaseButton.vue';
@@ -44,6 +44,8 @@ async function guardar() {
   if (falta) { toast.warning(falta); return; }
   if (motivo.value.trim().length < 3) { toast.warning('Escribe el motivo'); return; }
 
+  if (motivo.value.trim().length > 250) { toast.warning('El motivo no puede pasar de 250 caracteres'); return; }
+
   const datos = { motivo: motivo.value.trim(), cambios_vistos: (props.venta.cambios || []).length };
   guardando.value = true;
   try {
@@ -66,7 +68,7 @@ async function guardar() {
   <BaseModal :open="!!venta" :title="anula ? 'Anular venta' : 'Corregir venta'" max-width="max-w-xl" @close="emit('close')">
     <div v-if="ultima" class="space-y-4">
       <p class="text-sm text-text2">
-        Venta del {{ fmtFecha(ultima.venta_fecha) }} por <strong>{{ fmtCOP(Number(ultima.venta_total)) }}</strong>.
+        Venta del {{ fmtFecha(diaVenta(ultima)) }} por <strong>{{ fmtCOP(Number(ultima.venta_total)) }}</strong>.
       </p>
       <p v-if="anula" class="text-sm text-warning">
         Dejará de sumar y de contar como contrato. El estado del cliente no cambia: si vuelve a proceso, registra una gestión.

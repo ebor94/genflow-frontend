@@ -104,6 +104,28 @@ describe('VentasCliente', () => {
     expect(w.findComponent(CambiarVentaModal).props('venta')).toBeNull();
   });
 
+  it('un motivo de más de 250 caracteres no se envía', async () => {
+    const { w, toast } = await montar();
+    await boton(w, 'Anular').trigger('click');
+    await w.get('textarea').setValue('a'.repeat(251));
+    await boton(w, 'Anular venta').trigger('click');
+    expect(toast.warning).toHaveBeenCalledWith('El motivo no puede pasar de 250 caracteres');
+    expect(ventasApi.anular).not.toHaveBeenCalled();
+    ventasApi.anular.mockResolvedValue({ data: {} });
+    await w.get('textarea').setValue('a'.repeat(250));
+    await boton(w, 'Anular venta').trigger('click');
+    await flushPromises();
+    expect(ventasApi.anular).toHaveBeenCalledTimes(1);
+  });
+
+  it('la fecha es el día, venga como día o como hora del servidor', async () => {
+    const { w } = await montar({}, [{ ...ACTIVA, venta_fecha: '2026-11-24T05:00:00.000Z' }, { ...ANULADA, venta_fecha: '2026-11-12' }]);
+    expect(plano(w.get('[data-testid="venta-40"]'))).toContain('24 nov 2026');
+    expect(plano(w.get('[data-testid="venta-39"]'))).toContain('12 nov 2026');
+    await boton(w, 'Corregir').trigger('click');
+    expect(w.text()).toContain('Venta del 24 nov 2026');
+  });
+
   it('anular pide motivo y avisa que el estado del cliente no cambia', async () => {
     const { w, toast } = await montar();
     ventasApi.anular.mockResolvedValue({ data: {} });

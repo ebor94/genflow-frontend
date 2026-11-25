@@ -54,6 +54,33 @@ describe('CampoPesos', () => {
     await escribir(input, '123456789012');
     expect(w.emitted('update:modelValue').at(-1)).toEqual([1234567890]);
   });
+  describe('decimales', () => {
+    async function pegar(input, texto) {
+      input.element.value = texto;
+      input.element.setSelectionRange(texto.length, texto.length);
+      input.element.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'insertFromPaste' }));
+      await input.trigger('blur');
+    }
+    it.each(['8.770.000,00', '$ 8.770.000,00', '8770000.00', '8770000,00'])('pegar %s da 8770000', async (texto) => {
+      const { w, input } = montar();
+      await pegar(input, texto);
+      expect(w.emitted('update:modelValue').at(-1)).toEqual([8770000]);
+      expect(input.element.value).toBe('8.770.000');
+    });
+    it('escribir una coma no cambia el valor', async () => {
+      const { w, input } = montar(8770000);
+      await escribir(input, '8.770.000,');
+      expect(input.element.value).toBe('8.770.000');
+      expect(w.emitted('update:modelValue')).toBeUndefined();
+    });
+    it('pegar miles sin decimales respeta el valor', async () => {
+      const { w, input } = montar();
+      await pegar(input, '1.250.000');
+      expect(w.emitted('update:modelValue').at(-1)).toEqual([1250000]);
+      await pegar(input, '8.770');
+      expect(w.emitted('update:modelValue').at(-1)).toEqual([8770]);
+    });
+  });
   describe('borrar', () => {
     async function borrar(input, texto, cursor, inputType) {
       input.element.value = texto;

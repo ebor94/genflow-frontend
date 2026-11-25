@@ -6,7 +6,7 @@
  */
 import { computed } from 'vue';
 import { fmtCOP } from '@/utils/format';
-import { agruparProductos } from '@/utils/catalogoProductos';
+import { agruparProductos, precioDe } from '@/utils/catalogoProductos';
 import { lineaDe, subtotal, totalVenta } from '@/utils/ventas';
 import CampoPesos from '@/components/ui/CampoPesos.vue';
 
@@ -25,6 +25,10 @@ const grupos = computed(() => {
   return agruparProductos(props.productos.filter((p) => !p.prod_es_generico && !puestos.has(p.prod_id)))
     .flatMap((g) => g.tipos.map((t) => ({ titulo: `${g.categoria} › ${t.tipo}`, productos: t.productos })));
 });
+
+// Más de 3 veces el precio de la lista: casi siempre es un cero de más. Solo avisa.
+const precioDeLista = (l) => precioDe(props.productos.find((p) => p.prod_id === l.prod_id)?.prod_precio_base);
+const muyAlto = (l) => { const lista = precioDeLista(l); return !!lista && (l.precio_unitario || 0) > lista * 3; };
 
 function cambiar(prodId, datos) {
   emit('update:modelValue', props.modelValue.map((l) => (l.prod_id === prodId ? { ...l, ...datos } : l)));
@@ -66,6 +70,7 @@ function agregar(e) {
         <span :data-testid="`subtotal-${l.prod_id}`"
               class="col-span-2 sm:col-span-1 text-right text-sm font-semibold text-text1 whitespace-nowrap">{{ fmtCOP(subtotal(l)) }}</span>
       </div>
+      <p v-if="l.vendido && muyAlto(l)" :data-testid="`precio-alto-${l.prod_id}`" class="text-xs text-warning mt-1">Revisa el precio: es más de 3 veces el de la lista ({{ fmtCOP(precioDeLista(l)) }})</p>
     </div>
 
     <select data-testid="agregar-producto" aria-label="Agregar otro producto" class="sv-input" @change="agregar">
