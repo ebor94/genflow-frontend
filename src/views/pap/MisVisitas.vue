@@ -162,7 +162,7 @@ watch(q, () => {
             <StatusPill v-if="p.estado" :label="p.estado.estado_nombre" :color-hex="p.estado.estado_color_hex || '#2A6E47'" />
           </div>
           <div v-if="p.prosp_prox_gestion_fecha" class="text-[10px] text-warning font-semibold mt-1">
-            🔁 Volver: {{ fmtRelativo(p.prosp_prox_gestion_fecha) }}
+            {{ p.estado?.estado_codigo === 'VOLVER' ? '🔁 Volver' : '📅 Seguimiento' }}: {{ fmtRelativo(p.prosp_prox_gestion_fecha) }}
           </div>
         </div>
         <!-- Si el prospecto ya está afiliado (estado final-ganado), no se muestra el botón de gestión -->

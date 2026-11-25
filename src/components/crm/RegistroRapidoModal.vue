@@ -13,6 +13,7 @@ import { useToastStore } from '@/stores/useToastStore';
 import { useApiError } from '@/composables/useApiError';
 import { useGeolocation } from '@/composables/useGeolocation';
 import { dayjs, diaLocal } from '@/utils/format';
+import { pideFechaPap } from '@/utils/pap';
 
 import BaseInput from '@/components/ui/BaseInput.vue';
 import BaseButton from '@/components/ui/BaseButton.vue';
@@ -35,15 +36,17 @@ const form = ref({
   resultado_codigo: 'AFILIADO_HOY',
   plan: null,
   comentario: '',
-  prox_fecha: '',     // requerido solo si resultado_codigo === 'VOLVER'
+  prox_fecha: '',     // requerido si el resultado pide fecha (VOLVER o según catálogo)
   prox_hora:  '09:00'
 });
 
-// Fecha default sugerida cuando el asesor marca VOLVER: mañana
+// Fecha default sugerida cuando el resultado pide fecha: mañana
 function fechaDefaultManana() {
   return diaLocal(dayjs().add(1, 'day'));
 }
 const saving = ref(false);
+
+const pideFecha = computed(() => pideFechaPap(config.actual?.resultados, form.value.resultado_codigo));
 
 const RESULTADOS = [
   { codigo: 'AFILIADO_HOY',  label: 'Afiliado hoy',  icon: '✅', color: 'sage'    },
@@ -76,7 +79,7 @@ async function guardarYsiguiente() {
     toast.warning('Nombre y teléfono son obligatorios');
     return;
   }
-  if (form.value.resultado_codigo === 'VOLVER' && !form.value.prox_fecha) {
+  if (pideFecha.value && !form.value.prox_fecha) {
     toast.warning('Indica cuándo debes volver a visitar');
     return;
   }
@@ -88,16 +91,16 @@ async function guardar() {
     toast.warning('Nombre y teléfono son obligatorios');
     return;
   }
-  if (form.value.resultado_codigo === 'VOLVER' && !form.value.prox_fecha) {
+  if (pideFecha.value && !form.value.prox_fecha) {
     toast.warning('Indica cuándo debes volver a visitar');
     return;
   }
   await registrar(false);
 }
 
-// Auto-sugerir fecha mañana al cambiar a VOLVER si aún no se eligió ninguna
-watch(() => form.value.resultado_codigo, (codigo) => {
-  if (codigo === 'VOLVER' && !form.value.prox_fecha) {
+// Auto-sugerir fecha mañana al cambiar a un resultado que pide fecha, si aún no hay ninguna
+watch(pideFecha, (pide) => {
+  if (pide && !form.value.prox_fecha) {
     form.value.prox_fecha = fechaDefaultManana();
   }
 });
@@ -107,6 +110,10 @@ async function sinRespuesta() {
   form.value.nombre = form.value.nombre || 'Sin respuesta';
   form.value.telefono = form.value.telefono || `SR-${Date.now()}`;
   form.value.resultado_codigo = 'SIN_RESPUESTA';
+  if (pideFecha.value && !form.value.prox_fecha) {
+    toast.warning('Indica cuándo debes volver a visitar');
+    return;
+  }
   await registrar(true);
 }
 
@@ -122,9 +129,9 @@ async function registrar(continuar = false) {
       comentario: form.value.comentario.trim() || null,
       lat: coords.value?.lat || null,
       lng: coords.value?.lng || null,
-      // Solo se envían cuando resultado es VOLVER; backend los ignora en otros casos
-      prox_fecha: form.value.resultado_codigo === 'VOLVER' ? form.value.prox_fecha || null : null,
-      prox_hora:  form.value.resultado_codigo === 'VOLVER' ? form.value.prox_hora  || null : null
+      // Solo se envían cuando el resultado pide fecha; en los demás van nulos
+      prox_fecha: pideFecha.value ? form.value.prox_fecha || null : null,
+      prox_hora:  pideFecha.value ? form.value.prox_hora  || null : null
     };
     const r = await pap.registrar(payload);
 
@@ -199,10 +206,10 @@ function colorResultado(r) {
           </div>
         </div>
 
-        <!-- Fecha de retorno (si VOLVER) -->
-        <div v-if="form.resultado_codigo === 'VOLVER'"
+        <!-- Fecha de la próxima visita (si el resultado la pide) -->
+        <div v-if="pideFecha"
              class="sv-card border-2 border-area-emp/40 bg-area-emp/5 p-3 space-y-2">
-          <label class="sv-label flex items-center gap-1">🗓️ ¿Cuándo debes volver? <span class="text-danger">*</span></label>
+          <label class="sv-label flex items-center gap-1">🗓️ {{ form.resultado_codigo === 'VOLVER' ? '¿Cuándo debes volver?' : '¿Cuándo es el seguimiento?' }} <span class="text-danger">*</span></label>
           <div class="grid grid-cols-2 gap-2">
             <BaseInput v-model="form.prox_fecha" type="date" label="Fecha" required />
             <BaseInput v-model="form.prox_hora"  type="time" label="Hora"  required />

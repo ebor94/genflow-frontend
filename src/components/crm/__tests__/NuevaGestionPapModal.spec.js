@@ -17,9 +17,9 @@ const RESULTADOS = [
 ].map(([codigo, nombre], i) => ({ resultado_id: i + 1, resultado_codigo: codigo, resultado_nombre: nombre, resultado_grupo_id: 3, resultado_activo: true }));
 const ESTADOS = ['INTERESADO', 'VOLVER'].map((codigo, i) => ({ estado_id: i + 10, estado_codigo: codigo, estado_grupo_id: 3, estado_activo: true }));
 
-async function abrir() {
+async function abrir(resultados = RESULTADOS) {
   const pinia = createTestingPinia({ createSpy: vi.fn });
-  useConfigStore().actual = { resultados: RESULTADOS, estados: ESTADOS };
+  useConfigStore().actual = { resultados, estados: ESTADOS };
   const store = useGestionesStore();
   store.registrar.mockResolvedValue({});
   const w = mount(NuevaGestionPapModal, {
@@ -48,5 +48,20 @@ describe('NuevaGestionPapModal: la visita cumple la cita pendiente', () => {
     await boton(w, 'Registrar visita').trigger('click');
     await flushPromises();
     expect(store.registrar).toHaveBeenCalledWith(expect.objectContaining({ quitar_prox: false, gest_prox_fecha: '2026-12-01' }));
+  });
+
+  it('con Interesado marcado pide fecha: avisa sin ella y la manda con ella', async () => {
+    const marcados = RESULTADOS.map((r) => (r.resultado_codigo === 'INTERESADO' ? { ...r, resultado_requiere_fecha: 1 } : r));
+    const { w, store } = await abrir(marcados);
+    expect(w.find('input[type="date"]').exists()).toBe(false);
+    await boton(w, 'Interesado').trigger('click');
+    expect(w.text()).toContain('¿Cuándo es el seguimiento?');
+    await boton(w, 'Registrar visita').trigger('click');
+    await flushPromises();
+    expect(store.registrar).not.toHaveBeenCalled();
+    await w.find('input[type="date"]').setValue('2026-12-02');
+    await boton(w, 'Registrar visita').trigger('click');
+    await flushPromises();
+    expect(store.registrar).toHaveBeenCalledWith(expect.objectContaining({ quitar_prox: false, gest_prox_fecha: '2026-12-02' }));
   });
 });

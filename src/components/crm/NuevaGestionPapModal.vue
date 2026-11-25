@@ -7,7 +7,7 @@
  * Mapeo automático resultado → nuevo estado del prospecto:
  *   AFILIADO_HOY  → AFILIADO
  *   INTERESADO    → INTERESADO
- *   VOLVER        → VOLVER (puede pedir fecha de retorno)
+ *   VOLVER        → VOLVER (pide fecha de retorno; otros resultados, según el catálogo)
  *   NO_INTERESADO → NO_INTERES
  *   SIN_RESPUESTA → VISITADO
  */
@@ -17,6 +17,7 @@ import { useGestionesStore } from '@/stores/useGestionesStore';
 import { useToastStore } from '@/stores/useToastStore';
 import { useApiError } from '@/composables/useApiError';
 import { useGeolocation } from '@/composables/useGeolocation';
+import { pideFechaPap } from '@/utils/pap';
 
 import BaseModal from '@/components/ui/BaseModal.vue';
 import BaseInput from '@/components/ui/BaseInput.vue';
@@ -82,7 +83,8 @@ const botones = computed(() =>
     .filter(Boolean)
 );
 
-const requiereFecha = computed(() => resultadoSel.value === 'VOLVER');
+// "Volver" siempre pide fecha; los demás resultados, según el catálogo.
+const requiereFecha = computed(() => pideFechaPap(config.actual?.resultados, resultadoSel.value));
 
 watch(() => props.open, async (v) => {
   if (v) {
@@ -112,7 +114,7 @@ async function guardar() {
   }
 
   if (requiereFecha.value && !proxFecha.value) {
-    toast.warning('Indica la fecha para volver a visitar'); return;
+    toast.warning('Indica la fecha de la próxima visita'); return;
   }
 
   saving.value = true;
@@ -182,9 +184,9 @@ async function guardar() {
         </div>
       </div>
 
-      <!-- Fecha próxima solo si VOLVER -->
+      <!-- Fecha próxima si el resultado la pide -->
       <div v-if="requiereFecha" class="sv-card border border-area-emp/30 bg-area-emp/5 p-3">
-        <div class="text-xs text-area-emp font-semibold mb-2">📅 ¿Cuándo volver?</div>
+        <div class="text-xs text-area-emp font-semibold mb-2">📅 {{ resultadoSel === 'VOLVER' ? '¿Cuándo volver?' : '¿Cuándo es el seguimiento?' }}</div>
         <BaseInput v-model="proxFecha" type="date" required />
       </div>
 
