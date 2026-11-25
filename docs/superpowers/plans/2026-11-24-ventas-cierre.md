@@ -2865,9 +2865,15 @@ Aplica con `git apply` este diff, sin cambiarlo:
 
 ---
 
+### Ajustes de las revisiones (commits aparte)
+
+Las revisiones de tarea encontraron tres caminos que registraban una venta equivocada (estado automático que no se deshacía, reenvío que duplicaba, cambio de cliente con la ventana abierta) y huecos menores. Se corrigieron en `33abe62` y `1267750` (backend) y `4a3af17` (GenFlow); las reglas quedaron en el spec §3 (14 a 16), §5 y §7. El código de las tareas de arriba es el anterior a esos ajustes.
+
+---
+
 ### Task 9: Integración y despliegue (con el usuario)
 
-**Orden obligatorio:** 027 antes de que el backend llegue a `main` (los reportes y el snapshot de las 11:55 p. m. consultan las tablas nuevas), y backend antes que GenFlow (el actual descarta la venta en silencio).
+**Orden obligatorio:** 027 antes de que el backend llegue a `main` (los reportes y el snapshot de las 11:55 p. m. consultan las tablas nuevas), y backend antes que GenFlow (el actual descarta la venta en silencio). Entre el backend y GenFlow, cerrar un contrato de Prenecesidad responde 422 pidiendo recargar.
 
 - [ ] **Step 1:** `git fetch` y `git merge origin/main` en ambos; suites completas; verificar que 027 siga libre.
 - [ ] **Step 2 (con confirmación):** push **solo de la rama** del backend.
@@ -2878,7 +2884,7 @@ SELECT TABLE_NAME, COUNT(*) AS columnas FROM information_schema.COLUMNS
  WHERE TABLE_SCHEMA = 'serfuweb' AND TABLE_NAME LIKE 'sv_crm_ventas%' GROUP BY TABLE_NAME;
 ```
 
-Debe dar `sv_crm_ventas` 11, `sv_crm_ventas_cambios` 9 y `sv_crm_ventas_items` 6.
+Debe dar `sv_crm_ventas` 12, `sv_crm_ventas_cambios` 9 y `sv_crm_ventas_items` 6.
 
 - [ ] **Step 4 (con confirmación):** push del backend a `main`. **(usuario)** `deploy-mantix`; sin `doesn't exist` ni `Cannot find module` en los logs.
 - [ ] **Step 5 (con confirmación):** GenFlow: merge a `main`, push, build, respaldo, `rsync --delete --exclude '.htaccess'` y paridad.

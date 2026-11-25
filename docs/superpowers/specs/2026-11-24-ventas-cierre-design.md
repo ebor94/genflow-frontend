@@ -33,20 +33,24 @@ Hoy "Valor vendido" siempre es $0: `snapshot.service` lo escribe fijo en cero.
 10. Corregir y anular: roles supervisores dentro de su alcance (`fueraDeAlcance`). Motivo de 3 a 250 caracteres. Anular no cambia el estado del cliente.
 11. Cada corrección o anulación deja quién, cuándo, motivo, total anterior y nuevo, y los productos de antes y después. Nada se borra.
 12. Si alguien más cambió la venta desde que se abrió la ventana, responde 409 y se recarga (`cambios_vistos`).
-13. Un contrato es una venta activa del asesor dueño. Los cierres sin venta (otras áreas, o anteriores a la 027) se cuentan como siempre. Una venta anulada no cuenta.
+13. Un contrato es una venta activa del asesor dueño. Los cierres sin venta (otras áreas, o anteriores a la 027) se cuentan por cliente y día, como el snapshot; el panel del equipo contaba cada gestión. Una venta anulada no cuenta.
+14. Cada formulario envía una clave única (`clave`, 8 a 40 caracteres). Repetirla responde 409 y no guarda nada: reenviar tras perder la respuesta no duplica la venta.
+15. Un cliente no nace cerrado: crear un prospecto en un estado ganado se rechaza en las áreas que registran ventas.
+16. El estado que se puso solo por "Contrato firmado" se deshace si cambian el resultado. Si cambia el cliente con la ventana abierta, el formulario empieza de cero.
 
 ## 4. Datos (migración 027, solo crea tablas)
 
-- `sv_crm_ventas`: cliente, gestión (única), asesor, área, fecha, total, anulada, quién la registró.
+- `sv_crm_ventas`: cliente, gestión (única), clave (única), asesor, área, fecha, total, anulada, quién la registró.
 - `sv_crm_ventas_items`: producto, cantidad, precio ofrecido y precio vendido.
 - `sv_crm_ventas_cambios`: acción, motivo, totales y detalle JSON.
 
 ## 5. Backend
 
-- `POST /gestiones` y `POST /salas/homenajes/:id/visitas` aceptan `venta: { items: [{ prod_id, cantidad, precio_unitario }] }`.
+- `POST /gestiones` y `POST /salas/homenajes/:id/visitas` aceptan `venta: { clave, items: [{ prod_id, cantidad, precio_unitario }] }`.
 - `GET /prospectos/:id/ventas`: quien puede ver al cliente.
 - `PUT /ventas/:id` (`items`, `motivo`, `cambios_vistos`) y `POST /ventas/:id/anular` (`motivo`, `cambios_vistos`).
 - `reportes`: contratos y valor se calculan al momento con `ventas.metricasPorAsesor`; `reporteEquipo` agrega `snap_valor_vendido_cop` y `registra_ventas`. `snapshot` usa la misma regla.
+- Una gestión ya guardada no se responde como error aunque falle leerla después.
 - Cerrar sin venta responde 422 con un mensaje que pide recargar GenFlow (pantallas viejas).
 
 ## 6. GenFlow
@@ -64,6 +68,9 @@ Hoy "Valor vendido" siempre es $0: `snapshot.service` lo escribe fijo en cero.
 | Falta cantidad o precio | Aviso con el nombre del producto; no se envía |
 | Producto desactivado mientras se cerraba | 422; pide recargar |
 | No se pueden consultar las ventas previas | Se cierra igual, sin el aviso |
+| Se pierde la respuesta y la persona reenvía | 409: "La venta ya había quedado registrada" y se cierra |
+| Falla el historial después de guardar | La gestión cuenta como guardada |
+| Interés que se quitó antes de cerrar | No queda vendido |
 | Corrección sin cambios | 422 "No hay cambios para guardar" |
 | Venta ya anulada | 409 |
 | Error al corregir | La ventana sigue abierta con lo escrito |
