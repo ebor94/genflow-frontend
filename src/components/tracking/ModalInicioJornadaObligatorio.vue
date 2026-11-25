@@ -151,10 +151,10 @@ async function iniciarJornada() {
       toast.success('Jornada iniciada. Tracking activo.');
     }
   } catch (e) {
-    toast.error(
-      e?.response?.data?.error?.message
-      || 'No se pudo iniciar la jornada. Intenta de nuevo.'
-    );
+    toast.error(e?.response?.data?.message || 'No se pudo iniciar la jornada. Intenta de nuevo.');
+    if (e?.response?.status === 409 && e?.response?.data?.error === 'AUSENTE') {
+      jornObl.chequear({ force: true });
+    }
   } finally {
     cargando.value = false;
   }
@@ -170,7 +170,7 @@ async function confirmarAusencia() {
     });
     toast.success('Ausencia registrada por hoy.');
   } catch (e) {
-    toast.error(e.response?.data?.error?.message || 'No se pudo registrar la ausencia.');
+    toast.error(e?.response?.data?.message || 'No se pudo registrar la ausencia.');
   } finally {
     cargando.value = false;
   }

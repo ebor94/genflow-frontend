@@ -6,6 +6,7 @@
 import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
 import { trackingApi } from '@/api/trackingApi';
+import { useTrackingStore } from '@/stores/useTrackingStore';
 
 const CACHE_MS = 60_000;
 
@@ -20,20 +21,30 @@ export const useJornadaObligatoriaStore = defineStore('svJornadaObligatoria', ()
     if (!force && Date.now() - ultimoChequeoAt.value < CACHE_MS) return;
     if (chequeando.value) return;
     chequeando.value = true;
+    const tracking = useTrackingStore();
     try {
       const r = await trackingApi.estadoJornadaHoy();
       const data = r?.data || r; // tolera envolturas {ok:true,data:{}} o crudas
-      if (data.estado === 'ausente')             estado.value = 'ausente';
-      else if (data.requiere_popup)              estado.value = 'bloqueado';
-      else                                       estado.value = 'ok';
+      if (data.estado === 'activa' && data.jornada) {
+        estado.value = 'ok';
+        tracking.reanudar(data.jornada);
+      } else if (data.estado === 'ausente') {
+        estado.value = 'ausente';
+        tracking.detener();
+      } else if (data.requiere_popup) {
+        estado.value = 'bloqueado';
+        tracking.detener();
+      } else {
+        estado.value = 'ok';
+        tracking.detener();
+      }
       ultimoChequeoAt.value = Date.now();
     } catch (e) {
-      // Fail CLOSED: no permitir bypass de política de tracking por caída de red.
-      // El popup se muestra; iniciarJornada intentará de nuevo contra el backend
-      // (allí el usuario ve el toast de error si sigue caído).
-      estado.value = 'bloqueado';
+      // Sin red: sigue la copia del navegador si es de este usuario y de hoy;
+      // si no, fail CLOSED (el popup se muestra).
+      estado.value = tracking.reanudarLocal() ? 'ok' : 'bloqueado';
       ultimoChequeoAt.value = Date.now();
-      console.warn('[jornada-obligatoria] chequear falló → fail-closed:', e?.message || e);
+      console.warn('[jornada-obligatoria] chequear falló → chequeo falló:', e?.message || e);
     } finally {
       chequeando.value = false;
     }
@@ -41,6 +52,7 @@ export const useJornadaObligatoriaStore = defineStore('svJornadaObligatoria', ()
 
   async function marcarAusencia({ tipo, motivo }) {
     await trackingApi.registrarAusenciaHoy({ tipo, motivo });
+    useTrackingStore().detener();
     estado.value = 'ausente';
     ultimoChequeoAt.value = Date.now();
   }

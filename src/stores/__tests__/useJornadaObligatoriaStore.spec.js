@@ -9,6 +9,11 @@ vi.mock('@/api/trackingApi', () => ({
   }
 }));
 
+const tracking = vi.hoisted(() => ({
+  reanudar: vi.fn(), detener: vi.fn(), reanudarLocal: vi.fn(() => false)
+}));
+vi.mock('@/stores/useTrackingStore', () => ({ useTrackingStore: () => tracking }));
+
 import { trackingApi } from '@/api/trackingApi';
 import { useJornadaObligatoriaStore } from '@/stores/useJornadaObligatoriaStore';
 
@@ -16,6 +21,7 @@ describe('useJornadaObligatoriaStore', () => {
   beforeEach(() => {
     setActivePinia(createPinia());
     vi.clearAllMocks();
+    tracking.reanudarLocal.mockReturnValue(false);
   });
 
   it('estado inicial es sin_chequear', () => {
@@ -93,5 +99,61 @@ describe('useJornadaObligatoriaStore', () => {
     s.marcarJornadaIniciada();
     s.reset();
     expect(s.estado).toBe('sin_chequear');
+  });
+
+  it('activa → ok y reanuda la captura con la jornada del backend', async () => {
+    const jornada = { jor_id: 'x', jor_inicio_at: 'a' };
+    trackingApi.estadoJornadaHoy.mockResolvedValue({ data: { estado: 'activa', requiere_popup: false, jornada } });
+    const s = useJornadaObligatoriaStore();
+    await s.chequear();
+    expect(s.estado).toBe('ok');
+    expect(tracking.reanudar).toHaveBeenCalledWith(jornada);
+    expect(tracking.detener).not.toHaveBeenCalled();
+  });
+
+  it('ausente → detiene la captura', async () => {
+    trackingApi.estadoJornadaHoy.mockResolvedValue({ data: { estado: 'ausente', requiere_popup: false } });
+    await useJornadaObligatoriaStore().chequear();
+    expect(tracking.detener).toHaveBeenCalled();
+    expect(tracking.reanudar).not.toHaveBeenCalled();
+  });
+
+  it('sin_iniciar con popup → bloqueado y detiene', async () => {
+    trackingApi.estadoJornadaHoy.mockResolvedValue({ data: { estado: 'sin_iniciar', requiere_popup: true } });
+    const s = useJornadaObligatoriaStore();
+    await s.chequear();
+    expect(s.estado).toBe('bloqueado');
+    expect(tracking.detener).toHaveBeenCalled();
+  });
+
+  it('finalizada → ok y detiene', async () => {
+    trackingApi.estadoJornadaHoy.mockResolvedValue({ data: { estado: 'finalizada', requiere_popup: false, jornada: { jor_id: 'x' } } });
+    const s = useJornadaObligatoriaStore();
+    await s.chequear();
+    expect(s.estado).toBe('ok');
+    expect(tracking.detener).toHaveBeenCalled();
+    expect(tracking.reanudar).not.toHaveBeenCalled();
+  });
+
+  it('rol no operativo (sin_iniciar sin popup) → ok y detiene', async () => {
+    trackingApi.estadoJornadaHoy.mockResolvedValue({ data: { estado: 'sin_iniciar', requiere_popup: false } });
+    const s = useJornadaObligatoriaStore();
+    await s.chequear();
+    expect(s.estado).toBe('ok');
+    expect(tracking.detener).toHaveBeenCalled();
+  });
+
+  it('error de red con copia válida de hoy → ok', async () => {
+    trackingApi.estadoJornadaHoy.mockRejectedValue(new Error('Network Error'));
+    tracking.reanudarLocal.mockReturnValue(true);
+    const s = useJornadaObligatoriaStore();
+    await s.chequear();
+    expect(s.estado).toBe('ok');
+  });
+
+  it('marcarAusencia detiene la captura', async () => {
+    trackingApi.registrarAusenciaHoy.mockResolvedValue({ data: { aus_id: 9 } });
+    await useJornadaObligatoriaStore().marcarAusencia({ tipo: 'PERMISO', motivo: 'cita' });
+    expect(tracking.detener).toHaveBeenCalled();
   });
 });

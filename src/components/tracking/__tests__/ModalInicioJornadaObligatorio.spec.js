@@ -4,6 +4,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import ModalInicioJornadaObligatorio from '@/components/tracking/ModalInicioJornadaObligatorio.vue';
 import { useJornadaObligatoriaStore } from '@/stores/useJornadaObligatoriaStore';
 import { useTrackingStore } from '@/stores/useTrackingStore';
+import { useToastStore } from '@/stores/useToastStore';
 
 function factory() {
   return mount(ModalInicioJornadaObligatorio, {
@@ -76,5 +77,39 @@ describe('ModalInicioJornadaObligatorio', () => {
 
     expect(tracking.iniciar).toHaveBeenCalled();
     expect(jornStore.marcarJornadaIniciada).toHaveBeenCalled();
+  });
+
+  it('al fallar muestra el message del backend', async () => {
+    const wrapper = factory();
+    const tracking = useTrackingStore();
+    const toast = useToastStore();
+    tracking.iniciar = vi.fn().mockRejectedValue({ response: { status: 500, data: { message: 'Algo pasó' } } });
+    toast.error = vi.fn();
+    await wrapper.find('[data-testid="btn-iniciar-jornada"]').trigger('click');
+    await flushPromises();
+    expect(toast.error).toHaveBeenCalledWith('Algo pasó');
+  });
+
+  it('con 409 AUSENTE vuelve a preguntar al backend', async () => {
+    const wrapper = factory();
+    const tracking = useTrackingStore();
+    const jornStore = useJornadaObligatoriaStore();
+    tracking.iniciar = vi.fn().mockRejectedValue({
+      response: { status: 409, data: { success: false, error: 'AUSENTE', message: 'Hoy marcaste que no laboras' } }
+    });
+    jornStore.chequear = vi.fn();
+    await wrapper.find('[data-testid="btn-iniciar-jornada"]').trigger('click');
+    await flushPromises();
+    expect(jornStore.chequear).toHaveBeenCalledWith({ force: true });
+  });
+
+  it('otro error no vuelve a preguntar', async () => {
+    const wrapper = factory();
+    useTrackingStore().iniciar = vi.fn().mockRejectedValue({ response: { status: 500, data: { message: 'x' } } });
+    const jornStore = useJornadaObligatoriaStore();
+    jornStore.chequear = vi.fn();
+    await wrapper.find('[data-testid="btn-iniciar-jornada"]').trigger('click');
+    await flushPromises();
+    expect(jornStore.chequear).not.toHaveBeenCalled();
   });
 });
