@@ -171,6 +171,7 @@ async function confirmarAusencia() {
     toast.success('Ausencia registrada por hoy.');
   } catch (e) {
     toast.error(e?.response?.data?.message || 'No se pudo registrar la ausencia.');
+    if (e?.response?.status === 409) jornObl.chequear({ force: true });
   } finally {
     cargando.value = false;
   }

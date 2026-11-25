@@ -19,4 +19,16 @@ describe('JornadaWidget', () => {
     expect(tracking.restaurar).toBeUndefined();
     wrapper.unmount();
   });
+
+  it('montado con la persona ya puesta (recarga real) tampoco arranca nada', async () => {
+    const pinia = createTestingPinia({ createSpy: vi.fn, stubActions: true });
+    const auth = useAuthStore(pinia);
+    auth.accessToken = 'a';
+    auth.usuario = { usr_id: 1, rol: { rol_codigo: 'ASESOR' }, area: { area_codigo: 'PREV-PAP' } };
+    const tracking = useTrackingStore(pinia);
+    const wrapper = mount(JornadaWidget, { global: { plugins: [pinia] } });
+    await flushPromises();
+    for (const k of ['iniciar', 'reanudar', 'reanudarLocal']) expect(tracking[k]).not.toHaveBeenCalled();
+    wrapper.unmount();
+  });
 });

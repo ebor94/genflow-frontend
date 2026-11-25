@@ -145,10 +145,12 @@ export const useAuthStore = defineStore('svAuth', () => {
   }
 
   async function logout() {
-    // Envía lo pendiente y detiene la captura; la jornada sigue abierta (import dinámico para evitar ciclo)
+    // Envía lo pendiente; la jornada sigue abierta (import dinámico para evitar ciclo)
+    let tracking = null;
     try {
       const { useTrackingStore } = await import('@/stores/useTrackingStore');
-      await useTrackingStore().pausar();
+      tracking = useTrackingStore();
+      await tracking.pausar();
     } catch { /* silencioso */ }
     try { if (refreshToken.value) await authApi.logout(refreshToken.value); } catch {}
     accessToken.value  = null;
@@ -156,6 +158,8 @@ export const useAuthStore = defineStore('svAuth', () => {
     usuario.value      = null;
     areaActivaId.value = null;
     persist();
+    // Por si algo volvió a encender la captura mientras se cerraba la sesión
+    try { tracking?.detener({ borrarPendientes: false }); } catch { /* silencioso */ }
   }
 
   async function fetchMe() {

@@ -5,7 +5,7 @@ vi.mock('@/api/authApi', () => ({
   authApi: { logout: vi.fn().mockResolvedValue({}) }
 }));
 vi.mock('@/api/trackingApi', () => ({
-  trackingApi: { finalizarJornada: vi.fn(), batchPuntos: vi.fn() }
+  trackingApi: { batchPuntos: vi.fn() }
 }));
 
 import { authApi } from '@/api/authApi';
@@ -28,7 +28,7 @@ describe('useAuthStore.logout', () => {
     const pausar = vi.spyOn(tracking, 'pausar').mockResolvedValue();
     await auth.logout();
     expect(pausar).toHaveBeenCalledTimes(1);
-    expect(trackingApi.finalizarJornada).not.toHaveBeenCalled();
+    expect(trackingApi.finalizarJornada).toBeUndefined();
     expect(authApi.logout).toHaveBeenCalledWith('r');
     expect(auth.accessToken).toBeNull();
   });
@@ -40,5 +40,28 @@ describe('useAuthStore.logout', () => {
     expect(authApi.logout).toHaveBeenCalledWith('r');
     expect(auth.accessToken).toBeNull();
     expect(auth.usuario).toBeNull();
+  });
+
+  it('espera a pausar antes de cerrar la sesión', async () => {
+    const auth = sesion();
+    let fin;
+    vi.spyOn(useTrackingStore(), 'pausar').mockReturnValue(new Promise((r) => { fin = r; }));
+    const p = auth.logout();
+    await Promise.resolve(); await Promise.resolve();
+    expect(auth.accessToken).toBe('a');
+    expect(authApi.logout).not.toHaveBeenCalled();
+    fin();
+    await p;
+    expect(auth.accessToken).toBeNull();
+  });
+
+  it('después de cerrar la sesión vuelve a detener la captura conservando los pendientes', async () => {
+    const auth = sesion();
+    const tracking = useTrackingStore();
+    vi.spyOn(tracking, 'pausar').mockResolvedValue();
+    const detener = vi.spyOn(tracking, 'detener');
+    await auth.logout();
+    expect(detener).toHaveBeenCalledWith({ borrarPendientes: false });
+    expect(auth.accessToken).toBeNull();
   });
 });

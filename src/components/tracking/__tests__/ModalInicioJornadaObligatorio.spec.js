@@ -112,4 +112,26 @@ describe('ModalInicioJornadaObligatorio', () => {
     await flushPromises();
     expect(jornStore.chequear).not.toHaveBeenCalled();
   });
+
+  it('con 409 que no es AUSENTE no vuelve a preguntar', async () => {
+    const wrapper = factory();
+    useTrackingStore().iniciar = vi.fn().mockRejectedValue({ response: { status: 409, data: { error: 'OTRO', message: 'x' } } });
+    const jornStore = useJornadaObligatoriaStore();
+    jornStore.chequear = vi.fn();
+    await wrapper.find('[data-testid="btn-iniciar-jornada"]').trigger('click');
+    await flushPromises();
+    expect(jornStore.chequear).not.toHaveBeenCalled();
+  });
+
+  it('ausencia duplicada (409) vuelve a preguntar', async () => {
+    const wrapper = factory();
+    const jornStore = useJornadaObligatoriaStore();
+    jornStore.marcarAusencia = vi.fn().mockRejectedValue({ response: { status: 409, data: { message: 'Ya declaraste ausencia hoy' } } });
+    jornStore.chequear = vi.fn();
+    await wrapper.find('[data-testid="btn-tab-ausencia"]').trigger('click');
+    await wrapper.find('[data-testid="input-motivo"]').setValue('motivo largo');
+    await wrapper.find('[data-testid="btn-confirmar-ausencia"]').trigger('click');
+    await flushPromises();
+    expect(jornStore.chequear).toHaveBeenCalledWith({ force: true });
+  });
 });

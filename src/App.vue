@@ -3,6 +3,7 @@ import { computed, onMounted, onUnmounted, onBeforeUnmount, ref, watch } from 'v
 import { useRoute } from 'vue-router';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { useJornadaObligatoriaStore } from '@/stores/useJornadaObligatoriaStore';
+import { useTrackingStore } from '@/stores/useTrackingStore';
 import AppHeader from '@/components/layout/AppHeader.vue';
 import AppSidebar from '@/components/layout/AppSidebar.vue';
 import BottomNav from '@/components/layout/BottomNav.vue';
@@ -13,6 +14,7 @@ import ModalInicioJornadaObligatorio from '@/components/tracking/ModalInicioJorn
 const route = useRoute();
 const auth = useAuthStore();
 const jornObl = useJornadaObligatoriaStore();
+const tracking = useTrackingStore();
 
 const hideShell = computed(() => route.meta.publica || route.name === 'login');
 const showBusqueda = ref(false);
@@ -39,9 +41,15 @@ function onVisibilityChange() {
   }
 }
 
-watch(() => auth.isAuthenticated, (v) => {
-  if (v) jornObl.chequear();
-  else   jornObl.reset();
+// Vigila a la persona (no solo la sesión): al cambiar o salir, nada de su jornada pasa a la siguiente.
+watch(() => (auth.isAuthenticated ? (auth.usuario?.usr_id ?? null) : null), (id, antes) => {
+  if (antes === undefined) {
+    if (id != null) jornObl.chequear();
+    return;
+  }
+  jornObl.reset();
+  tracking.detener({ borrarPendientes: false });
+  if (id != null) jornObl.chequear({ force: true });
 }, { immediate: true });
 
 onMounted(() => document.addEventListener('visibilitychange', onVisibilityChange));
