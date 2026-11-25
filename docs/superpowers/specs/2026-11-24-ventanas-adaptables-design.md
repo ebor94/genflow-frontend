@@ -26,6 +26,9 @@ Pedido del usuario tras probar Productos 2026: la ventana "se pierde a lo vertic
 - `cierraAfuera` (por defecto `false`): solo el buscador global lo activa.
 - `paso`: Nuevo prospecto y Nueva empresa le pasan su paso; al cambiar, el contenido vuelve arriba. Otros cambios, como el título, no mueven el contenido.
 - La X es `type="button"`.
+- Rodar sobre un campo numérico enfocado le quita el foco antes: el navegador cambiaría su valor (80000 → 79997) en vez de desplazar la ventana.
+- La lista de "Grupo empresarial" se lleva a la vista al abrirse y se cierra al salir del campo (antes lanzaba un error).
+- El buscador global limita su lista para no mostrar dos barras en pantallas bajas.
 
 ## 5. Casos de borde
 
@@ -33,7 +36,7 @@ Pedido del usuario tras probar Productos 2026: la ventana "se pierde a lo vertic
 |---|---|
 | Ventana más corta que la pantalla | Igual que hoy: centrada y sin desplazamiento |
 | Seleccionar texto y soltar afuera | No cierra |
-| Listas flotantes (usuario de red, grupo empresarial) | Quedan dentro del contenido; tienen campos debajo, así que caben o se llega desplazando |
+| Listas flotantes | La de grupo empresarial se lleva a la vista al abrirse. La del usuario de red es el primer campo de su ventana y se ve completa, salvo en pantallas de unos 400 px de alto, donde se llega desplazando |
 | Selector de productos, que ya tiene su propio desplazamiento | Se conserva; quedan dos barras cuando el formulario es más alto que la pantalla |
 | Ventanas con su propio contenedor (agenda, eventos, OTP, jornada, afiliación) | No cambian |
 
@@ -41,7 +44,7 @@ Pedido del usuario tras probar Productos 2026: la ventana "se pierde a lo vertic
 
 `BaseModal.spec.js`: clic afuera con y sin permiso, clic adentro, Escape, X, clases de alto, paso y título. Con Teleport y Transition reales: con los stubs los nodos se vuelven a crear en cada cambio y las pruebas de desplazamiento pasarían sin probar nada. `ventanas.spec.js`: el buscador cierra afuera; Nuevo prospecto, Nueva empresa y Registrar gestión no; las dos por pasos informan su paso.
 
-Cada prueba se comprobó rompiendo el código a propósito (2026-11-24). En un navegador, con el catálogo real, el pie queda visible y nada desborda a lo ancho en 500×580, 800×393, 1366×553 y 1920×993, y en celular (375×667).
+`SelectorGrupoEmpresarial.spec.js`: la lista se lleva a la vista, se cierra al salir y elegir emite el grupo. Las pruebas de cierre, alto, paso y rueda se comprobaron rompiendo el código a propósito (2026-11-24); las clases CSS que happy-dom no puede medir se revisaron en el navegador. En un navegador, con el catálogo real, el pie queda visible y nada desborda a lo ancho en 500×580, 800×393, 1366×553 y 1920×993, y en celular (375×667).
 
 ## 7. Fuera de alcance
 

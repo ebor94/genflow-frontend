@@ -295,6 +295,12 @@ por
 
 ---
 
+### Ajustes de la revisión (commit aparte)
+
+La revisión independiente encontró dos problemas de desplazarse dentro de la ventana: la rueda cambiaba campos numéricos y la lista de grupo empresarial se abría recortada. Se corrigieron en `BaseModal.vue` y `SelectorGrupoEmpresarial.vue`, junto con la prueba del paso y la lista del buscador; el detalle está en el spec §4 y §6.
+
+---
+
 ### Task 2: Verificación y publicación (con el usuario)
 
 - [ ] **Step 1:** con el código final, medir en un navegador sin ventana (375, 800, 1366 y 1920 de ancho) que el pie quede visible, que nada desborde a lo ancho, que el clic afuera y Escape no cierren, y que el buscador sí cierre afuera.
