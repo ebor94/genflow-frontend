@@ -5,10 +5,10 @@ import BaseModal from '@/components/ui/BaseModal.vue';
 // Teleport y Transition reales: los stubs vuelven a crear los nodos en cada cambio y las
 // pruebas de desplazamiento pasarían sin probar nada.
 let w;
-function montar(props = {}) {
+function montar(props = {}, contenido = '<input class="campo" />') {
   w = mount(BaseModal, {
     props: { open: true, title: 'Registrar gestión', ...props },
-    slots: { default: '<input class="campo" />', footer: '<button type="button">Registrar</button>' },
+    slots: { default: contenido, footer: '<button type="button">Registrar</button>' },
     attachTo: document.body,
     global: { stubs: { teleport: false, transition: false } }
   });
@@ -85,5 +85,24 @@ describe('alto', () => {
     await w.setProps({ title: 'Otro título' });
     expect(cuerpo().element).toBe(centro);
     expect(centro.scrollTop).toBe(120);
+  });
+});
+
+describe('rueda', () => {
+  it('rodar sobre un campo numérico enfocado le quita el foco para no cambiar su valor', async () => {
+    montar({}, '<input type="number" class="numero" />');
+    const campo = en('.numero').element;
+    campo.focus();
+    expect(document.activeElement).toBe(campo);
+    await en('.numero').trigger('wheel');
+    expect(document.activeElement).not.toBe(campo);
+  });
+
+  it('rodar sobre un campo de texto enfocado conserva el foco', async () => {
+    montar();
+    const campo = en('.campo').element;
+    campo.focus();
+    await en('.campo').trigger('wheel');
+    expect(document.activeElement).toBe(campo);
   });
 });

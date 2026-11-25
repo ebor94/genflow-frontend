@@ -23,6 +23,12 @@ watch(() => props.paso, () => {
   if (cuerpo.value) cuerpo.value.scrollTop = 0;
 }, { flush: 'post' });
 
+// Al rodar sobre un campo numérico enfocado, el navegador cambia su valor en vez de desplazar
+// la ventana: se le quita el foco antes.
+function alRodar(e) {
+  if (e.target.type === 'number' && e.target === document.activeElement) e.target.blur();
+}
+
 function clicAfuera() {
   if (props.cierraAfuera) emit('close');
 }
@@ -48,7 +54,7 @@ function clicAfuera() {
               </svg>
             </button>
           </header>
-          <div ref="cuerpo" data-testid="modal-cuerpo" class="flex-1 min-h-0 overflow-y-auto overscroll-contain px-5 py-4">
+          <div ref="cuerpo" data-testid="modal-cuerpo" class="flex-1 min-h-0 overflow-y-auto overscroll-contain px-5 py-4" @wheel.capture.passive="alRodar">
             <slot />
           </div>
           <footer v-if="$slots.footer" class="shrink-0 px-5 py-3 border-t border-text3/15 bg-cream/40 flex flex-wrap justify-end gap-2 rounded-b-sv">

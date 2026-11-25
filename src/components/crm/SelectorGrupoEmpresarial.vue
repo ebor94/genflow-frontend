@@ -7,7 +7,7 @@
  *
  *   <SelectorGrupoEmpresarial v-model="empresa.empresa_grupo_empresarial_id" />
  */
-import { ref, watch, onMounted } from 'vue';
+import { ref, watch, onMounted, nextTick } from 'vue';
 import { gruposEmpresarialesApi } from '@/api/categorizacionApi';
 import { useToastStore } from '@/stores/useToastStore';
 
@@ -107,6 +107,18 @@ watch(() => props.modelValue, (v) => {
 const noMatchPerfecto = () =>
   texto.value.trim().length >= 2 &&
   !opciones.value.some(o => o.grupemp_nombre.toLowerCase() === texto.value.trim().toLowerCase());
+
+// Dentro de una ventana que se desplaza, la lista puede abrirse por debajo de lo visible.
+const lista = ref(null);
+watch([dropdownOpen, opciones, cargando], async () => {
+  await nextTick();
+  lista.value?.scrollIntoView({ block: 'nearest' });
+});
+
+// El retraso deja que el clic en una opción llegue antes de que la lista desaparezca.
+function cerrarLuego() {
+  setTimeout(() => { dropdownOpen.value = false; }, 200);
+}
 </script>
 
 <template>
@@ -118,7 +130,7 @@ const noMatchPerfecto = () =>
         type="text"
         :placeholder="placeholder"
         @focus="dropdownOpen = true"
-        @blur="setTimeout(() => dropdownOpen = false, 200)"
+        @blur="cerrarLuego"
         class="w-full px-3 py-2 text-sm border border-text3/40 rounded-sv focus:outline-none focus:ring-2 focus:ring-gold focus:border-transparent"
       />
       <button
@@ -131,6 +143,7 @@ const noMatchPerfecto = () =>
     </div>
 
     <div v-if="dropdownOpen && (cargando || opciones.length || noMatchPerfecto())"
+         ref="lista"
          class="absolute z-20 mt-1 w-full bg-white border border-text3/30 rounded-sv shadow-sv-pop max-h-60 overflow-auto">
       <div v-if="cargando" class="px-3 py-2 text-xs text-text3">Buscando…</div>
       <button

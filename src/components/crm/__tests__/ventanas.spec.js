@@ -1,11 +1,14 @@
-import { mount } from '@vue/test-utils';
+import { mount, flushPromises } from '@vue/test-utils';
 import { createTestingPinia } from '@pinia/testing';
 import { describe, it, expect, vi } from 'vitest';
 
 vi.mock('vue-router', () => ({ useRouter: () => ({ push: vi.fn() }), useRoute: () => ({ params: {}, query: {} }) }));
 vi.mock('@/api/buscadorApi', () => ({ buscadorApi: { buscar: vi.fn() } }));
+vi.mock('@/api/empresasApi', () => ({ empresasApi: { buscar: vi.fn() } }));
 vi.mock('@/api/personasApi', () => ({ personasApi: { buscar: vi.fn(), create: vi.fn() } }));
 
+import { personasApi } from '@/api/personasApi';
+import { empresasApi } from '@/api/empresasApi';
 import BaseModal from '@/components/ui/BaseModal.vue';
 import BusquedaGlobalModal from '@/components/crm/BusquedaGlobalModal.vue';
 import NuevoProspecto from '@/components/crm/NuevoProspecto.vue';
@@ -45,5 +48,27 @@ describe('formularios por pasos', () => {
   ])('%s le dice su paso a la ventana', (_n, componente, props) => {
     const w = montar(componente, props);
     expect(w.findComponent(BaseModal).props('paso')).toBe(1);
+  });
+});
+
+describe('el paso llega a la ventana', () => {
+  it('Nuevo prospecto pasa al paso 2 al validar el teléfono', async () => {
+    personasApi.buscar.mockRejectedValue({ response: { status: 404 } });
+    const w = montar(NuevoProspecto, { open: false, areaId: 1, grupoId: 1 });
+    await w.setProps({ open: true });
+    await w.find('input').setValue('3001234567');
+    await w.findAll('button').find((b) => b.text().trim() === 'Validar teléfono').trigger('click');
+    await flushPromises();
+    expect(w.findComponent(BaseModal).props('paso')).toBe(2);
+  });
+
+  it('Nueva empresa pasa al paso 2 al validar el NIT', async () => {
+    empresasApi.buscar.mockRejectedValue({ response: { status: 404 } });
+    const w = montar(NuevaEmpresa, { open: false });
+    await w.setProps({ open: true });
+    await w.find('input').setValue('9002345671');
+    await w.findAll('button').find((b) => b.text().trim() === 'Validar NIT').trigger('click');
+    await flushPromises();
+    expect(w.findComponent(BaseModal).props('paso')).toBe(2);
   });
 });

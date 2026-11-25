@@ -60,7 +60,7 @@ function irAProspecto(p) {
 
     <div v-if="buscando" class="text-text3 text-center py-6 text-sm">Buscando...</div>
 
-    <div v-else-if="q.length >= 2" class="mt-4 space-y-4 max-h-[400px] overflow-y-auto">
+    <div v-else-if="q.length >= 2" class="mt-4 space-y-4 max-h-[min(400px,calc(100dvh-11rem))] overflow-y-auto">
       <section v-if="resultados.prospectos.length">
         <h3 class="text-xs text-text3 uppercase tracking-wide mb-2">📋 Prospectos</h3>
         <ul class="divide-y divide-text3/10">
