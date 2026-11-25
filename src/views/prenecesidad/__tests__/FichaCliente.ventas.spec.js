@@ -1,17 +1,29 @@
-import { mount, flushPromises } from '@vue/test-utils';
+import { mount, flushPromises, enableAutoUnmount } from '@vue/test-utils';
 import { createTestingPinia } from '@pinia/testing';
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
-vi.mock('vue-router', () => ({
-  useRoute: () => ({ params: { id: '900' }, query: {} }),
-  useRouter: () => ({ push: vi.fn(), back: vi.fn() }),
-  RouterLink: { template: '<a><slot /></a>' }
-}));
+vi.mock('vue-router', async () => {
+  const { reactive } = await import('vue');
+  const ruta = reactive({ params: { id: '900' }, query: {} });
+  return {
+    useRoute: () => ruta,
+    useRouter: () => ({ push: vi.fn(), back: vi.fn() }),
+    RouterLink: { template: '<a><slot /></a>' }
+  };
+});
 vi.mock('@/api/salasApi', () => ({ salasApi: { obtener: vi.fn() } }));
 vi.mock('@/api/personasApi', () => ({ personasApi: { prospectosActivos: vi.fn(async () => ({ data: [] })) } }));
+vi.mock('@/api/prospectosApi', () => ({ prospectosApi: { get: vi.fn() } }));
+vi.mock('@/api/gestionesApi', () => ({ gestionesApi: { historial: vi.fn() } }));
+vi.mock('@/api/ventasApi', () => ({ ventasApi: { deProspecto: vi.fn() } }));
 
+import { useRoute } from 'vue-router';
+import { gestionesApi } from '@/api/gestionesApi';
+import { prospectosApi } from '@/api/prospectosApi';
+import { ventasApi } from '@/api/ventasApi';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { useConfigStore } from '@/stores/useConfigStore';
+import { useProspectosStore } from '@/stores/useProspectosStore';
 import FichaCliente from '@/views/prenecesidad/FichaCliente.vue';
 import RegistrarGestion from '@/components/crm/RegistrarGestion.vue';
 import VentasCliente from '@/components/crm/VentasCliente.vue';
@@ -38,6 +50,9 @@ async function montar(rol) {
   return w;
 }
 
+// La ruta es una sola para todas las pruebas: una ficha que quede montada reaccionaría a ella.
+enableAutoUnmount(afterEach);
+
 describe('FichaCliente: ventas', () => {
   it('pasa el cliente, el catálogo activo del área y si puede corregir', async () => {
     const v = (await montar('SUPERVISOR')).findComponent(VentasCliente);
@@ -53,5 +68,60 @@ describe('FichaCliente: ventas', () => {
     w.findComponent(RegistrarGestion).vm.$emit('registrada', {});
     await flushPromises();
     expect(w.findComponent(VentasCliente).props('version')).toBe(antes + 1);
+  });
+
+  it('la recarga espera a que llegue el cliente', async () => {
+    const w = await montar('ASESOR');
+    const version = () => w.findComponent(VentasCliente).props('version');
+    const antes = version();
+    let llega;
+    useProspectosStore().fetchOne.mockImplementationOnce(() => new Promise((r) => { llega = r; }));
+    w.findComponent(RegistrarGestion).vm.$emit('registrada', {});
+    await flushPromises();
+    expect(version()).toBe(antes);
+    llega();
+    await flushPromises();
+    expect(version()).toBe(antes + 1);
+  });
+});
+
+describe('FichaCliente: cuántas veces se piden las ventas', () => {
+  const pedidas = () => ventasApi.deProspecto.mock.calls.map((c) => c[0]);
+
+  async function abrir(id) {
+    const ruta = useRoute();
+    ruta.params.id = String(id);
+    const w = mount(FichaCliente, {
+      global: {
+        plugins: [createTestingPinia({ createSpy: vi.fn, stubActions: false })],
+        stubs: { teleport: true, RegistrarGestion: true, AgendarProximaModal: true, ReasignarProspectoModal: true,
+          ProspectosCrossArea: true, QuickActionRow: true, HistorialItem: true }
+      }
+    });
+    await flushPromises();
+    return { w, ruta };
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    prospectosApi.get.mockImplementation(async (id) => ({ data: { ...ACTIVO, prosp_id: id } }));
+    gestionesApi.historial.mockResolvedValue({ data: { items: [], page: 1, total: 0, hasMore: false } });
+    ventasApi.deProspecto.mockResolvedValue({ data: [] });
+  });
+
+  it('una al abrir la ficha y otra por cada gestión', async () => {
+    const { w } = await abrir(900);
+    expect(pedidas()).toEqual([900]);
+    w.findComponent(RegistrarGestion).vm.$emit('registrada', null);
+    await flushPromises();
+    expect(pedidas()).toEqual([900, 900]);
+  });
+
+  it('al pasar a otro cliente, solo las del nuevo y una vez', async () => {
+    const { ruta } = await abrir(900);
+    ventasApi.deProspecto.mockClear();
+    ruta.params.id = '901';
+    await flushPromises();
+    expect(pedidas()).toEqual([901]);
   });
 });

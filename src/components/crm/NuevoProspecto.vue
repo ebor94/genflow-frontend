@@ -79,17 +79,19 @@ const opcPuntos = computed(() => (config.actual?.puntos || [])
   .filter(p => p.punto_activo)
   .map(p => ({ value: p.punto_id, label: `${p.punto_codigo} — ${p.punto_nombre}` })));
 
-const opcEstadosIniciales = computed(() => (config.actual?.estados || [])
-  .filter(e => e.estado_grupo_id === grupoIdEffective.value && e.estado_activo)
-  .sort((a, b) => a.estado_orden - b.estado_orden)
-  .map(e => ({ value: e.estado_id, label: e.estado_nombre })));
-
 const opcProductos = computed(() => (config.actual?.productos || [])
   .filter(p => p.prod_area_id === areaIdEffective.value && p.prod_activo)
   .sort((a, b) => a.prod_orden_display - b.prod_orden_display));
 
 // Con catálogo por tipos (Prenecesidad) se usa el selector; las demás áreas, los botones.
 const conTipos = computed(() => tieneTipos(opcProductos.value));
+
+const opcEstadosIniciales = computed(() => (config.actual?.estados || [])
+  .filter(e => e.estado_grupo_id === grupoIdEffective.value && e.estado_activo)
+  // Donde se registran ventas, el contrato se cierra con una gestión, no al crear el cliente.
+  .filter(e => !(conTipos.value && e.estado_es_ganado))
+  .sort((a, b) => a.estado_orden - b.estado_orden)
+  .map(e => ({ value: e.estado_id, label: e.estado_nombre })));
 
 watch(() => props.open, (v) => {
   if (v) {

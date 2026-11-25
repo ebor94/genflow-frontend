@@ -29,12 +29,17 @@ const motivo = ref('');
 const guardando = ref(false);
 const anula = computed(() => props.modo === 'anular');
 
+// Al cerrar, venta pasa a null antes de que termine la transición: se sigue pintando la última.
+const ultima = ref(null);
 watch(() => [props.venta, props.modo], () => {
+  if (!props.venta) return;
+  ultima.value = props.venta;
   lineas.value = lineasDeVenta(props.venta);
   motivo.value = '';
 }, { immediate: true });
 
 async function guardar() {
+  if (!props.venta) return; // ya se está cerrando
   const falta = anula.value ? '' : errorVenta(lineas.value);
   if (falta) { toast.warning(falta); return; }
   if (motivo.value.trim().length < 3) { toast.warning('Escribe el motivo'); return; }
@@ -59,9 +64,9 @@ async function guardar() {
 
 <template>
   <BaseModal :open="!!venta" :title="anula ? 'Anular venta' : 'Corregir venta'" max-width="max-w-xl" @close="emit('close')">
-    <div v-if="venta" class="space-y-4">
+    <div v-if="ultima" class="space-y-4">
       <p class="text-sm text-text2">
-        Venta del {{ fmtFecha(venta.venta_fecha) }} por <strong>{{ fmtCOP(Number(venta.venta_total)) }}</strong>.
+        Venta del {{ fmtFecha(ultima.venta_fecha) }} por <strong>{{ fmtCOP(Number(ultima.venta_total)) }}</strong>.
       </p>
       <p v-if="anula" class="text-sm text-warning">
         Dejará de sumar y de contar como contrato. El estado del cliente no cambia: si vuelve a proceso, registra una gestión.

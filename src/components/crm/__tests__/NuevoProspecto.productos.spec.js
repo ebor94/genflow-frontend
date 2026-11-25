@@ -18,7 +18,10 @@ async function enPaso2(productos) {
   const pinia = createTestingPinia({ createSpy: vi.fn });
   useConfigStore(pinia).actual = {
     productos, fuentes: [], puntos: [],
-    estados: [{ estado_id: 11, estado_grupo_id: 1, estado_activo: 1, estado_orden: 1, estado_nombre: 'Nuevo' }]
+    estados: [
+      { estado_id: 11, estado_grupo_id: 1, estado_activo: 1, estado_orden: 1, estado_nombre: 'Nuevo', estado_es_ganado: 0 },
+      { estado_id: 15, estado_grupo_id: 1, estado_activo: 1, estado_orden: 5, estado_nombre: 'Contrato cerrado', estado_es_ganado: 1 }
+    ]
   };
   personasApi.buscar.mockRejectedValue({ response: { status: 404 } });
   const w = mount(NuevoProspecto, {
@@ -54,5 +57,20 @@ describe('NuevoProspecto: productos de interés', () => {
     const { w } = await enPaso2([prod(3, 'Contrato SAP', null)]);
     expect(w.findComponent(SelectorProductos).exists()).toBe(false);
     expect(w.findAll('button').some((b) => b.text().trim() === 'Contrato SAP')).toBe(true);
+  });
+});
+
+describe('NuevoProspecto: estado inicial', () => {
+  beforeEach(() => vi.clearAllMocks());
+  const estados = (w) => w.findAll('label').find((l) => l.text().startsWith('Estado inicial'))
+    .element.parentElement.querySelectorAll('option:not([disabled])');
+  const nombres = (w) => [...estados(w)].map((o) => o.textContent.trim());
+
+  it('donde se registran ventas no se ofrece un estado ganado', async () => {
+    expect(nombres((await enPaso2([prod(2, 'Osario A2', 'Osarios')])).w)).toEqual(['Nuevo']);
+  });
+
+  it('en las demás áreas se ofrecen todos, como siempre', async () => {
+    expect(nombres((await enPaso2([prod(3, 'Contrato SAP', null)])).w)).toEqual(['Nuevo', 'Contrato cerrado']);
   });
 });

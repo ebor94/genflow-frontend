@@ -13,10 +13,16 @@ describe('TablaAsesores', () => {
     expect(plano(w)).not.toContain('%');
   });
 
+  it('una meta en 0 es como no tener meta', () => {
+    const w = mount(TablaAsesores, { props: { asesores: [{ ...FILA, snap_meta_contratos: 0 }] } });
+    expect(titulos(w)).not.toContain('Meta %');
+  });
+
   it('con metas sí, comparada con la meta real', () => {
-    const w = mount(TablaAsesores, { props: { asesores: [{ ...FILA, meta: { meta_contratos: 12 } }] } });
+    const w = mount(TablaAsesores, { props: { asesores: [{ ...FILA, snap_meta_contratos: 12 }] } });
     expect(titulos(w)).toContain('Meta %');
     expect(plano(w)).toContain('25%');
+    expect(w.get('.bg-gold').attributes('style')).toContain('width: 25%');
   });
 
   it('con ventas muestra lo vendido', () => {

@@ -29,7 +29,8 @@ async function cargar() {
     if (id === props.prospId) ventas.value = r.data || [];
   } catch (e) {
     if (id === props.prospId) ventas.value = [];
-    notify(e);
+    // La tarjeta es auxiliar: si no puede ver las ventas de este cliente, simplemente no aparece.
+    if (![403, 404].includes(e?.response?.status)) notify(e);
   }
 }
 watch(() => [props.prospId, props.version], cargar, { immediate: true });

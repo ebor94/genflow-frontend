@@ -67,9 +67,11 @@ const versionVentas = ref(0);
 
 async function cargar() {
   const id = parseInt(route.params.id);
-  versionVentas.value += 1;
+  // Con otro cliente, la tarjeta de ventas ya recarga porque cambia su prospId.
+  const mismoCliente = store.activo?.prosp_id === id;
   try {
     await store.fetchOne(id);
+    if (mismoCliente) versionVentas.value += 1;
     await gestiones.fetchHistorial(id, { reset: true });
     // Cross-área: prospectos del cliente en otras áreas
     if (store.activo?.prosp_persona_id) {

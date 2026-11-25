@@ -67,3 +67,11 @@ export function errorVenta(lineas) {
 export function itemsVenta(lineas) {
   return vendidas(lineas).map(({ prod_id, cantidad, precio_unitario }) => ({ prod_id, cantidad, precio_unitario }));
 }
+
+/** Una por formulario: el servidor rechaza la repetida, así la venta no queda dos veces. */
+export function nuevaClave() {
+  // randomUUID no existe en páginas http.
+  if (globalThis.crypto?.randomUUID) return globalThis.crypto.randomUUID();
+  const azar = () => Math.random().toString(36).slice(2, 12);
+  return `${Date.now().toString(36)}-${azar()}${azar()}`;
+}

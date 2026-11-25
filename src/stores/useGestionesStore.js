@@ -38,7 +38,14 @@ export const useGestionesStore = defineStore('svGestiones', () => {
     const r = await gestionesApi.create(payload);
     // Limpiar historial cacheado del prospecto y recargar primera página
     if (payload.gest_prosp_id) {
-      await fetchHistorial(payload.gest_prosp_id, { reset: true });
+      try {
+        await fetchHistorial(payload.gest_prosp_id, { reset: true });
+      } catch {
+        // La gestión ya quedó guardada. Sin el historial en caché, la ficha lo vuelve a pedir.
+        const next = new Map(historial.value);
+        next.delete(payload.gest_prosp_id);
+        historial.value = next;
+      }
     }
     return r.data;
   }

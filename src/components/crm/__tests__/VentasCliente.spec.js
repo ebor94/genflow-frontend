@@ -77,6 +77,20 @@ describe('VentasCliente', () => {
     expect(w.find('[data-testid="ventas"]').exists()).toBe(false);
   });
 
+  it.each([
+    ['403', { response: { status: 403, data: { message: 'Sin permiso' } } }, 0],
+    ['404', { response: { status: 404, data: { message: 'No existe' } } }, 0],
+    ['500', { response: { status: 500, data: { message: 'Error interno' } } }, 1],
+    ['sin red', new Error('Network Error'), 1]
+  ])('si la consulta falla (%s) muestra el error solo cuando corresponde', async (_n, error, avisos) => {
+    const { w, toast } = await montar();
+    ventasApi.deProspecto.mockRejectedValueOnce(error);
+    await w.setProps({ version: 1 });
+    await flushPromises();
+    expect(toast.error).toHaveBeenCalledTimes(avisos);
+    expect(w.find('[data-testid="ventas"]').exists()).toBe(false);
+  });
+
   it('corregir envía los productos, el motivo y los cambios vistos, y recarga', async () => {
     const { w } = await montar();
     ventasApi.corregir.mockResolvedValue({ data: {} });
@@ -127,5 +141,52 @@ describe('VentasCliente', () => {
     await flushPromises();
     expect(w.findComponent(CambiarVentaModal).props('venta')).toBeNull();
     expect(ventasApi.deProspecto).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe('CambiarVentaModal: mientras se cierra', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  // Deja a la vista título y contenido aunque esté cerrada, como durante la transición de salida.
+  const Ventana = { name: 'BaseModal', props: ['open', 'title'], template: '<div><h3>{{ title }}</h3><slot /><slot name="footer" /></div>' };
+  function abrir(props) {
+    const pinia = createTestingPinia({ createSpy: vi.fn });
+    const w = mount(CambiarVentaModal, {
+      props: { venta: ACTIVA, modo: 'corregir', productos: PRODUCTOS, ...props },
+      global: { plugins: [pinia], stubs: { BaseModal: Ventana } }
+    });
+    return { w, toast: useToastStore(pinia), open: () => w.findComponent(Ventana).props('open') };
+  }
+
+  it('el título, el total y los productos siguen siendo los de la última venta', async () => {
+    const { w, open } = abrir();
+    const antes = plano(w);
+    expect(antes).toContain('Corregir venta');
+    expect(antes).toContain('por $ 17.000.000');
+    expect(plano(w.get('[data-testid="total-venta"]'))).toBe('$ 17.000.000');
+    await w.setProps({ venta: null });
+    expect(open()).toBe(false);
+    expect(plano(w)).toBe(antes);
+  });
+
+  it.each(['corregir', 'anular'])('el botón de %s ya no envía nada', async (modo) => {
+    const { w, toast } = abrir({ modo });
+    await w.get('textarea').setValue('un motivo');
+    await w.setProps({ venta: null });
+    await w.findAll('button').at(-1).trigger('click');
+    await flushPromises();
+    expect(ventasApi[modo]).not.toHaveBeenCalled();
+    expect(toast.warning).not.toHaveBeenCalled();
+    expect(toast.error).not.toHaveBeenCalled();
+  });
+
+  it('al abrirla otra vez con la misma venta empieza de cero', async () => {
+    const { w } = abrir();
+    await w.get('[data-testid="cantidad-2"]').setValue('9');
+    await w.get('textarea').setValue('un motivo');
+    await w.setProps({ venta: null });
+    await w.setProps({ venta: ACTIVA });
+    expect(w.get('[data-testid="cantidad-2"]').element.value).toBe('2');
+    expect(w.get('textarea').element.value).toBe('');
   });
 });

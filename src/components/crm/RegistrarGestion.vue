@@ -4,7 +4,7 @@
  * Props: open, prospecto (objeto con prosp_id, prosp_grupo_id, prosp_area_id, persona, productos),
  *        homenajeSalaId (modo sala: canal fijo "visita_sala" y guardado por /sv/salas),
  *        resumenCliente (cliente de otro asesor: muestra resumen y oculta productos)
- * Emit: close, registrada (gestion)
+ * Emit: close, registrada (gestion, o null si la venta ya había quedado registrada), sala-cerrada
  *
  * Incluye editor opcional de productos de interés del cliente.
  * Si se modifican, se guardan antes de registrar la gestión.
@@ -19,7 +19,7 @@ import { prospectosApi } from '@/api/prospectosApi';
 import { salasApi } from '@/api/salasApi';
 import { ventasApi } from '@/api/ventasApi';
 import { tieneTipos } from '@/utils/catalogoProductos';
-import { lineasIniciales, porDefinir, errorVenta, itemsVenta } from '@/utils/ventas';
+import { lineasIniciales, porDefinir, errorVenta, itemsVenta, nuevaClave } from '@/utils/ventas';
 import { fmtCOP, fmtFecha, fmtFechaHora } from '@/utils/format';
 
 import BaseModal from '@/components/ui/BaseModal.vue';
@@ -127,27 +127,55 @@ const estadoGanado = computed(() => estadosDelGrupo.value.find(e => e.estado_es_
 const cierra = computed(() => conProductos.value && conTipos.value
   && !!estadosDelGrupo.value.find(e => e.estado_id === parseInt(form.value.gest_estado_nuevo_id))?.estado_es_ganado);
 const lineasVenta = ref([]);
-const ventaPrevia = ref(null);
+const desdeIntereses = new Set(); // prod_id que entraron a la venta desde los intereses
+const claveVenta = ref(nuevaClave()); // una por formulario: reintentar no registra otra venta
+const ventasPrevias = ref([]); // las activas, de la más reciente a la más antigua
 
 // "Contrato firmado" sin cambio de estado no contaba como contrato: el estado pasa solo.
+// Si el resultado cambia, se deshace; el que la persona elige a mano no se toca.
+const estadoAutomatico = ref(null);
 watch(() => form.value.gest_resultado_id, () => {
-  if (conProductos.value && conTipos.value && resultadoSeleccionado.value?.resultado_codigo === 'CONTRATO'
-      && !form.value.gest_estado_nuevo_id && estadoGanado.value) {
-    form.value.gest_estado_nuevo_id = estadoGanado.value.estado_id;
+  if (resultadoSeleccionado.value?.resultado_codigo !== 'CONTRATO') {
+    if (estadoAutomatico.value !== null && Number(form.value.gest_estado_nuevo_id) === estadoAutomatico.value) {
+      form.value.gest_estado_nuevo_id = '';
+    }
+    estadoAutomatico.value = null;
+  } else if (conProductos.value && conTipos.value && !form.value.gest_estado_nuevo_id && estadoGanado.value) {
+    estadoAutomatico.value = estadoGanado.value.estado_id;
+    form.value.gest_estado_nuevo_id = estadoAutomatico.value;
   }
 });
 
-watch(cierra, async (v) => {
+watch(cierra, (v) => {
   if (!v) return;
-  // Si cambia de estado y vuelve, conserva lo que ya había escrito.
-  const puestas = new Set(lineasVenta.value.map(l => l.prod_id));
-  lineasVenta.value = [...lineasVenta.value,
-    ...lineasIniciales(productosSel.value, productosDisponibles.value, props.prospecto?.productos).filter(l => !puestas.has(l.prod_id))];
+  // Si cambia de estado y vuelve, conserva lo escrito, menos los intereses que haya quitado.
+  const elegidos = new Set(productosSel.value.map(p => p.prod_id));
+  const quitados = new Set([...desdeIntereses].filter(id => !elegidos.has(id)));
+  quitados.forEach(id => desdeIntereses.delete(id));
+  const lineas = lineasVenta.value.filter(l => !quitados.has(l.prod_id));
+  const puestas = new Set(lineas.map(l => l.prod_id));
+  const nuevas = lineasIniciales(productosSel.value, productosDisponibles.value, props.prospecto?.productos)
+    .filter(l => !puestas.has(l.prod_id));
+  nuevas.forEach(l => desdeIntereses.add(l.prod_id));
+  lineasVenta.value = [...lineas, ...nuevas];
+  consultarVentas();
+});
+
+async function consultarVentas() {
   const prospId = props.prospecto?.prosp_id;
   try {
     const ventas = (await ventasApi.deProspecto(prospId)).data || [];
-    if (prospId === props.prospecto?.prosp_id) ventaPrevia.value = ventas.find(x => !x.venta_anulada) || null;
+    if (prospId === props.prospecto?.prosp_id) ventasPrevias.value = ventas.filter(x => !x.venta_anulada);
   } catch { /* es solo un aviso: sin él se puede cerrar igual */ }
+}
+
+const avisoVentasPrevias = computed(() => {
+  const n = ventasPrevias.value.length;
+  if (!n) return '';
+  const total = fmtCOP(ventasPrevias.value.reduce((suma, v) => suma + Number(v.venta_total), 0));
+  const fecha = fmtFecha(ventasPrevias.value[0].venta_fecha);
+  const cuales = n === 1 ? `una venta de ${total} del ${fecha}` : `${n} ventas por ${total}; la última, del ${fecha}`;
+  return `Este cliente ya tiene ${cuales}. Si registras otra, se suman.`;
 });
 
 const opcCanales = [
@@ -156,21 +184,28 @@ const opcCanales = [
   { value: 'correo',     label: '✉️ Correo' }
 ];
 
-watch(() => props.open, (v) => {
-  if (v) {
-    form.value = formVacio();
-    // Cargar productos actuales del prospecto
-    const actuales = (props.prospecto?.productos || []).map(p => ({
-      prod_id:      p.pp_prod_id,
-      es_principal: !!p.pp_es_principal,
-      nota:         p.pp_nota || null
-    }));
-    productosSel.value = JSON.parse(JSON.stringify(actuales));
-    productosOriginales.value = JSON.parse(JSON.stringify(actuales));
-    editandoProductos.value = false;
-    lineasVenta.value = [];
-    ventaPrevia.value = null;
-  }
+function inicializar() {
+  form.value = formVacio();
+  estadoAutomatico.value = null;
+  // Cargar productos actuales del prospecto
+  const actuales = (props.prospecto?.productos || []).map(p => ({
+    prod_id:      p.pp_prod_id,
+    es_principal: !!p.pp_es_principal,
+    nota:         p.pp_nota || null
+  }));
+  productosSel.value = JSON.parse(JSON.stringify(actuales));
+  productosOriginales.value = JSON.parse(JSON.stringify(actuales));
+  editandoProductos.value = false;
+  lineasVenta.value = [];
+  desdeIntereses.clear();
+  claveVenta.value = nuevaClave();
+  ventasPrevias.value = [];
+}
+
+// Si cambia el cliente con la ventana abierta, empieza de cero: lo escrito era del anterior.
+// Un refresco del mismo cliente no borra nada.
+watch([() => props.open, () => props.prospecto?.prosp_id], ([abierta]) => {
+  if (abierta) inicializar();
 });
 
 function estaSeleccionado(prodId) {
@@ -226,46 +261,56 @@ async function submit() {
     const falta = errorVenta(lineasVenta.value);
     if (falta) { toast.warning(falta); return; }
   }
+  // Lo que se envía se decide aquí: si algo cambia mientras se guarda, no se mezcla.
+  const prospId = props.prospecto?.prosp_id;
+  const homenajeId = props.homenajeSalaId;
+  const productos = productosSel.value;
+  const base = {
+    gest_resultado_id: parseInt(form.value.gest_resultado_id),
+    gest_estado_nuevo_id: form.value.gest_estado_nuevo_id ? parseInt(form.value.gest_estado_nuevo_id) : null,
+    gest_comentario: form.value.gest_comentario || null,
+    gest_prox_fecha: form.value.gest_prox_fecha || null,
+    gest_prox_hora:  form.value.gest_prox_hora || null
+  };
+  if (cierra.value) base.venta = { clave: claveVenta.value, items: itemsVenta(lineasVenta.value) };
+  const gestion = {
+    gest_prosp_id: prospId,
+    gest_canal: form.value.gest_canal,
+    gest_duracion_seg: form.value.gest_duracion_seg || null,
+    ...base
+  };
+
   saving.value = true;
   try {
     // 1) Si los productos cambiaron, guardarlos primero
     if (conProductos.value && productosCambiaron.value) {
-      await prospectosApi.actualizarProductos(props.prospecto.prosp_id, productosSel.value);
-      toast.info(`Productos actualizados (${productosSel.value.length})`);
+      await prospectosApi.actualizarProductos(prospId, productos);
+      toast.info(`Productos actualizados (${productos.length})`);
     }
 
     // 2) Registrar gestión
-    const base = {
-      gest_resultado_id: parseInt(form.value.gest_resultado_id),
-      gest_estado_nuevo_id: form.value.gest_estado_nuevo_id ? parseInt(form.value.gest_estado_nuevo_id) : null,
-      gest_comentario: form.value.gest_comentario || null,
-      gest_prox_fecha: form.value.gest_prox_fecha || null,
-      gest_prox_hora:  form.value.gest_prox_hora || null
-    };
-    if (cierra.value) base.venta = { items: itemsVenta(lineasVenta.value) };
-    let g;
-    if (modoSala.value) {
-      g = (await salasApi.registrarVisita(props.homenajeSalaId, base)).data;
-    } else {
-      g = await gestiones.registrar({
-        gest_prosp_id: props.prospecto.prosp_id,
-        gest_canal: form.value.gest_canal,
-        gest_duracion_seg: form.value.gest_duracion_seg || null,
-        ...base
-      });
-    }
+    const g = homenajeId != null
+      ? (await salasApi.registrarVisita(homenajeId, base)).data
+      : await gestiones.registrar(gestion);
     toast.success('Gestión registrada');
     emit('registrada', g);
     emit('close');
   } catch (e) {
     const codigo = e?.response?.data?.error;
-    if (modoSala.value && (codigo === 'HOMENAJE_CERRADO' || codigo === 'HOMENAJE_NO_ENCONTRADO')) {
+    if (homenajeId != null && (codigo === 'HOMENAJE_CERRADO' || codigo === 'HOMENAJE_NO_ENCONTRADO')) {
       // El homenaje terminó mientras el formulario estaba abierto: avisar y soltar el modo sala.
       toast.warning(extract(e));
       emit('sala-cerrada');
       emit('close');
+    } else if (base.venta && codigo === 'CONFLICT') {
+      // Un intento anterior sí se guardó, aunque su respuesta no llegó.
+      toast.info('La venta ya había quedado registrada');
+      emit('registrada', null);
+      emit('close');
     } else {
       notify(e);
+      // Pudo haberse guardado sin que llegara la respuesta: el aviso sale antes de reintentar.
+      if (base.venta) await consultarVentas();
     }
   } finally {
     saving.value = false;
@@ -306,7 +351,8 @@ async function submit() {
         Canal: <strong>🏛️ Visita en sala</strong>
       </div>
       <BaseSelect v-model="form.gest_resultado_id" label="Resultado *" :options="opcResultados" required />
-      <BaseSelect v-model="form.gest_estado_nuevo_id" label="Cambiar estado a..." :options="opcEstados" />
+      <BaseSelect v-model="form.gest_estado_nuevo_id" label="Cambiar estado a..." :options="opcEstados"
+                  @update:model-value="estadoAutomatico = null" />
 
       <BaseTextarea v-model="form.gest_comentario" label="Comentario / observaciones" rows="3" />
 
@@ -325,11 +371,10 @@ async function submit() {
       <!-- Venta: reemplaza a los intereses mientras se cierra el contrato -->
       <div v-if="cierra" data-testid="venta" class="border-t border-text3/10 pt-3 space-y-2">
         <div class="text-sm font-semibold text-text1">🧾 Productos vendidos</div>
-        <p v-if="ventaPrevia" data-testid="venta-previa" class="text-xs text-warning">
-          Este cliente ya tiene una venta de {{ fmtCOP(Number(ventaPrevia.venta_total)) }} del {{ fmtFecha(ventaPrevia.venta_fecha) }}. Si registras otra, se suman.
-        </p>
+        <p v-if="avisoVentasPrevias" data-testid="venta-previa" class="text-xs text-warning">{{ avisoVentasPrevias }}</p>
         <ProductosVendidos v-model="lineasVenta" :productos="productosDisponibles"
                            :por-definir="porDefinir(productosSel, productosDisponibles)" />
+        <p v-if="productosCambiaron" data-testid="intereses-sin-guardar" class="text-xs text-text3">También se guardarán los cambios en los productos de interés.</p>
       </div>
 
       <!-- Editor de productos de interés -->

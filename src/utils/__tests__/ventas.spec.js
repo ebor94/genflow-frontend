@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest';
-import { lineasIniciales, porDefinir, lineasDeVenta, lineaDe, subtotal, totalVenta, errorVenta, itemsVenta } from '@/utils/ventas';
+import { describe, it, expect, vi, afterEach } from 'vitest';
+import { lineasIniciales, porDefinir, lineasDeVenta, lineaDe, subtotal, totalVenta, errorVenta, itemsVenta, nuevaClave } from '@/utils/ventas';
 
 const p = (prod_id, prod_nombre, prod_precio_base, prod_es_generico = 0) => ({ prod_id, prod_nombre, prod_precio_base, prod_es_generico });
 const CATALOGO = [p(1, 'Osarios', null, 1), p(2, 'Osario A2', '8770000.00'), p(3, 'Lote doble', '18950000.00'), p(4, 'Nivel 1A', '0.00')];
@@ -56,5 +56,30 @@ describe('total, validación y envío', () => {
   ])('%s', (_n, lineas, mensaje) => expect(errorVenta(lineas)).toBe(mensaje));
   it('envía solo lo vendido y solo los datos que el servidor espera', () => {
     expect(itemsVenta([L(), L({ prod_id: 3, vendido: false })])).toEqual([{ prod_id: 2, cantidad: 2, precio_unitario: 100 }]);
+  });
+});
+
+describe('clave de la venta', () => {
+  afterEach(() => vi.unstubAllGlobals());
+  const claves = () => Array.from({ length: 200 }, nuevaClave);
+  const validas = (lista) => {
+    expect(new Set(lista).size).toBe(lista.length);
+    for (const c of lista) expect(c).toMatch(/^[\w-]{8,40}$/);
+  };
+
+  it('usa crypto.randomUUID si el navegador lo tiene', () => {
+    vi.stubGlobal('crypto', { randomUUID: () => '3f0c9a2e-7d41-4a55-9b1e-5f1d2c3b4a59' });
+    expect(nuevaClave()).toBe('3f0c9a2e-7d41-4a55-9b1e-5f1d2c3b4a59');
+  });
+  it('da claves distintas que el servidor acepta', () => validas(claves()));
+  it.each([['sin randomUUID (página http)', {}], ['sin crypto', undefined]])('también %s', (_n, crypto) => {
+    vi.stubGlobal('crypto', crypto);
+    validas(claves());
+  });
+  it('sigue siendo válida si el azar sale en cero', () => {
+    vi.stubGlobal('crypto', {});
+    const azar = vi.spyOn(Math, 'random').mockReturnValue(0);
+    expect(nuevaClave()).toMatch(/^[\w-]{8,40}$/);
+    azar.mockRestore();
   });
 });

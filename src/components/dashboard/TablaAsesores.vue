@@ -3,12 +3,12 @@ import { computed } from 'vue';
 import { fmtCOP } from '@/utils/format';
 
 const props = defineProps({
-  asesores: { type: Array, default: () => [] }, // [{ usuario, snap_* fields, meta }]
+  asesores: { type: Array, default: () => [] }, // filas de reporteEquipo: [{ usuario, snap_* }]
   conVentas: { type: Boolean, default: false }  // el área registra el valor vendido
 });
 
 // Sin metas cargadas no hay con qué comparar: la columna no se muestra.
-const conMeta = computed(() => props.asesores.some((a) => a.meta?.meta_contratos > 0));
+const conMeta = computed(() => props.asesores.some((a) => a.snap_meta_contratos > 0));
 const columnas = computed(() => 5 + (props.conVentas ? 1 : 0) + (conMeta.value ? 1 : 0));
 
 function pct(v, m) { return m > 0 ? Math.min(100, Math.round((v / m) * 100)) : 0; }
@@ -44,9 +44,9 @@ function pct(v, m) { return m > 0 ? Math.min(100, Math.round((v / m) * 100)) : 0
           <td v-if="conMeta" class="px-4 py-3">
             <div class="flex items-center gap-2">
               <div class="flex-1 h-2 rounded-full bg-text3/15 overflow-hidden">
-                <div class="h-full rounded-full bg-gold" :style="`width: ${pct(a.snap_contratos_cerrados, a.meta?.meta_contratos)}%`"></div>
+                <div class="h-full rounded-full bg-gold" :style="`width: ${pct(a.snap_contratos_cerrados, a.snap_meta_contratos)}%`"></div>
               </div>
-              <span class="text-xs w-12 text-right">{{ pct(a.snap_contratos_cerrados, a.meta?.meta_contratos) }}%</span>
+              <span class="text-xs w-12 text-right">{{ pct(a.snap_contratos_cerrados, a.snap_meta_contratos) }}%</span>
             </div>
           </td>
         </tr>
