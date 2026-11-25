@@ -13,4 +13,4 @@ En PAP, "Interesado" está marcado en el catálogo para pedir fecha (`resultado_
 5. El atajo "Sin respuesta" del registro rápido registra de una vez; si Administración le marca "requiere fecha", muestra el campo y no guarda hasta tenerla.
 
 ## Qué no cambia
-"Afiliado hoy", "No interesado" y "Sin respuesta"; `quitar_prox` (se manda cuando el resultado no pide fecha); las demás áreas. El backend no exige la fecha: la pantalla anterior sigue funcionando y guarda sin cita, como hoy. Sin migración; el orden de publicación es libre.
+"Afiliado hoy", "No interesado" y "Sin respuesta"; `quitar_prox` (se manda cuando el resultado no pide fecha); las demás áreas. El backend no exige la fecha: la pantalla anterior sigue funcionando y guarda sin cita, como hoy. Sin migración. Orden: primero el backend; con GenFlow nueva y el backend anterior, el registro rápido pediría la fecha de Interesado y se perdería.
