@@ -47,6 +47,7 @@ export const useTrackingStore = defineStore('svTracking', () => {
 
   let enviando = null;      // un solo envío a la vez
   let cambiandoDia = null;
+  let ultimoRechequeo = 0;  // la vuelta a preguntar no se repite más de una vez por minuto
 
   function leerJson(clave) {
     try {
@@ -78,7 +79,7 @@ export const useTrackingStore = defineStore('svTracking', () => {
     if (!j) return;
     try {
       localStorage.setItem(LS_KEY, JSON.stringify({
-        usr_id: j.usr_id, fecha: j.fecha, jor_id: j.jor_id, jor_inicio_at: j.jor_inicio_at
+        usr_id: j.usr_id, dia: j.dia, jor_id: j.jor_id, jor_inicio_at: j.jor_inicio_at
       }));
       localStorage.setItem(LS_BUF, JSON.stringify({ jor_id: j.jor_id, puntos: bufferLocal.value }));
     } catch { /* ignore */ }
@@ -93,11 +94,11 @@ export const useTrackingStore = defineStore('svTracking', () => {
       ultimaPos.value = pos ? { lat: pos.lat, lng: pos.lng, ts: pos.ts || Date.now() } : null;
       enviadoCount.value = 0;
     }
-    const fecha = jornada.fecha
-      || (jornada.jor_fecha ? String(jornada.jor_fecha).slice(0, 10) : diaLocal());
+    // Día del reloj del equipo: se compara con diaLocal(), nunca con la fecha del backend.
+    const dia = jornada.dia || diaLocal();
     jornadaActiva.value = {
       jor_id: jornada.jor_id, jor_inicio_at: jornada.jor_inicio_at,
-      usr_id: jornada.usr_id ?? useAuthStore().usuario?.usr_id, fecha
+      usr_id: jornada.usr_id ?? useAuthStore().usuario?.usr_id, dia
     };
     persistir();
     iniciarWatch();
@@ -116,13 +117,13 @@ export const useTrackingStore = defineStore('svTracking', () => {
     const usrId = useAuthStore().usuario?.usr_id;
     const hoy = diaLocal();
     const m = jornadaActiva.value;
-    if (m && m.usr_id != null && m.usr_id === usrId && m.fecha === hoy) {
+    if (m && m.usr_id != null && m.usr_id === usrId && m.dia === hoy) {
       activar(m);
       return true;
     }
     const c = leerJson(LS_KEY);
-    if (c && c.jor_id && c.usr_id != null && c.usr_id === usrId && c.fecha === hoy) {
-      activar({ jor_id: c.jor_id, jor_inicio_at: c.jor_inicio_at, usr_id: c.usr_id, fecha: c.fecha });
+    if (c && c.jor_id && c.usr_id != null && c.usr_id === usrId && c.dia === hoy) {
+      activar({ jor_id: c.jor_id, jor_inicio_at: c.jor_inicio_at, usr_id: c.usr_id, dia: c.dia });
       return true;
     }
     detener();
@@ -202,10 +203,12 @@ export const useTrackingStore = defineStore('svTracking', () => {
   }
 
   function diaCambio() {
-    return !!jornadaActiva.value && jornadaActiva.value.fecha !== diaLocal();
+    return !!jornadaActiva.value && jornadaActiva.value.dia !== diaLocal();
   }
 
   async function rechequear() {
+    if (Date.now() - ultimoRechequeo < 60_000) return;
+    ultimoRechequeo = Date.now();
     try {
       const { useJornadaObligatoriaStore } = await import('@/stores/useJornadaObligatoriaStore');
       await useJornadaObligatoriaStore().chequear({ force: true });

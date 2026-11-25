@@ -23,7 +23,7 @@ const AYER = '2026-11-24';
 let geo;
 
 function copia(extra = {}) {
-  return { usr_id: 7, fecha: HOY, jor_id: 'J1', jor_inicio_at: '2026-11-25T13:00:00Z', ...extra };
+  return { usr_id: 7, dia: HOY, jor_id: 'J1', jor_inicio_at: '2026-11-25T13:00:00Z', ...extra };
 }
 function guardar(c, puntos) {
   if (c) localStorage.setItem('sv_tracking_jornada', JSON.stringify(c));
@@ -59,7 +59,7 @@ describe('useTrackingStore', () => {
 
   describe('iniciar', () => {
     it('siempre llama al backend, aunque haya una jornada vieja de otro día y usuario', async () => {
-      guardar(copia({ usr_id: 99, fecha: AYER, jor_id: 'VIEJA' }), { jor_id: 'VIEJA', puntos: [pt(1)] });
+      guardar(copia({ usr_id: 99, dia: AYER, jor_id: 'VIEJA' }), { jor_id: 'VIEJA', puntos: [pt(1)] });
       trackingApi.iniciarJornada.mockResolvedValue({ data: { jor_id: 'J2', jor_inicio_at: 'x' } });
       const t = useTrackingStore();
       await t.iniciar();
@@ -68,11 +68,11 @@ describe('useTrackingStore', () => {
       expect(t.bufferLocal).toEqual([]);
     });
 
-    it('deja la copia local con usr_id y fecha', async () => {
+    it('deja la copia local con usr_id y día', async () => {
       trackingApi.iniciarJornada.mockResolvedValue({ data: { jor_id: 'J2', jor_inicio_at: 'x' } });
       await useTrackingStore().iniciar();
       expect(JSON.parse(localStorage.getItem('sv_tracking_jornada'))).toEqual(
-        { usr_id: 7, fecha: HOY, jor_id: 'J2', jor_inicio_at: 'x' }
+        { usr_id: 7, dia: HOY, jor_id: 'J2', jor_inicio_at: 'x' }
       );
       expect(JSON.parse(localStorage.getItem('sv_tracking_buffer')).jor_id).toBe('J2');
     });
@@ -151,7 +151,7 @@ describe('useTrackingStore', () => {
     });
 
     it.each([
-      ['de ayer', copia({ fecha: AYER })],
+      ['de ayer', copia({ dia: AYER })],
       ['de otro usuario', copia({ usr_id: 8 })],
       ['sin usr_id (formato anterior)', { jor_id: 'J1', jor_inicio_at: 'a' }]
     ])('copia %s: false, la borra y no arranca', (_n, c) => {
@@ -166,12 +166,12 @@ describe('useTrackingStore', () => {
 
     it('sin usuario en sesión no acepta una copia sin usr_id', () => {
       useAuthStore().usuario = null;
-      guardar({ jor_id: 'J1', fecha: HOY, jor_inicio_at: 'a' });
+      guardar({ jor_id: 'J1', dia: HOY, jor_inicio_at: 'a' });
       expect(useTrackingStore().reanudarLocal()).toBe(false);
     });
 
     it('una copia inválida no borra los pendientes de otra jornada', () => {
-      guardar(copia({ fecha: AYER, jor_id: 'J1' }), { jor_id: 'J9', puntos: [pt(1)] });
+      guardar(copia({ dia: AYER, jor_id: 'J1' }), { jor_id: 'J9', puntos: [pt(1)] });
       expect(useTrackingStore().reanudarLocal()).toBe(false);
       expect(localStorage.getItem('sv_tracking_jornada')).toBeNull();
       expect(JSON.parse(localStorage.getItem('sv_tracking_buffer')).jor_id).toBe('J9');
@@ -431,13 +431,11 @@ describe('useTrackingStore', () => {
   describe('cruce de medianoche', () => {
     const manana = () => vi.setSystemTime(new Date(2026, 10, 26, 0, 5, 0));
 
-    it('la jornada lleva el día y el usuario fijados al activar', () => {
+    it('la jornada lleva el día del equipo y el usuario fijados al activar', () => {
       const t = useTrackingStore();
       t.reanudar({ jor_id: 'J1', jor_inicio_at: 'a', jor_fecha: '2026-11-25T05:00:00.000Z' });
-      expect(JSON.parse(localStorage.getItem('sv_tracking_jornada'))).toMatchObject({ usr_id: 7, fecha: HOY });
-      manana();
-      geo.watchPosition.mock.calls[0][0](lectura(1));
-      expect(JSON.parse(localStorage.getItem('sv_tracking_jornada')).fecha).toBe(HOY);
+      expect(JSON.parse(localStorage.getItem('sv_tracking_jornada'))).toMatchObject({ usr_id: 7, dia: HOY });
+      expect(t.jornadaActiva).toMatchObject({ usr_id: 7, dia: HOY });
     });
 
     it('la copia conserva el día de la jornada aunque se guarde después de medianoche', async () => {
@@ -450,13 +448,79 @@ describe('useTrackingStore', () => {
       manana();
       d.resolve({ data: { aceptados: 1 } });
       await p;
-      expect(JSON.parse(localStorage.getItem('sv_tracking_jornada')).fecha).toBe(HOY);
+      expect(JSON.parse(localStorage.getItem('sv_tracking_jornada')).dia).toBe(HOY);
     });
 
-    it('el día sale de jor_fecha del backend, no de la hora del equipo', () => {
+    it('equipo con el día corrido: jor_fecha distinta de diaLocal no provoca preguntas', async () => {
+      trackingApi.batchPuntos.mockResolvedValue({ data: { aceptados: 1 } });
       const t = useTrackingStore();
       t.reanudar({ jor_id: 'J1', jor_inicio_at: 'a', jor_fecha: '2026-11-24' });
-      expect(JSON.parse(localStorage.getItem('sv_tracking_jornada')).fecha).toBe(AYER);
+      expect(JSON.parse(localStorage.getItem('sv_tracking_jornada')).dia).toBe(HOY);
+      geo.watchPosition.mock.calls[0][0](lectura(1));
+      geo.watchPosition.mock.calls[0][0](lectura(2));
+      await t.flush();
+      await vi.advanceTimersByTimeAsync(60_000);
+      expect(t.estaActiva).toBe(true);
+      expect(chequear).not.toHaveBeenCalled();
+      expect(trackingApi.batchPuntos).toHaveBeenCalled();
+    });
+
+    it('cruce real de medianoche: envía lo pendiente, detiene y pregunta una sola vez', async () => {
+      trackingApi.batchPuntos.mockResolvedValue({ data: { aceptados: 1 } });
+      guardar(copia(), { jor_id: 'J1', puntos: [pt(1)] });
+      const t = useTrackingStore();
+      t.reanudarLocal();
+      manana();
+      geo.watchPosition.mock.calls[0][0](lectura(2));
+      geo.watchPosition.mock.calls[0][0](lectura(3));
+      await t.flush();
+      await vi.advanceTimersByTimeAsync(0);
+      expect(trackingApi.batchPuntos).toHaveBeenCalledTimes(1);
+      expect(chequear).toHaveBeenCalledTimes(1);
+    });
+
+    it('la vuelta a preguntar no se repite antes de un minuto y sí después', async () => {
+      trackingApi.batchPuntos.mockRejectedValue(errHttp(409, 'JORNADA_CERRADA'));
+      const t = useTrackingStore();
+      for (let i = 0; i < 2; i++) {
+        guardar(copia(), { jor_id: 'J1', puntos: [pt(1)] });
+        t.reanudarLocal();
+        await t.flush();
+        await vi.advanceTimersByTimeAsync(0);
+      }
+      expect(chequear).toHaveBeenCalledTimes(1);
+      await vi.advanceTimersByTimeAsync(61_000);
+      guardar(copia({ dia: HOY }), { jor_id: 'J1', puntos: [pt(1)] });
+      t.reanudarLocal();
+      await t.flush();
+      await vi.advanceTimersByTimeAsync(0);
+      expect(chequear).toHaveBeenCalledTimes(2);
+    });
+
+    it('recarga sin red al día siguiente: reanudarLocal da false', () => {
+      guardar(copia(), { jor_id: 'J1', puntos: [] });
+      manana();
+      const t = useTrackingStore();
+      expect(t.reanudarLocal()).toBe(false);
+      expect(t.estaActiva).toBe(false);
+    });
+
+    it('reanudarLocal conserva el día guardado, no lo recalcula', () => {
+      guardar(copia(), { jor_id: 'J1', puntos: [] });
+      const t = useTrackingStore();
+      t.reanudarLocal();
+      expect(t.jornadaActiva.dia).toBe(HOY);
+    });
+
+    it('reanudar la misma jornada con el backend actualiza el día', () => {
+      const t = useTrackingStore();
+      t.reanudar({ jor_id: 'J1', jor_inicio_at: 'a' });
+      manana();
+      t.reanudar({ jor_id: 'J1', jor_inicio_at: 'a' });
+      expect(t.jornadaActiva.dia).toBe('2026-11-26');
+      geo.watchPosition.mock.calls[0][0](lectura(1));
+      expect(t.estaActiva).toBe(true);
+      expect(chequear).not.toHaveBeenCalled();
     });
 
     it('un punto capturado después de medianoche envía lo pendiente, detiene y pregunta de nuevo', async () => {
