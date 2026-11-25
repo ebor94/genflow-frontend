@@ -252,6 +252,7 @@ async function finalizar() {
   <BaseModal :open="open"
              :title="`Nueva empresa · Paso ${paso} de 3`"
              max-width="max-w-2xl"
+             :paso="paso"
              @close="emit('close')">
     <!-- Paso 1: NIT -->
     <div v-if="paso === 1" class="space-y-4">

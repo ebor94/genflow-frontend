@@ -58,6 +58,14 @@
     @apply bg-white rounded-sv shadow-sv-card border border-text3/10;
   }
 
+  /* Ventanas: nunca más altas que la pantalla. dvh descuenta la barra del navegador en el
+     celular; la línea con vh queda para los navegadores que no lo conocen. */
+  .sv-modal {
+    @apply flex flex-col;
+    max-height: calc(100vh - 1.5rem);
+    max-height: calc(100dvh - 1.5rem);
+  }
+
   .sv-input {
     @apply block w-full rounded-sv border-text3/30 text-sm shadow-sm transition-colors
            focus:border-gold focus:ring-2 focus:ring-gold/20

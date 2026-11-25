@@ -51,7 +51,7 @@ function irAProspecto(p) {
 </script>
 
 <template>
-  <BaseModal :open="open" title="" max-width="max-w-2xl" @close="emit('close')">
+  <BaseModal :open="open" title="" max-width="max-w-2xl" cierra-afuera @close="emit('close')">
     <template #header>
       <span class="text-base text-text2">🔎 Buscar</span>
     </template>

@@ -201,7 +201,7 @@ function descartarExistente() {
 </script>
 
 <template>
-  <BaseModal :open="open" :title="paso === 1 ? 'Nuevo prospecto · Paso 1' : 'Nuevo prospecto · Paso 2'" max-width="max-w-2xl" @close="emit('close')">
+  <BaseModal :open="open" :title="paso === 1 ? 'Nuevo prospecto · Paso 1' : 'Nuevo prospecto · Paso 2'" max-width="max-w-2xl" :paso="paso" @close="emit('close')">
     <!-- Paso 1: validar teléfono -->
     <div v-if="paso === 1" class="space-y-4">
       <p class="text-sm text-text2">Primero validamos si ya existe esta persona en el sistema.</p>
