@@ -1,13 +1,15 @@
 /**
  * Presupuesto contra realizado: cumplimiento, semáforo y meses.
  */
+import { AREAS } from '@/utils/areasIds';
+
 const MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto',
   'septiembre', 'octubre', 'noviembre', 'diciembre'];
 
-/** Área de Prenecesidad: la de PRENEC entre las accesibles; si no está, la activa. */
+/** Área de Prenecesidad. El super admin puede no tenerla en su lista: ahí vale el id del seed. */
 export function areaPrenec(auth) {
   const a = (auth.areasAccesibles || []).find((x) => x.area_codigo === 'PRENEC');
-  return a ? a.area_id : (auth.areaActivaId ?? null);
+  return a ? a.area_id : AREAS.PRENEC;
 }
 
 /** Realizado ÷ presupuesto en %, sin redondear. null si no hay presupuesto. */

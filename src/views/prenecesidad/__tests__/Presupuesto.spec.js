@@ -33,6 +33,7 @@ let pinia;
 function factory() {
   pinia = createTestingPinia({ createSpy: vi.fn });
   const auth = useAuthStore(pinia);
+  auth.areasAccesibles = [{ area_id: 7, area_codigo: 'PRENEC' }];
   auth.areaActivaId = 7;
   return mount(Presupuesto, { global: { plugins: [pinia], stubs: { teleport: true } } });
 }
@@ -46,7 +47,7 @@ describe('Presupuesto (vista)', () => {
   });
   afterEach(() => vi.useRealTimers());
 
-  it('pide con el área activa y el mes actual', async () => {
+  it('pide con el área de Prenecesidad y el mes actual', async () => {
     factory();
     await flushPromises();
     expect(presupuestosApi.obtener).toHaveBeenCalledWith({ area_id: 7, anio: 2026, mes: 11 });

@@ -20,6 +20,7 @@ const otro = { usr_id: 6, nombre: 'Otro', presupuesto: 9000, realizado: 9000, ca
 function factory() {
   const pinia = createTestingPinia({ createSpy: vi.fn });
   const auth = useAuthStore(pinia);
+  auth.areasAccesibles = [{ area_id: 7, area_codigo: 'PRENEC' }];
   auth.areaActivaId = 7;
   auth.usuario = { usr_id: 5 };
   return mount(MisMetricas, { global: { plugins: [pinia], stubs: { teleport: true } } });
@@ -35,7 +36,7 @@ describe('MisMetricas: tarjeta de presupuesto', () => {
   });
   afterEach(() => vi.useRealTimers());
 
-  it('pide el mes actual del área activa y muestra lo propio', async () => {
+  it('pide el mes actual del área de Prenecesidad y muestra lo propio', async () => {
     const w = factory();
     await flushPromises();
     expect(presupuestosApi.obtener).toHaveBeenCalledWith({ area_id: 7, anio: 2026, mes: 11 });

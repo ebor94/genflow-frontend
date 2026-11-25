@@ -94,16 +94,16 @@ describe('Presupuesto: área de Prenecesidad', () => {
     expect(presupuestosApi.revisar.mock.calls[0][0].get('anio')).toBe('2025');
   });
 
-  it('sin áreas accesibles y sin activa, no rompe', async () => {
+  it('sin áreas accesibles y sin activa, usa el id de Prenecesidad del seed', async () => {
     factory({ areasAccesibles: [], areaActivaId: null });
     await flushPromises();
-    expect(presupuestosApi.obtener).toHaveBeenCalledWith({ area_id: null, anio: 2026, mes: 11 });
+    expect(presupuestosApi.obtener).toHaveBeenCalledWith({ area_id: 1, anio: 2026, mes: 11 });
   });
 
-  it('sin Prenecesidad en la lista usa el área activa', async () => {
+  it('sin Prenecesidad en la lista (super admin) usa el id del seed, no la activa', async () => {
     factory({ areasAccesibles: [{ area_id: 9, area_codigo: 'SVC' }], areaActivaId: 9 });
     await flushPromises();
-    expect(presupuestosApi.obtener).toHaveBeenCalledWith({ area_id: 9, anio: 2026, mes: 11 });
+    expect(presupuestosApi.obtener).toHaveBeenCalledWith({ area_id: 1, anio: 2026, mes: 11 });
   });
 });
 

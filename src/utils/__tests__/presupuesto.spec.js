@@ -64,8 +64,8 @@ describe('areaPrenec', () => {
   it('usa la de Prenecesidad aunque la activa sea otra', () => {
     expect(areaPrenec({ areasAccesibles: [{ area_id: 9, area_codigo: 'SVC' }, PRENEC], areaActivaId: 9 })).toBe(3);
   });
-  it('sin Prenecesidad en la lista, usa la activa', () => {
-    expect(areaPrenec({ areasAccesibles: [{ area_id: 9, area_codigo: 'SVC' }], areaActivaId: 9 })).toBe(9);
-    expect(areaPrenec({ areasAccesibles: [], areaActivaId: null })).toBeNull();
+  it('super admin sin Prenecesidad en su lista: usa el id de siempre, nunca otra área activa', () => {
+    expect(areaPrenec({ areasAccesibles: [{ area_id: 9, area_codigo: 'SVC' }], areaActivaId: 9 })).toBe(1);
+    expect(areaPrenec({ areasAccesibles: [], areaActivaId: null })).toBe(1);
   });
 });
