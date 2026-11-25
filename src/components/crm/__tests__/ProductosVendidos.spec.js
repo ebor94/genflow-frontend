@@ -63,4 +63,13 @@ describe('ProductosVendidos', () => {
       .toBe('Falta definir: Osarios, Lotes. Agrega abajo el producto exacto que se vendió.');
     expect(montar().find('[data-testid="por-definir"]').exists()).toBe(false);
   });
+
+  it('Enter en la cantidad y en el precio no envía el formulario', async () => {
+    const w = montar();
+    for (const el of [w.get('[data-testid="cantidad-2"]').element, w.get('[data-testid="precio-2"] input').element]) {
+      const ev = new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true });
+      el.dispatchEvent(ev);
+      expect(ev.defaultPrevented).toBe(true);
+    }
+  });
 });

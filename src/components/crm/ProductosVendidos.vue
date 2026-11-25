@@ -60,7 +60,7 @@ function agregar(e) {
       <div v-if="l.vendido" class="mt-2 grid grid-cols-[4rem_1fr] sm:grid-cols-[4rem_10rem_1fr] gap-2 items-center">
         <input type="text" inputmode="numeric" autocomplete="off" class="sv-input text-center" :value="l.cantidad ?? ''"
                :aria-label="`Cantidad de ${l.nombre}`" :data-testid="`cantidad-${l.prod_id}`"
-               @input="cambiarCantidad(l.prod_id, $event.target.value)" />
+               @input="cambiarCantidad(l.prod_id, $event.target.value)" @keydown.enter.prevent />
         <CampoPesos :model-value="l.precio_unitario" :etiqueta="`Precio por unidad de ${l.nombre}`"
                     :data-testid="`precio-${l.prod_id}`" @update:model-value="cambiar(l.prod_id, { precio_unitario: $event })" />
         <span :data-testid="`subtotal-${l.prod_id}`"

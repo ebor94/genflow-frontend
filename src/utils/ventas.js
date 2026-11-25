@@ -38,7 +38,7 @@ export function lineasDeVenta(venta) {
     prod_id: i.vi_prod_id,
     nombre: i.producto?.prod_nombre || 'Producto no disponible',
     vendido: true,
-    cantidad: i.vi_cantidad,
+    cantidad: Number(i.vi_cantidad),
     precio_unitario: Number(i.vi_precio_unitario)
   }));
 }

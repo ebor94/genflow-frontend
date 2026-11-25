@@ -35,6 +35,10 @@ it('las líneas de una venta guardada conservan lo vendido', () => {
   expect(lineasDeVenta(null)).toEqual([]);
 });
 
+it('la cantidad siempre es numérica', () => {
+  expect(lineasDeVenta({ items: [{ vi_prod_id: 2, vi_cantidad: '2', vi_precio_unitario: '1.00', producto: null }] })[0].cantidad).toBe(2);
+});
+
 describe('total, validación y envío', () => {
   it('suma solo lo vendido', () => {
     expect(subtotal(L())).toBe(200);

@@ -16,9 +16,21 @@ const formato = (n) => (n === null || n === undefined ? '' : miles.format(n));
 
 function alEscribir(e) {
   const campo = e.target;
-  const cursor = campo.selectionStart ?? campo.value.length;
-  let aLaDerecha = campo.value.slice(cursor).replace(/\D/g, '').length;
-  const digitos = campo.value.replace(/\D/g, '').slice(0, MAX_DIGITOS);
+  const antes = formato(props.modelValue);
+  let texto = campo.value;
+  let cursor = campo.selectionStart ?? texto.length;
+  // Solo se borró un separador: se borra el dígito de al lado. Si no, el punto vuelve a salir
+  // y el cursor se traba.
+  if (texto.length === antes.length - 1 && texto.replace(/\D/g, '') === antes.replace(/\D/g, '')) {
+    if (e.inputType === 'deleteContentBackward' && cursor > 0) {
+      texto = texto.slice(0, cursor - 1) + texto.slice(cursor);
+      cursor -= 1;
+    } else if (e.inputType === 'deleteContentForward') {
+      texto = texto.slice(0, cursor) + texto.slice(cursor + 1);
+    }
+  }
+  let aLaDerecha = texto.slice(cursor).replace(/\D/g, '').length;
+  const digitos = texto.replace(/\D/g, '').slice(0, MAX_DIGITOS);
   const valor = digitos ? Number(digitos) : null;
 
   campo.value = formato(valor);
@@ -37,6 +49,6 @@ function alEscribir(e) {
   <span class="relative block">
     <span class="absolute left-2 top-1/2 -translate-y-1/2 text-sm text-text3" aria-hidden="true">$</span>
     <input type="text" inputmode="numeric" autocomplete="off" :value="formato(modelValue)"
-           :aria-label="etiqueta" :disabled="disabled" class="sv-input pl-6 text-right" @input="alEscribir" />
+           :aria-label="etiqueta" :disabled="disabled" class="sv-input pl-6 text-right" @input="alEscribir" @keydown.enter.prevent />
   </span>
 </template>

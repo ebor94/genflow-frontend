@@ -54,4 +54,32 @@ describe('CampoPesos', () => {
     await escribir(input, '123456789012');
     expect(w.emitted('update:modelValue').at(-1)).toEqual([1234567890]);
   });
+  describe('borrar', () => {
+    async function borrar(input, texto, cursor, inputType) {
+      input.element.value = texto;
+      input.element.setSelectionRange(cursor, cursor);
+      input.element.dispatchEvent(new InputEvent('input', { bubbles: true, inputType }));
+      await input.trigger('blur');
+    }
+    it('Retroceso sobre un punto de miles borra el dígito de al lado', async () => {
+      const { w, input } = montar(8770000);
+      await borrar(input, '8770.000', 1, 'deleteContentBackward');
+      expect(w.emitted('update:modelValue').at(-1)).toEqual([770000]);
+      expect(input.element.value).toBe('770.000');
+      expect(input.element.selectionStart).toBe(0);
+    });
+    it('Suprimir sobre un punto de miles borra el dígito siguiente', async () => {
+      const { w, input } = montar(8770000);
+      await borrar(input, '8770.000', 1, 'deleteContentForward');
+      expect(w.emitted('update:modelValue').at(-1)).toEqual([870000]);
+      expect(input.element.value).toBe('870.000');
+      expect(input.element.selectionStart).toBe(1);
+    });
+    it('borrar un dígito normal funciona igual', async () => {
+      const { w, input } = montar(8770000);
+      await borrar(input, '8.770.00', 8, 'deleteContentBackward');
+      expect(w.emitted('update:modelValue').at(-1)).toEqual([877000]);
+      expect(input.element.value).toBe('877.000');
+    });
+  });
 });
