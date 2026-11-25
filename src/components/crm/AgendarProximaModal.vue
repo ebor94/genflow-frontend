@@ -28,7 +28,7 @@ const saving = ref(false);
 
 watch(() => props.open, (v) => {
   if (v && props.prospecto) {
-    fecha.value = props.prospecto.prosp_prox_gestion_fecha || '';
+    fecha.value = (props.prospecto.prosp_prox_gestion_fecha || '').slice(0, 10);
     hora.value  = props.prospecto.prosp_prox_gestion_hora?.slice(0,5) || '';
   }
 });

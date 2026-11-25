@@ -3,7 +3,7 @@
  * HistorialItem.vue — item de timeline de gestión inmutable.
  */
 import { computed } from 'vue';
-import { fmtFechaHora, fmtRelativo } from '@/utils/format';
+import { fmtFecha, fmtFechaHora, fmtRelativo } from '@/utils/format';
 
 const props = defineProps({ gestion: { type: Object, required: true } });
 
@@ -40,7 +40,7 @@ const iconoCanal = computed(() => ({
       <span v-if="gestion.asesor">por {{ gestion.asesor.usr_nombre }} {{ gestion.asesor.usr_apellido }}</span>
       <span v-if="gestion.gest_canal === 'visita_sala'">· Visita en sala</span>
       <span v-if="gestion.gest_duracion_seg">· {{ Math.floor(gestion.gest_duracion_seg / 60) }}m {{ gestion.gest_duracion_seg % 60 }}s</span>
-      <span v-if="gestion.gest_prox_fecha">· próx: {{ gestion.gest_prox_fecha }} {{ gestion.gest_prox_hora?.slice(0,5) || '' }}</span>
+      <span v-if="gestion.gest_prox_fecha">· próx: {{ fmtFecha(gestion.gest_prox_fecha) }} {{ gestion.gest_prox_hora?.slice(0,5) || '' }}</span>
     </div>
   </div>
 </template>

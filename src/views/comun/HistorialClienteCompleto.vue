@@ -12,7 +12,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { useApiError } from '@/composables/useApiError';
 import { useTelefono } from '@/composables/useTelefono';
 import { personasApi } from '@/api/personasApi';
-import { fmtFechaHora, fmtRelativo } from '@/utils/format';
+import { fmtFecha, fmtFechaHora, fmtRelativo } from '@/utils/format';
 
 import AreaBadge from '@/components/common/AreaBadge.vue';
 import StatusPill from '@/components/common/StatusPill.vue';
@@ -124,7 +124,7 @@ function colorCanal(canal) {
             </div>
             <div v-if="p.empresa" class="text-xs text-text3 mt-1">Empresa: {{ p.empresa.empresa_razon_social }}</div>
             <div v-if="p.prosp_prox_gestion_fecha" class="text-xs text-text3 mt-1">
-              📅 Próx: {{ p.prosp_prox_gestion_fecha }} {{ p.prosp_prox_gestion_hora?.slice(0,5) || '' }}
+              📅 Próx: {{ fmtFecha(p.prosp_prox_gestion_fecha) }} {{ p.prosp_prox_gestion_hora?.slice(0,5) || '' }}
             </div>
           </div>
         </div>
@@ -171,7 +171,7 @@ function colorCanal(canal) {
               por <strong>{{ g.asesor?.usr_nombre }} {{ g.asesor?.usr_apellido }}</strong>
               <span v-if="g.gest_canal === 'visita_sala'"> · Visita en sala</span>
               <span v-if="g.gest_duracion_seg"> · {{ Math.floor(g.gest_duracion_seg / 60) }}m {{ g.gest_duracion_seg % 60 }}s</span>
-              <span v-if="g.gest_prox_fecha"> · próx: {{ g.gest_prox_fecha }}</span>
+              <span v-if="g.gest_prox_fecha"> · próx: {{ fmtFecha(g.gest_prox_fecha) }}</span>
             </div>
           </div>
         </div>

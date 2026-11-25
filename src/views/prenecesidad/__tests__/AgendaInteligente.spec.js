@@ -14,9 +14,11 @@ async function montar(agendaMes) {
 }
 
 // Celdas del calendario que llevan marca (punto) y su color.
+// `pos` es la posición en la cuadrícula: el 28 de noviembre de 2026 es la celda 33 (la cuadrícula arranca el 26 de octubre).
 const marcas = (w) => w.findAll('button.relative')
-  .filter((b) => b.find('span.rounded-full').exists())
-  .map((b) => ({ dia: b.find('span').text(), vencida: b.find('span.rounded-full').classes().includes('bg-danger') }));
+  .map((b, pos) => ({ b, pos }))
+  .filter(({ b }) => b.find('span.rounded-full').exists())
+  .map(({ b, pos }) => ({ pos, dia: b.find('span').text(), vencida: b.find('span.rounded-full').classes().includes('bg-danger') }));
 
 enableAutoUnmount(afterEach);
 
@@ -27,13 +29,13 @@ describe('AgendaInteligente: marcas del calendario', () => {
   });
   afterEach(() => vi.useRealTimers());
 
-  it('marca el día de la gestión y no el de hoy', async () => {
-    const w = await montar([{ prosp_prox_gestion_fecha: '2026-11-28', total: 2, vencidas: 0 }]);
-    expect(marcas(w)).toEqual([{ dia: '28', vencida: false }]);
+  it.each(['2026-11-28', '2026-11-28T05:00:00.000Z'])('marca el día de la gestión (%s) y no el de hoy', async (f) => {
+    const w = await montar([{ prosp_prox_gestion_fecha: f, total: 2, vencidas: 0 }]);
+    expect(marcas(w)).toEqual([{ pos: 33, dia: '28', vencida: false }]);
   });
 
-  it('con vencidas la marca es la de vencida', async () => {
-    const w = await montar([{ prosp_prox_gestion_fecha: '2026-11-28', total: 2, vencidas: 1 }]);
-    expect(marcas(w)).toEqual([{ dia: '28', vencida: true }]);
+  it.each(['2026-11-28', '2026-11-28T05:00:00.000Z'])('con vencidas la marca es la de vencida (%s)', async (f) => {
+    const w = await montar([{ prosp_prox_gestion_fecha: f, total: 2, vencidas: 1 }]);
+    expect(marcas(w)).toEqual([{ pos: 33, dia: '28', vencida: true }]);
   });
 });

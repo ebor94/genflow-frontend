@@ -16,4 +16,10 @@ describe('HistorialItem', () => {
     expect(w.text()).toContain('📞');
     expect(w.text()).not.toContain('Visita en sala');
   });
+
+  it.each(['2026-11-28', '2026-11-28T05:00:00.000Z'])('muestra la próxima fecha %s con formato', (f) => {
+    const w = mount(HistorialItem, { props: { gestion: { ...base, gest_canal: 'llamada', gest_prox_fecha: f } } });
+    expect(w.text()).toContain('28 nov 2026');
+    expect(w.text()).not.toContain('T05:00');
+  });
 });

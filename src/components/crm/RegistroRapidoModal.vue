@@ -12,6 +12,7 @@ import { usePapStore } from '@/stores/usePapStore';
 import { useToastStore } from '@/stores/useToastStore';
 import { useApiError } from '@/composables/useApiError';
 import { useGeolocation } from '@/composables/useGeolocation';
+import { dayjs, diaLocal } from '@/utils/format';
 
 import BaseInput from '@/components/ui/BaseInput.vue';
 import BaseButton from '@/components/ui/BaseButton.vue';
@@ -40,9 +41,7 @@ const form = ref({
 
 // Fecha default sugerida cuando el asesor marca VOLVER: mañana
 function fechaDefaultManana() {
-  const d = new Date();
-  d.setDate(d.getDate() + 1);
-  return d.toISOString().slice(0, 10);
+  return diaLocal(dayjs().add(1, 'day'));
 }
 const saving = ref(false);
 

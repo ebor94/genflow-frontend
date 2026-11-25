@@ -41,20 +41,20 @@ describe('FichaCliente: color de la próxima gestión', () => {
 
   const clases = async (fecha) => (await montar(fecha)).find('section.border-l-4.flex').classes();
 
-  it('la del día de hoy queda pendiente', async () => {
-    const c = await clases('2026-11-28');
+  it.each(['2026-11-28', '2026-11-28T05:00:00.000Z'])('la del día de hoy (%s) queda pendiente', async (f) => {
+    const c = await clases(f);
     expect(c).toContain('border-warning');
     expect(c).not.toContain('border-danger');
   });
 
-  it('la de ayer sale vencida', async () => {
-    const c = await clases('2026-11-27');
+  it.each(['2026-11-27', '2026-11-27T05:00:00.000Z'])('la de ayer (%s) sale vencida', async (f) => {
+    const c = await clases(f);
     expect(c).toContain('border-danger');
     expect(c).not.toContain('border-warning');
   });
 
-  it('la de mañana queda pendiente', async () => {
-    const c = await clases('2026-11-29');
+  it.each(['2026-11-29', '2026-11-29T05:00:00.000Z'])('la de mañana (%s) queda pendiente', async (f) => {
+    const c = await clases(f);
     expect(c).toContain('border-warning');
   });
 });
