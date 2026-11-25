@@ -7,6 +7,7 @@ import { useAuthStore } from '@/stores/useAuthStore';
 import { useConfigStore } from '@/stores/useConfigStore';
 import { useApiError } from '@/composables/useApiError';
 import { useTelefono } from '@/composables/useTelefono';
+import { useAgenda } from '@/composables/useAgenda';
 import { personasApi } from '@/api/personasApi';
 import { salasApi } from '@/api/salasApi';
 import { detalleInteres } from '@/utils/catalogoProductos';
@@ -34,6 +35,7 @@ const { notify } = useApiError();
 const otrosProspectos = ref([]);
 const puedeVerHistorial = computed(() => auth.rolNivel <= 3);
 const { formato } = useTelefono();
+const { urgencia } = useAgenda();
 
 const showRegistrar = ref(false);
 const showAgendar = ref(false);
@@ -140,7 +142,7 @@ function llamar() {
 
       <!-- Próxima gestión -->
       <section v-if="p.prosp_prox_gestion_fecha" class="sv-card p-4 mb-4 flex items-center justify-between"
-               :class="new Date(p.prosp_prox_gestion_fecha) < new Date().setHours(0,0,0,0)
+               :class="urgencia(p.prosp_prox_gestion_fecha) === 'vencida'
                        ? 'border-l-4 border-danger bg-danger/5'
                        : 'border-l-4 border-warning bg-warning/5'">
         <div>

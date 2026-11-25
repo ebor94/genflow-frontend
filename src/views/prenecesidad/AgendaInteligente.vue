@@ -26,6 +26,11 @@ const fmtFechaSel = computed(() =>
   dayjs(fechaSel.value).format('dddd D [de] MMMM YYYY').replace(/^./, c => c.toUpperCase())
 );
 
+// El backend entrega la fecha como prosp_prox_gestion_fecha; MiniCalendar espera `fecha`
+const eventosMes = computed(() =>
+  (store.agendaMes || []).map(e => ({ ...e, fecha: e.prosp_prox_gestion_fecha }))
+);
+
 async function cargarMes(anio, mes) {
   try { await store.fetchAgendaMes(anio, mes); } catch (e) { notify(e); }
 }
@@ -67,7 +72,7 @@ function abrir(p) {
     <div class="grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-5">
       <MiniCalendar
         v-model="fechaSel"
-        :eventos="store.agendaMes"
+        :eventos="eventosMes"
         @month-change="onMesChange"
       />
 
