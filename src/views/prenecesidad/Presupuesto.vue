@@ -13,6 +13,7 @@ import BaseButton from '@/components/ui/BaseButton.vue';
 import ChipCumplimiento from '@/components/prenec/ChipCumplimiento.vue';
 import BarrasPresupuesto from '@/components/prenec/BarrasPresupuesto.vue';
 import TablaPresupuesto from '@/components/prenec/TablaPresupuesto.vue';
+import SubirPresupuestoModal from '@/components/prenec/SubirPresupuestoModal.vue';
 
 const auth = useAuthStore();
 const toast = useToastStore();
@@ -27,6 +28,7 @@ const error = ref(false);
 const grupoSel = ref(null);
 const asesorSel = ref(null);
 const bajando = ref(false);
+const subiendo = ref(false);
 
 const periodo = () => {
   const [anio, m] = mes.value.split('-').map(Number);
@@ -139,6 +141,7 @@ async function descargarPlantilla() {
       </div>
       <div v-if="datos?.puede_cargar" class="flex items-center gap-2 flex-wrap">
         <BaseButton variant="secondary" data-testid="btn-plantilla" :loading="bajando" @click="descargarPlantilla">Plantilla del mes</BaseButton>
+        <BaseButton data-testid="btn-subir" @click="subiendo = true">Subir presupuesto</BaseButton>
       </div>
     </header>
 
@@ -191,5 +194,11 @@ async function descargarPlantilla() {
         <p v-else-if="!soloUno" class="text-center text-sm text-text3">Toca un asesor para ver su detalle por categoría.</p>
       </template>
     </template>
+
+    <SubirPresupuestoModal
+      v-if="datos?.puede_cargar"
+      :open="subiendo" :area-id="auth.areaActivaId" :anio="periodo().anio" :mes="periodo().mes"
+      @close="subiendo = false" @guardado="cargar"
+    />
   </div>
 </template>

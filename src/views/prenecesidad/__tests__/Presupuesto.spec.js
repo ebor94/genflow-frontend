@@ -132,10 +132,24 @@ describe('Presupuesto (vista)', () => {
     let w = factory();
     await flushPromises();
     expect(w.find('[data-testid="btn-plantilla"]').text()).toBe('Plantilla del mes');
+    expect(w.find('[data-testid="btn-subir"]').text()).toBe('Subir presupuesto');
     presupuestosApi.obtener.mockResolvedValue(respuesta({ puede_cargar: false }));
     w = factory();
     await flushPromises();
     expect(w.find('[data-testid="btn-plantilla"]').exists()).toBe(false);
+    expect(w.find('[data-testid="btn-subir"]').exists()).toBe(false);
+  });
+
+  it('subir abre la ventana y al guardar recarga el mes', async () => {
+    const w = factory();
+    await flushPromises();
+    expect(w.find('[data-testid="archivo"]').exists()).toBe(false);
+    await w.find('[data-testid="btn-subir"]').trigger('click');
+    expect(w.find('[data-testid="archivo"]').exists()).toBe(true);
+    presupuestosApi.obtener.mockClear();
+    w.findComponent({ name: 'SubirPresupuestoModal' }).vm.$emit('guardado');
+    await flushPromises();
+    expect(presupuestosApi.obtener).toHaveBeenCalledWith({ area_id: 7, anio: 2026, mes: 11 });
   });
 
   it('sin asesores muestra un aviso', async () => {
