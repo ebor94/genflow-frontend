@@ -59,6 +59,7 @@ async function cargar() {
   } catch (e) {
     if (mio !== pedido) return;
     datos.value = null;
+    subiendo.value = false;
     error.value = true;
     toast.error(extract(e));
   } finally {
@@ -68,6 +69,7 @@ async function cargar() {
 
 function cambiarMes(valor) {
   mes.value = valor;
+  subiendo.value = false;
   cargar();
 }
 

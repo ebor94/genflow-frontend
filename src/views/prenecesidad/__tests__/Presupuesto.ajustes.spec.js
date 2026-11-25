@@ -94,6 +94,43 @@ describe('Presupuesto: área de Prenecesidad', () => {
     expect(presupuestosApi.revisar.mock.calls[0][0].get('anio')).toBe('2025');
   });
 
+  it('si el mes cambia con la ventana abierta y la consulta falla, no se reabre sola al recuperar', async () => {
+    const w = factory();
+    await flushPromises();
+    await w.find('[data-testid="btn-subir"]').trigger('click');
+    expect(w.find('[data-testid="archivo"]').exists()).toBe(true);
+    presupuestosApi.obtener.mockRejectedValueOnce(new Error('caído'));
+    await w.find('select').setValue('2026-10');
+    await flushPromises();
+    expect(w.find('[data-testid="archivo"]').exists()).toBe(false);
+    await w.find('select').setValue('2026-09');
+    await flushPromises();
+    expect(w.find('[data-testid="btn-subir"]').exists()).toBe(true);
+    expect(w.find('[data-testid="archivo"]').exists()).toBe(false);
+  });
+
+  it('si la recarga falla con la ventana abierta, al reintentar no se reabre sola', async () => {
+    const w = factory();
+    await flushPromises();
+    await w.find('[data-testid="btn-subir"]').trigger('click');
+    presupuestosApi.obtener.mockRejectedValueOnce(new Error('caído'));
+    w.findComponent({ name: 'SubirPresupuestoModal' }).vm.$emit('guardado');
+    await flushPromises();
+    await w.find('[data-testid="error-presupuesto"] button').trigger('click');
+    await flushPromises();
+    expect(w.find('[data-testid="btn-subir"]').exists()).toBe(true);
+    expect(w.find('[data-testid="archivo"]').exists()).toBe(false);
+  });
+
+  it('cambiar de mes cierra la ventana aunque la consulta salga bien', async () => {
+    const w = factory();
+    await flushPromises();
+    await w.find('[data-testid="btn-subir"]').trigger('click');
+    await w.find('select').setValue('2026-10');
+    await flushPromises();
+    expect(w.find('[data-testid="archivo"]').exists()).toBe(false);
+  });
+
   it('sin áreas accesibles y sin activa, usa el id de Prenecesidad del seed', async () => {
     factory({ areasAccesibles: [], areaActivaId: null });
     await flushPromises();

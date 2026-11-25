@@ -70,9 +70,11 @@ const nav = computed(() => {
     grupos.push({ tipo: 'link', to: { name: 'prenec-salas' },    label: 'Salas' });
     grupos.push({ tipo: 'link', to: { name: 'prenec-agenda' },   label: 'Agenda' });
     grupos.push({ tipo: 'link', to: { name: 'prenec-metricas' }, label: 'Métricas' });
-    grupos.push({ tipo: 'link', to: { name: 'prenec-presupuesto' }, label: 'Presupuesto' });
+    // Sin supervisión es un enlace suelto, solo desde lg para no ensanchar la barra.
+    if (!esSup) grupos.push({ tipo: 'link', to: { name: 'prenec-presupuesto' }, label: 'Presupuesto', clase: 'hidden lg:inline-block' });
     if (esSup) {
       grupos.push({ tipo: 'dropdown', key: 'prenec-sup', label: 'Supervisión', items: [
+        { to: { name: 'prenec-presupuesto' },      label: 'Presupuesto',          desc: 'Meta y realizado del equipo' },
         { to: { name: 'prenec-supervisor' },      label: 'Panel supervisor',     desc: 'Métricas y equipo' },
         { to: { name: 'reasignacion-masiva' },    label: 'Reasignar prospectos', desc: 'Mover cartera entre asesores' },
         { to: { name: 'tracking-live' },          label: 'Mapa en vivo',         desc: 'Posición actual del equipo' },
@@ -178,6 +180,7 @@ function dropdownActivo(grupo) {
           <RouterLink v-if="grupo.tipo === 'link'"
                       :to="grupo.to"
                       class="px-3 py-2 text-sm font-medium rounded-sv text-cream/75 hover:text-gold-bright hover:bg-cream/5 transition-colors"
+                      :class="grupo.clase"
                       active-class="text-gold-bright bg-cream/10">
             {{ grupo.label }}
           </RouterLink>

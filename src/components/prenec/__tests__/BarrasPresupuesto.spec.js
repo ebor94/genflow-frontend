@@ -50,6 +50,16 @@ describe('BarrasPresupuesto', () => {
     expect(clases(3)).toContain('bg-danger');
     expect(clases(4)).not.toContain('bg-danger');
   });
+  it('Retirado queda fuera del texto que se trunca, para que un nombre largo no lo oculte', () => {
+    const w = montar({ asesores: [{ usr_id: 1, nombre: 'Nombre larguísimo '.repeat(8), presupuesto: 1, realizado: 1, activo: false }] });
+    const nombre = w.find('[data-testid="asesor-1"] .truncate');
+    expect(nombre.text()).not.toContain('Retirado');
+    const ins = w.find('[data-testid="insignia-retirado-1"]');
+    expect(ins.text()).toBe('Retirado');
+    expect(ins.classes()).toContain('shrink-0');
+    expect(ins.element.closest('.truncate')).toBeNull();
+    expect(nombre.classes()).toContain('min-w-0');
+  });
   it('un asesor retirado lleva la etiqueta Retirado; uno activo no', () => {
     const w = montar({ asesores: [
       { usr_id: 1, nombre: 'A', presupuesto: 1, realizado: 1, activo: false },

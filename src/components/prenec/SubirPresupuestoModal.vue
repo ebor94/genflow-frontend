@@ -114,7 +114,7 @@ async function confirmar() {
     <p v-if="archivo" data-testid="nombre-archivo" class="text-xs text-text3 mt-1">{{ archivo.name }} ({{ (archivo.size / 1024).toFixed(1) }} KB)</p>
     <p class="mt-1 text-xs text-text3">Usa la plantilla del mes. Hasta 2 MB.</p>
 
-    <p aria-live="polite" class="mt-4 text-sm text-text3 empty:hidden">{{ revisando ? 'Revisando el archivo...' : '' }}</p>
+    <p aria-live="polite" class="text-sm text-text3" :class="{ 'mt-4': revisando }">{{ revisando ? 'Revisando el archivo...' : '' }}</p>
     <p v-if="errorArchivo" data-testid="error-archivo" role="alert" class="mt-4 text-sm text-text1 border border-danger bg-danger/10 rounded-sv px-3 py-2">{{ errorArchivo }}</p>
 
     <template v-if="resultado">

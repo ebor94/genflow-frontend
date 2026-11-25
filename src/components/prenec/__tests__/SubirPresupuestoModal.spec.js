@@ -280,6 +280,46 @@ describe('SubirPresupuestoModal', () => {
     expect(w.find('[data-testid="btn-confirmar"]').exists()).toBe(true);
   });
 
+  it('al volver a elegir el mismo archivo se vacía el campo para que el navegador avise el cambio', async () => {
+    const proto = HTMLInputElement.prototype;
+    const original = Object.getOwnPropertyDescriptor(proto, 'value');
+    const vaciados = [];
+    Object.defineProperty(proto, 'value', { configurable: true, get: original.get, set(v) { vaciados.push(v); original.set.call(this, v); } });
+    try {
+      const w = factory();
+      await elegir(w, 'mismo.xlsx');
+      const antes = vaciados.length;
+      await elegir(w, 'mismo.xlsx');
+      expect(vaciados.length).toBeGreaterThan(antes);
+      expect(vaciados.slice(antes).every((v) => v === '')).toBe(true);
+    } finally {
+      Object.defineProperty(proto, 'value', original);
+    }
+  });
+
+  it('el error de una revisión vieja no se muestra en la nueva', async () => {
+    let fallar;
+    presupuestosApi.revisar
+      .mockImplementationOnce(() => new Promise((_, rej) => { fallar = () => rej({ response: { data: { message: 'Error viejo' } } }); }))
+      .mockResolvedValueOnce(ok());
+    const w = factory();
+    await elegir(w, 'a.xlsx');
+    await w.setProps({ mes: 11 });
+    await elegir(w, 'b.xlsx');
+    fallar();
+    await flushPromises();
+    expect(w.find('[data-testid="error-archivo"]').exists()).toBe(false);
+    expect(w.find('[data-testid="btn-confirmar"]').exists()).toBe(true);
+  });
+
+  it('la zona aria-live existe siempre y sin hueco cuando está vacía', () => {
+    const w = factory();
+    const z = w.find('[aria-live="polite"]');
+    expect(z.exists()).toBe(true);
+    expect(z.classes()).not.toContain('empty:hidden');
+    expect(z.classes()).not.toContain('mt-4');
+  });
+
   it('accesibilidad: los errores tienen role alert', async () => {
     presupuestosApi.revisar.mockResolvedValueOnce(ok({ errores: [{ fila: 4, columna: 'C', mensaje: 'Malo' }] }));
     let w = factory();
