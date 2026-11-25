@@ -99,7 +99,7 @@ async function guardar() {
 }
 
 // Auto-sugerir fecha mañana al cambiar a un resultado que pide fecha, si aún no hay ninguna
-watch(pideFecha, (pide) => {
+watch([() => form.value.resultado_codigo, pideFecha], ([, pide]) => {
   if (pide && !form.value.prox_fecha) {
     form.value.prox_fecha = fechaDefaultManana();
   }
@@ -107,13 +107,13 @@ watch(pideFecha, (pide) => {
 
 async function sinRespuesta() {
   // Atajo: marcar como SIN_RESPUESTA con datos mínimos (nombre puede ser "Sin respuesta")
-  form.value.nombre = form.value.nombre || 'Sin respuesta';
-  form.value.telefono = form.value.telefono || `SR-${Date.now()}`;
   form.value.resultado_codigo = 'SIN_RESPUESTA';
   if (pideFecha.value && !form.value.prox_fecha) {
     toast.warning('Indica la fecha de la próxima visita');
     return;
   }
+  form.value.nombre = form.value.nombre || 'Sin respuesta';
+  form.value.telefono = form.value.telefono || `SR-${Date.now()}`;
   await registrar(true);
 }
 

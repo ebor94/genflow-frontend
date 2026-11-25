@@ -113,7 +113,10 @@ async function guardar() {
     toast.error('Catálogos PAP incompletos. Recarga la página.'); return;
   }
 
-  if (requiereFecha.value && !proxFecha.value) {
+  // Se fijan antes de esperar el GPS: tocar otro resultado no cambia lo que se guarda
+  const pideFecha = requiereFecha.value;
+  const fecha = proxFecha.value;
+  if (pideFecha && !fecha) {
     toast.warning('Indica la fecha de la próxima visita'); return;
   }
 
@@ -130,8 +133,8 @@ async function guardar() {
       gest_comentario:      comentario.value || null,
       gest_ubicacion_lat:   coords.value?.lat || null,
       gest_ubicacion_lng:   coords.value?.lng || null,
-      gest_prox_fecha:      requiereFecha.value ? proxFecha.value : null,
-      quitar_prox:          !requiereFecha.value
+      gest_prox_fecha:      pideFecha ? fecha : null,
+      quitar_prox:          !pideFecha
     };
     const g = await gestiones.registrar(payload);
     toast.success('Gestión registrada');
