@@ -30,7 +30,7 @@ Hoy "Valor vendido" siempre es $0: `snapshot.service` lo escribe fijo en cero.
 7. La fecha es el día en Colombia en que se registró. Corregirla no la mueve.
 8. Un cliente puede tener varias ventas; la pantalla avisa si ya tiene una activa.
 9. En una visita en sala, quien atiende al cliente de otro asesor no puede cerrarle el contrato (403).
-10. Corregir y anular: roles supervisores dentro de su alcance (`fueraDeAlcance`). Motivo de 3 a 250 caracteres. Anular no cambia el estado del cliente.
+10. Corregir y anular: roles supervisores dentro de su alcance (`fueraDeAlcanceVentas`). Director comercial y gerente general, solo en sus áreas asignadas, también para ver las ventas y para cerrar. Motivo de 3 a 250 caracteres. Anular no cambia el estado del cliente.
 11. Cada corrección o anulación deja quién, cuándo, motivo, total anterior y nuevo, y los productos de antes y después. Nada se borra.
 12. Si alguien más cambió la venta desde que se abrió la ventana, responde 409 y se recarga (`cambios_vistos`).
 13. Un contrato es una venta activa del asesor dueño. Los cierres sin venta (otras áreas, o anteriores a la 027) se cuentan por cliente y día, como el snapshot; el panel del equipo contaba cada gestión. Una venta anulada no cuenta.
@@ -47,10 +47,10 @@ Hoy "Valor vendido" siempre es $0: `snapshot.service` lo escribe fijo en cero.
 ## 5. Backend
 
 - `POST /gestiones` y `POST /salas/homenajes/:id/visitas` aceptan `venta: { clave, items: [{ prod_id, cantidad, precio_unitario }] }`.
-- `GET /prospectos/:id/ventas`: quien puede ver al cliente.
+- `GET /prospectos/:id/ventas`: quien puede ver al cliente (director y gerente, si es de sus áreas).
 - `PUT /ventas/:id` (`items`, `motivo`, `cambios_vistos`) y `POST /ventas/:id/anular` (`motivo`, `cambios_vistos`).
 - El snapshot usa el día de Colombia: con la fecha UTC, el de las 11:55 p. m. escribía el día siguiente. En `reporteAsesor`, gestiones e interesados también se calculan al momento.
-- Cada reporte respeta el alcance del rol (antes, el valor vendido se podía leer desde otra área).
+- Cada reporte respeta el alcance del rol (antes, el valor vendido se podía leer desde otra área). `/reportes/dashboard` sin parámetros suma solo las áreas asignadas de director y gerente.
 - `reportes`: contratos y valor se calculan al momento con `ventas.metricasPorAsesor`; `reporteEquipo` agrega `snap_valor_vendido_cop` y `registra_ventas`. `snapshot` usa la misma regla.
 - Una gestión ya guardada no se responde como error aunque falle leerla después.
 - Cerrar sin venta responde 422 con un mensaje que pide recargar GenFlow (pantallas viejas).
