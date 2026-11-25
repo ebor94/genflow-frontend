@@ -30,7 +30,7 @@ it('cada interés muestra por definir, el precio ofrecido o solo el nombre', asy
   const w = mount(FichaCliente, {
     global: {
       plugins: [createTestingPinia({ createSpy: vi.fn, initialState: { svProspectos: { activo } } })],
-      stubs: { teleport: true, RegistrarGestion: true, AgendarProximaModal: true, ReasignarProspectoModal: true, ProspectosCrossArea: true, QuickActionRow: true, HistorialItem: true }
+      stubs: { teleport: true, RegistrarGestion: true, AgendarProximaModal: true, ReasignarProspectoModal: true, ProspectosCrossArea: true, QuickActionRow: true, HistorialItem: true, VentasCliente: true }
     }
   });
   await flushPromises();

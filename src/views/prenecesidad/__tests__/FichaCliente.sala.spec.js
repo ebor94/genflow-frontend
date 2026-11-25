@@ -34,7 +34,7 @@ function factory() {
       plugins: [createTestingPinia({ createSpy: vi.fn, initialState: { svProspectos: { activo: PROSPECTO } } })],
       stubs: {
         teleport: true, RegistrarGestion: true, AgendarProximaModal: true, ReasignarProspectoModal: true,
-        ProspectosCrossArea: true, QuickActionRow: true, HistorialItem: true
+        ProspectosCrossArea: true, QuickActionRow: true, HistorialItem: true, VentasCliente: true
       }
     }
   });

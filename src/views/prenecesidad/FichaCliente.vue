@@ -4,6 +4,7 @@ import { useRoute, useRouter, RouterLink } from 'vue-router';
 import { useProspectosStore } from '@/stores/useProspectosStore';
 import { useGestionesStore } from '@/stores/useGestionesStore';
 import { useAuthStore } from '@/stores/useAuthStore';
+import { useConfigStore } from '@/stores/useConfigStore';
 import { useApiError } from '@/composables/useApiError';
 import { useTelefono } from '@/composables/useTelefono';
 import { personasApi } from '@/api/personasApi';
@@ -17,6 +18,7 @@ import HistorialItem from '@/components/common/HistorialItem.vue';
 import QuickActionRow from '@/components/common/QuickActionRow.vue';
 import BaseButton from '@/components/ui/BaseButton.vue';
 import RegistrarGestion from '@/components/crm/RegistrarGestion.vue';
+import VentasCliente from '@/components/crm/VentasCliente.vue';
 import AgendarProximaModal from '@/components/crm/AgendarProximaModal.vue';
 import ProspectosCrossArea from '@/components/crm/ProspectosCrossArea.vue';
 import ReasignarProspectoModal from '@/components/crm/ReasignarProspectoModal.vue';
@@ -26,6 +28,7 @@ const router = useRouter();
 const store  = useProspectosStore();
 const gestiones = useGestionesStore();
 const auth = useAuthStore();
+const config = useConfigStore();
 const { notify } = useApiError();
 
 const otrosProspectos = ref([]);
@@ -57,8 +60,14 @@ const p = computed(() => store.activo);
 const persona = computed(() => p.value?.persona);
 const historial = computed(() => gestiones.historial.get(parseInt(route.params.id)) || { items: [], hasMore: false, loading: false });
 
+// Catálogo para corregir una venta, y aviso a la tarjeta de ventas de que debe recargar.
+const productosArea = computed(() => (config.actual?.productos || [])
+  .filter((x) => x.prod_area_id === p.value?.prosp_area_id && x.prod_activo));
+const versionVentas = ref(0);
+
 async function cargar() {
   const id = parseInt(route.params.id);
+  versionVentas.value += 1;
   try {
     await store.fetchOne(id);
     await gestiones.fetchHistorial(id, { reset: true });
@@ -176,6 +185,8 @@ function llamar() {
           </span>
         </div>
       </section>
+
+      <VentasCliente :prosp-id="p.prosp_id" :productos="productosArea" :puede-corregir="auth.puedeReasignar" :version="versionVentas" />
 
       <!-- Nota inicial -->
       <section v-if="p.prosp_nota_inicial" class="sv-card p-4 mb-4">
