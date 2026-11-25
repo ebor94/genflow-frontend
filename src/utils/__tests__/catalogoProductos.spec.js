@@ -55,6 +55,7 @@ describe('filtrarGrupos', () => {
   it('busca por palabras sueltas, sin tildes ni mayúsculas', () => expect(ids(filtrarGrupos(grupos, 'MARMOL a2'))).toEqual([2]));
   it('también busca por categoría y tipo', () => expect(ids(filtrarGrupos(grupos, 'inhumaciones osarios'))).toEqual([5, 6]));
   it('sin coincidencias devuelve vacío', () => expect(filtrarGrupos(grupos, 'xyz')).toEqual([]));
+  it('conserva el por definir cuando solo coincide el tipo', () => expect(ids(filtrarGrupos(grupos, 'osarios mausoleos'))).toEqual([1, 2, 3]));
 });
 
 describe('alternarInteres', () => {
@@ -78,6 +79,12 @@ describe('alternarInteres', () => {
     expect(alternarInteres(antes, CATALOGO[3], CATALOGO)[0].nota).toBe('con descuento');
     expect(antes).toHaveLength(1);
   });
+  it('si el por definir era el principal y hay otros intereses, lo hereda el producto nuevo', () => {
+    expect(alternarInteres([sel(1, true), sel(4)], CATALOGO[1], CATALOGO)).toEqual([sel(4), sel(2, true)]);
+  });
+  it('si el por definir no era el principal, el principal no cambia', () => {
+    expect(alternarInteres([sel(4, true), sel(1)], CATALOGO[1], CATALOGO)).toEqual([sel(4, true), sel(2)]);
+  });
 });
 
 describe('marcarPrincipalEn', () => {
@@ -99,6 +106,9 @@ describe('detalleInteres', () => {
   });
   it('precio ofrecido distinto del vigente', () => {
     expect(plano(detalleInteres({ producto: CATALOGO[1], pp_precio_ofrecido: '8000000.00' }))).toBe('$ 8.000.000 (vigente $ 8.770.000)');
+  });
+  it('precio ofrecido sin precio vigente muestra solo el ofrecido', () => {
+    expect(plano(detalleInteres({ producto: { prod_nombre: 'X', prod_precio_base: null }, pp_precio_ofrecido: '100000.00' }))).toBe('$ 100.000');
   });
   it('sin precio guardado no muestra nada', () => {
     expect(detalleInteres({ producto: CATALOGO[1], pp_precio_ofrecido: null })).toBe('');

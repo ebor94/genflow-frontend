@@ -69,14 +69,16 @@ export function alternarInteres(seleccion, producto, catalogo) {
     return conPrincipal(seleccion.filter((s) => s.prod_id !== producto.prod_id));
   }
   let base = seleccion;
+  let heredaPrincipal = false;
   if (!producto.prod_es_generico && producto.prod_tipo) {
     // Ya se sabe qué quiere: sobra el "por definir" de ese mismo tipo.
     const genericos = new Set((catalogo || [])
       .filter((p) => p.prod_es_generico && claveTipo(p) === claveTipo(producto))
       .map((p) => p.prod_id));
+    heredaPrincipal = seleccion.some((s) => genericos.has(s.prod_id) && s.es_principal);
     base = seleccion.filter((s) => !genericos.has(s.prod_id));
   }
-  return conPrincipal([...base, { prod_id: producto.prod_id, es_principal: false, nota: null }]);
+  return conPrincipal([...base, { prod_id: producto.prod_id, es_principal: heredaPrincipal, nota: null }]);
 }
 
 export function marcarPrincipalEn(seleccion, prodId) {
