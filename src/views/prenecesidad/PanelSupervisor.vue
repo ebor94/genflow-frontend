@@ -10,6 +10,7 @@ import { ref, computed, onMounted, watch } from 'vue';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { useApiError } from '@/composables/useApiError';
 import { reportesApi } from '@/api/reportesApi';
+import { diaLocal, fmtCOP } from '@/utils/format';
 
 import KpiCard from '@/components/dashboard/KpiCard.vue';
 import TablaAsesores from '@/components/dashboard/TablaAsesores.vue';
@@ -21,7 +22,7 @@ const auth = useAuthStore();
 const { notify } = useApiError();
 
 // Rango de fechas (default: hoy)
-const hoyISO = new Date().toISOString().slice(0, 10);
+const hoyISO = diaLocal();
 const desde = ref(hoyISO);
 const hasta = ref(hoyISO);
 const loading = ref(false);
@@ -38,8 +39,8 @@ const PRESETS = [
 function aplicarPreset(dias) {
   const hoy = new Date();
   const desdeDate = new Date(hoy.getTime() - dias * 86400000);
-  desde.value = desdeDate.toISOString().slice(0, 10);
-  hasta.value = hoy.toISOString().slice(0, 10);
+  desde.value = diaLocal(desdeDate);
+  hasta.value = diaLocal(hoy);
 }
 
 const rangoLabel = computed(() => {
@@ -103,9 +104,15 @@ const totales = computed(() => {
     gestiones:   ases.reduce((s, a) => s + (a.snap_gestiones_realizadas || 0), 0),
     interesados: ases.reduce((s, a) => s + (a.snap_interesados_nuevos || 0), 0),
     contratos:   ases.reduce((s, a) => s + (a.snap_contratos_cerrados || 0), 0),
+    valor:       ases.reduce((s, a) => s + Number(a.snap_valor_vendido_cop || 0), 0),
     vencidas:    ases.reduce((s, a) => s + (a.snap_vencidas_acumuladas || 0), 0)
   };
 });
+
+// Solo las áreas que venden por producto tienen valor vendido.
+const conVentas = computed(() => (tab.value === 'consolidado'
+  ? Array.from(dataPorGrupo.value.values())
+  : [dataPorGrupo.value.get(parseInt(tab.value))]).some((d) => d?.registra_ventas));
 
 const titulo = computed(() => {
   if (tab.value === 'consolidado') return 'Panel del Supervisor — Consolidado';
@@ -160,10 +167,11 @@ const titulo = computed(() => {
     <div v-if="loading" class="text-text3 text-center py-12">Cargando...</div>
 
     <template v-else>
-      <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
+      <div class="grid grid-cols-2 gap-3 mb-5" :class="conVentas ? 'lg:grid-cols-5' : 'lg:grid-cols-4'">
         <KpiCard label="Gestiones del día" icon="📞" :value="totales.gestiones" />
         <KpiCard label="Interesados"       icon="🎯" :value="totales.interesados" color-hex="#1A5C8A" />
         <KpiCard label="Contratos"         icon="✅" :value="totales.contratos"   color-hex="#2A6E47" />
+        <KpiCard v-if="conVentas" label="Valor vendido" icon="💰" :value="fmtCOP(totales.valor)" color-hex="#9B4F20" />
         <KpiCard label="Vencidas"          icon="🔴" :value="totales.vencidas"    color-hex="#B83227" />
       </div>
 
@@ -171,7 +179,7 @@ const titulo = computed(() => {
         Rendimiento del equipo
         <span class="text-sm text-text3 font-sans">({{ asesoresVisibles.length }} asesores)</span>
       </h2>
-      <TablaAsesores :asesores="asesoresVisibles" />
+      <TablaAsesores :asesores="asesoresVisibles" :con-ventas="conVentas" />
     </template>
 
     <CargarListaModal :open="showCargarLista" @close="showCargarLista = false" @cargada="() => { showCargarLista = false; cargar(); }" />

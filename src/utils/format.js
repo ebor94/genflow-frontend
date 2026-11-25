@@ -33,4 +33,9 @@ export function fmtNumero(n) {
   return new Intl.NumberFormat('es-CO').format(n);
 }
 
+/** Día local en formato YYYY-MM-DD. toISOString() da el de UTC: después de las 7 p. m. sería mañana. */
+export function diaLocal(d = new Date()) {
+  return dayjs(d).format('YYYY-MM-DD');
+}
+
 export { dayjs };
