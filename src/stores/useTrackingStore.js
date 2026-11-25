@@ -2,6 +2,8 @@ import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
 import { trackingApi } from '@/api/trackingApi';
 import { useToastStore } from '@/stores/useToastStore';
+import { useAuthStore } from '@/stores/useAuthStore';
+import { diaLocal } from '@/utils/format';
 
 const LS_KEY  = 'sv_tracking_jornada';
 const LS_BUF  = 'sv_tracking_buffer';
@@ -43,24 +45,63 @@ export const useTrackingStore = defineStore('svTracking', () => {
   let watchId    = null;
   let flushTimer = null;
 
-  function restaurar() {
+  function leerJson(clave) {
     try {
-      const raw = localStorage.getItem(LS_KEY);
-      if (raw) jornadaActiva.value = JSON.parse(raw);
-      const buf = localStorage.getItem(LS_BUF);
-      if (buf) bufferLocal.value = JSON.parse(buf);
-    } catch { /* ignore */ }
-    if (jornadaActiva.value) {
-      iniciarWatch();
-      registrarListeners();
-      if (wakeLockPref.value) requestWakeLock().catch(() => {});
-    }
+      const raw = localStorage.getItem(clave);
+      return raw ? JSON.parse(raw) : null;
+    } catch { return null; }
+  }
+
+  function borrarClaves() {
+    try { localStorage.removeItem(LS_KEY); localStorage.removeItem(LS_BUF); } catch { /* ignore */ }
   }
 
   function persistir() {
-    if (jornadaActiva.value) localStorage.setItem(LS_KEY, JSON.stringify(jornadaActiva.value));
-    else localStorage.removeItem(LS_KEY);
-    localStorage.setItem(LS_BUF, JSON.stringify(bufferLocal.value));
+    try {
+      if (!jornadaActiva.value) { borrarClaves(); return; }
+      const usrId = useAuthStore().usuario?.usr_id;
+      localStorage.setItem(LS_KEY, JSON.stringify({
+        usr_id: usrId, fecha: diaLocal(),
+        jor_id: jornadaActiva.value.jor_id, jor_inicio_at: jornadaActiva.value.jor_inicio_at
+      }));
+      localStorage.setItem(LS_BUF, JSON.stringify({
+        jor_id: jornadaActiva.value.jor_id, puntos: bufferLocal.value
+      }));
+    } catch { /* ignore */ }
+  }
+
+  /** Arranca la captura de esta jornada. Los puntos guardados solo se usan si son de la misma jornada. */
+  function activar(jornada, pos = null) {
+    const cambia = jornadaActiva.value?.jor_id !== jornada.jor_id;
+    if (cambia) {
+      const buf = leerJson(LS_BUF);
+      bufferLocal.value = (buf && buf.jor_id === jornada.jor_id && Array.isArray(buf.puntos)) ? buf.puntos : [];
+      ultimaPos.value = pos ? { lat: pos.lat, lng: pos.lng, ts: pos.ts || Date.now() } : null;
+      enviadoCount.value = 0;
+    }
+    jornadaActiva.value = { jor_id: jornada.jor_id, jor_inicio_at: jornada.jor_inicio_at };
+    persistir();
+    iniciarWatch();
+    registrarListeners();
+    if (wakeLockPref.value && !wakeLockActivo.value) requestWakeLock().catch(() => {});
+  }
+
+  /** Sigue con una jornada que el backend dice que está activa hoy. */
+  function reanudar(jornada) {
+    if (!jornada?.jor_id) return;
+    activar(jornada);
+  }
+
+  /** Sin red: sigue con la copia del navegador solo si es de este usuario y de hoy. */
+  function reanudarLocal() {
+    const c = leerJson(LS_KEY);
+    const usrId = useAuthStore().usuario?.usr_id;
+    if (c && c.jor_id && c.usr_id != null && c.usr_id === usrId && c.fecha === diaLocal()) {
+      activar({ jor_id: c.jor_id, jor_inicio_at: c.jor_inicio_at });
+      return true;
+    }
+    borrarClaves();
+    return false;
   }
 
   const estaActiva = computed(() => !!jornadaActiva.value);
@@ -136,15 +177,16 @@ export const useTrackingStore = defineStore('svTracking', () => {
       enviadoCount.value += r.data?.aceptados || 0;
       persistir();
     } catch (e) {
-      if (e.response?.data?.error === 'JORNADA_CERRADA') {
-        bufferLocal.value = [];
-        jornadaActiva.value = null;
-        persistir();
-        detenerWatch();
-        soltarListeners();
+      const status = e.response?.status;
+      if (e.response?.data?.error === 'JORNADA_CERRADA' || status === 403) {
+        detener();
         toast.warning('Tu jornada fue cerrada automáticamente.');
+      } else if (status === 422) {
+        // Lote inválido: se descarta para que no bloquee los siguientes.
+        bufferLocal.value = bufferLocal.value.slice(lote.length);
+        persistir();
       }
-      // Si fue por offline, dejar buffer; los listeners de online lo intentarán de nuevo.
+      // Sin red: dejar buffer; los listeners de online lo intentarán de nuevo.
     }
   }
 
@@ -288,47 +330,18 @@ export const useTrackingStore = defineStore('svTracking', () => {
   // Lifecycle
   // ──────────────────────────────────────────────────────────
 
+  /** Siempre pregunta al backend: él decide si es la jornada de hoy (idempotente). */
   async function iniciar() {
-    if (estaActiva.value) return jornadaActiva.value;
     const pos = await getActual();
-    try {
-      const r = await trackingApi.iniciarJornada({
-        lat: pos?.lat, lng: pos?.lng, dispositivo: navigator.userAgent
-      });
-      jornadaActiva.value = {
-        jor_id: r.data.jor_id,
-        jor_inicio_at: r.data.jor_inicio_at
-      };
-      ultimaPos.value = pos ? { lat: pos.lat, lng: pos.lng, ts: pos.ts || Date.now() } : null;
-      bufferLocal.value = [];
-      enviadoCount.value = 0;
-      persistir();
-      iniciarWatch();
-      registrarListeners();
-      if (wakeLockPref.value) await requestWakeLock();
-      return jornadaActiva.value;
-    } catch (e) { throw e; }
+    const r = await trackingApi.iniciarJornada({
+      lat: pos?.lat, lng: pos?.lng, dispositivo: navigator.userAgent
+    });
+    activar({ jor_id: r.data.jor_id, jor_inicio_at: r.data.jor_inicio_at }, pos);
+    return jornadaActiva.value;
   }
 
-  async function finalizar() {
-    if (!estaActiva.value) return;
-    await flush();
-    const pos = await getActual();
-    try {
-      await trackingApi.finalizarJornada(jornadaActiva.value.jor_id, {
-        lat: pos?.lat, lng: pos?.lng
-      });
-    } catch (e) { /* silencioso */ }
-    detenerWatch();
-    soltarListeners();
-    await releaseWakeLock();
-    jornadaActiva.value = null;
-    bufferLocal.value = [];
-    enviadoCount.value = 0;
-    persistir();
-  }
-
-  function reset() {
+  /** Detiene la captura y limpia memoria y copia del navegador. */
+  function detener() {
     detenerWatch();
     soltarListeners();
     releaseWakeLock();
@@ -336,15 +349,20 @@ export const useTrackingStore = defineStore('svTracking', () => {
     ultimaPos.value = null;
     enviadoCount.value = 0;
     bufferLocal.value = [];
-    localStorage.removeItem(LS_KEY);
-    localStorage.removeItem(LS_BUF);
+    borrarClaves();
+  }
+
+  /** Cerrar sesión: envía lo pendiente y detiene, sin terminar la jornada. */
+  async function pausar() {
+    try { await flush(); } catch { /* ignore */ }
+    detener();
   }
 
   return {
     jornadaActiva, ultimaPos, enviadoCount, bufferLocal, errorPermiso,
     estaActiva, duracionMin, minSinPunto,
     wakeLockActivo, wakeLockPref, lastResumedAt,
-    restaurar, iniciar, finalizar, flush, reset,
+    iniciar, reanudar, reanudarLocal, pausar, detener, flush,
     toggleWakeLock, maybeReadquireWakeLock
   };
 });

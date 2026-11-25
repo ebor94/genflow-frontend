@@ -145,12 +145,10 @@ export const useAuthStore = defineStore('svAuth', () => {
   }
 
   async function logout() {
-    // Finalizar jornada de tracking antes de cerrar sesión (import dinámico para evitar ciclo)
+    // Envía lo pendiente y detiene la captura; la jornada sigue abierta (import dinámico para evitar ciclo)
     try {
       const { useTrackingStore } = await import('@/stores/useTrackingStore');
-      const tracking = useTrackingStore();
-      if (tracking.estaActiva) await tracking.finalizar();
-      else tracking.reset();
+      await useTrackingStore().pausar();
     } catch { /* silencioso */ }
     try { if (refreshToken.value) await authApi.logout(refreshToken.value); } catch {}
     accessToken.value  = null;

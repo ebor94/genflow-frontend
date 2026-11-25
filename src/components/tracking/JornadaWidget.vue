@@ -3,12 +3,12 @@
  * JornadaWidget.vue — indicador y controles del tracking GPS.
  *
  * Comportamiento:
- *  - Inicia/finaliza automáticamente con la sesión (sin botón manual).
+ *  - Solo muestra el estado: la jornada la inicia el popup y la sigue useJornadaObligatoriaStore.
  *  - Muestra duración de la jornada y minutos sin reporte (gap si > 5 min).
  *  - Permite activar "Mantener pantalla activa" (Wake Lock) para evitar que
  *    el navegador suspenda el watchPosition al bloquear el teléfono.
  */
-import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue';
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { useTrackingStore } from '@/stores/useTrackingStore';
 
@@ -35,29 +35,17 @@ function formatoDuracion(min) {
 
 const hayGap = computed(() => tracking.minSinPunto != null && tracking.minSinPunto >= 5);
 
-async function autoIniciar() {
-  if (!debeAparecer.value) return;
-  if (tracking.estaActiva) return;
-  try { await tracking.iniciar(); } catch (e) { /* silencioso */ }
-}
-
 // Cuando el navegador libera Wake Lock (ej. al cambiar de pestaña), reintentar al volver
 function onVisibility() {
   if (document.visibilityState === 'visible') tracking.maybeReadquireWakeLock();
 }
 
-onMounted(async () => {
-  tracking.restaurar();
-  if (!tracking.estaActiva) await autoIniciar();
+onMounted(() => {
   document.addEventListener('visibilitychange', onVisibility);
 });
 
 onBeforeUnmount(() => {
   document.removeEventListener('visibilitychange', onVisibility);
-});
-
-watch(() => auth.usuario?.usr_id, async (newId, oldId) => {
-  if (newId && newId !== oldId) await autoIniciar();
 });
 
 function onClickFuera(ev) {
