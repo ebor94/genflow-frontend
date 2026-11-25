@@ -73,6 +73,16 @@ describe('CampoPesos', () => {
       expect(input.element.value).toBe('8.770.000');
       expect(w.emitted('update:modelValue')).toBeUndefined();
     });
+    it('una coma escrita en el medio no borra los dígitos de después ni mueve el cursor', async () => {
+      const { w, input } = montar(8770000);
+      input.element.value = '8.770,.000';
+      input.element.setSelectionRange(6, 6);
+      input.element.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'insertText' }));
+      await input.trigger('blur');
+      expect(input.element.value).toBe('8.770.000');
+      expect(w.emitted('update:modelValue')).toBeUndefined();
+      expect(input.element.selectionStart).toBe(5);
+    });
     it('pegar miles sin decimales respeta el valor', async () => {
       const { w, input } = montar();
       await pegar(input, '1.250.000');
